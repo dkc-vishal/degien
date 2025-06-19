@@ -61,6 +61,10 @@ export default function TechSpecSheet() {
       const newWidth = e.clientX - th.getBoundingClientRect().left;
       if (newWidth > 20) {
         th.style.width = `${newWidth}px`;
+        const updatedWidths = [...colWidths];
+        updatedWidths[resizingColIndex.current] = newWidth;
+        setColWidths(updatedWidths);
+        localStorage.setItem("table_colWidths", JSON.stringify(updatedWidths));
       }
     }
   };
@@ -379,7 +383,6 @@ export default function TechSpecSheet() {
     setTableData(updated);
   };
 
-
   const deleteCol = (deleteIndex: number) => {
     // Guard clause: don't allow deleting if there's only 1 column left
     if (columnHeaders.length <= 1) return;
@@ -497,7 +500,12 @@ export default function TechSpecSheet() {
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, []);
-
+  useEffect(() => {
+    const savedWidths = localStorage.getItem("table_colWidths");
+    if (savedWidths) {
+      setColWidths(JSON.parse(savedWidths));
+    }
+  }, []);
   return (
     <>
       {contextMenu1?.visible && (
@@ -600,8 +608,8 @@ export default function TechSpecSheet() {
       <div className="flex h-screen font-sans bg-gray-100">
         {/* Sidebar */}
         <aside
-          className={`transition-all duration-300 ${collapsed ? "w-0" : "w-64"
-            } bg-gray-900 text-gray-100 flex flex-col`}
+        style={{width: collapsed ? "0%":"15%"}}
+          className={`transition-all duration-300 bg-gray-900 text-gray-100 flex flex-col`}
         >
           {/* Toggle Button */}
           <div className="flex items-center justify-between p-4 border-b border-gray-800">
@@ -628,7 +636,7 @@ export default function TechSpecSheet() {
         {/* Main Content */}
         <div
           className="flex-1 flex flex-col"
-          style={{ width: "calc(100vw - 10%)" }}
+          style={{ width: "calc(100vw - 15%)" }}
         >
           {/* Navbar */}
           <header className="bg-white border-b shadow-sm px-6 py-4 text-gray-800">
@@ -706,7 +714,7 @@ export default function TechSpecSheet() {
                             draggable
                             style={{
                               position: "relative",
-                              width: "150px", // Set default width
+                              width: colWidths[i], // Set default width
                               minWidth: "50px",
                               maxWidth: "500px",
                               background: frozenColIndex === i ? "green" : ""
@@ -745,6 +753,7 @@ export default function TechSpecSheet() {
                                 return newRow;
                               });
                               setTableData(updated);
+                              console.log(updated)
                               setDraggedColIndex(null);
                             }}
                             onDragOver={(e) => e.preventDefault()}
@@ -1033,6 +1042,7 @@ export default function TechSpecSheet() {
                                           editingCell?.[1] === colIndex
                                         )
                                       }
+
                                       onChange={(e) => {
                                         handleCellChange(
                                           rowIndex,
@@ -1082,6 +1092,8 @@ export default function TechSpecSheet() {
                                       }
                                       // onClick={(e) => e.stopPropagation()}
                                       onClick={(e) => {
+                                        setEditingCell([rowIndex, colIndex]);
+
                                         e.stopPropagation();
                                         setSelectedCell([rowIndex, colIndex]);
                                         setSelectionAnchor(null);
@@ -1140,9 +1152,7 @@ export default function TechSpecSheet() {
                                           setSelectionAnchor(null);
                                         }
                                       }}
-                                      className={`w-full h-auto p-0 m-0 border px-2 py-1  outline-none resize-none overflow-hidden whitespace-pre-wrap break-words
-                
-              `}
+                                      className={`w-full h-auto p-0 m-0 border px-2 py-1  outline-none resize-none overflow-hidden whitespace-pre-wrap break-words`}
                                       rows={1}
                                     />
                                   </td>

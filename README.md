@@ -43,3 +43,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 
 add qa in input
+
+
+
+110 -> as it is here -> original extract using filter -> create sheet mid1 -> filtered for mid 1 only -> format copied mid 1
