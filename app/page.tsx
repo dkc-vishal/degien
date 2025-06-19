@@ -1,7 +1,23 @@
 "use client";
+import ImageEditorModal from "@/components/image-editor/ImageEditorModal";
+import { toast } from "@/hooks/use-toast";
 import { useEffect, useRef } from "react"; // Make sure useRef is imported
 import React, { useState } from "react";
+// export interface IssueImage {
+//   id: string;
+//   url: string;
+//   file: File;
+//   name: string;
+// }
 
+export interface Issue {
+  id: string;
+  // description: string;
+  images: string[];
+  status?: string;
+  priority?: string;
+  createdDate?: string;
+}
 import {
   FaBars,
   FaTachometerAlt,
@@ -24,6 +40,19 @@ export default function TechSpecSheet() {
   const [draggedColIndex, setDraggedColIndex] = useState<number | null>(null);
   const draggedImageSource = useRef<string | null>(null);
   const draggedImageOrigin = useRef<[number, number] | null>(null);
+  // State for Image Editor Modal
+  const [editingImageInfo, setEditingImageInfo] = useState<{
+    issueId: string;
+    image: string;
+  } | null>(null);
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [imageSeleted, setimageSeleted] = useState({
+    rownumber: 0,
+    colnumber: 0,
+    imgindex: 0
+
+  })
+  const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollDirectionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -44,6 +73,7 @@ export default function TechSpecSheet() {
     "TOP Grading",
     "sdfdsfdsf",
   ]);
+  const [imageopen, setIsTyping] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
   const [colWidths, setColWidths] = useState(
     () => columnHeaders.map(() => 150) // default 150px per column
@@ -75,6 +105,38 @@ export default function TechSpecSheet() {
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
   };
+  const handleOpenImageEditor = (issueId: string, image: string) => {
+    setEditingImageInfo({ issueId, image });
+    setIsImageEditorOpen(true);
+  };
+  const handleCloseImageEditor = () => {
+    setIsImageEditorOpen(false);
+    setEditingImageInfo(null);
+  };
+
+  const handleSaveEditedImage = (
+    newImageDataUrl: string
+  ) => {
+
+    const { rownumber, colnumber, imgindex } = imageSeleted;
+    setTableData((prevData) => {
+      const newData = [...prevData];
+      const row = [...newData[rownumber]];
+      const images = [...(row[colnumber] as string[])];
+
+      images[imgindex] = newImageDataUrl; // Replace image at index
+      row[colnumber] = images;
+      newData[rownumber] = row;
+
+      return newData;
+    });
+    toast({
+      title: "Image updated",
+      description: "Your changes have been saved.",
+    });
+    handleCloseImageEditor();
+  };
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -608,7 +670,7 @@ export default function TechSpecSheet() {
       <div className="flex h-screen font-sans bg-gray-100">
         {/* Sidebar */}
         <aside
-        style={{width: collapsed ? "0%":"15%"}}
+          style={{ width: collapsed ? "0%" : "15%" }}
           className={`transition-all duration-300 bg-gray-900 text-gray-100 flex flex-col`}
         >
           {/* Toggle Button */}
@@ -973,6 +1035,16 @@ export default function TechSpecSheet() {
                                         <div className="flex flex-wrap gap-1 justify-center">
                                           {cell.map((src, i) => (
                                             <img
+                                              onClick={e => {
+                                                e.stopPropagation();
+                                                setimageSeleted({
+                                                  rownumber: rowIndex,
+                                                  colnumber: colIndex,
+                                                  imgindex: i
+                                                })
+                                                handleOpenImageEditor(src, src)
+
+                                              }}
                                               style={{ width: "100%", height: "100%", aspectRatio: "9/16" }}
                                               onKeyDown={(e) => {
                                                 if ((e.ctrlKey || e.metaKey) && e.key === "c") {
@@ -1032,7 +1104,7 @@ export default function TechSpecSheet() {
                                       ? "border-blue-500 ring-2 ring-blue-400"
                                       : "border-gray-300"
                                       }
-                ${isCellInRange(rowIndex, colIndex) ? "bg-blue-100" : ""}`}
+                                  ${isCellInRange(rowIndex, colIndex) ? "bg-blue-100" : ""}`}
                                   >
                                     <textarea
                                       value={cell}
@@ -1092,7 +1164,6 @@ export default function TechSpecSheet() {
                                       }
                                       // onClick={(e) => e.stopPropagation()}
                                       onClick={(e) => {
-                                        setEditingCell([rowIndex, colIndex]);
 
                                         e.stopPropagation();
                                         setSelectedCell([rowIndex, colIndex]);
@@ -1145,7 +1216,7 @@ export default function TechSpecSheet() {
                                           if (!selectionAnchor)
                                             setSelectionAnchor(selectedCell);
                                         } else {
-                                          setEditingCell(null);
+                                          setEditingCell([newRow, newCol]);
 
                                           setSelectedCell([newRow, newCol]);
                                           setSelectedRange(null);
@@ -1173,6 +1244,18 @@ export default function TechSpecSheet() {
           </main>
         </div>
       </div>
+      {isImageEditorOpen && editingImageInfo && (
+        <ImageEditorModal
+          isOpen={isImageEditorOpen}
+          onClose={handleCloseImageEditor}
+          image={editingImageInfo.image}
+          onSave={(newImageDataUrl) =>
+            handleSaveEditedImage(
+              newImageDataUrl
+            )
+          }
+        />
+      )}
     </>
   );
 }
