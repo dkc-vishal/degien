@@ -131,13 +131,12 @@ td {
   margin: 0;
   position: relative;
   height: 30px;
- min-height: 30px;
+  min-height: 30px;
 }
 
 th {
   width: 300px;
   text-align: center;
-
 }
 
 textarea {

@@ -27,7 +27,13 @@ import {
 } from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
 
-export default function Table() {
+export default function DynamicTable({
+  rowLenght,
+  columnLenght,
+}: {
+  rowLenght: number;
+  columnLenght: number;
+}) {
   const [frozenColIndex, setFrozenColIndex] = useState<number | null>(null);
 
   const [collapsed, setCollapsed] = useState(false);
@@ -67,8 +73,8 @@ export default function Table() {
   const [colWidths, setColWidths] = useState(
     () => columnHeaders.map(() => 150) // default 150px per column
   );
-  colWidths[0] = 5; // Set first column width
-  colWidths[1] = 5; // Set second column width
+  colWidths[0] = 50; // Set first column width
+  colWidths[1] = 50; // Set second column width
   colWidths[2] = 200; // Set third column width
   colWidths[3] = 200; // Set fourth column width
   const isResizing = useRef(false);
@@ -146,8 +152,8 @@ export default function Table() {
     };
   }, []);
   const [tableData, setTableData] = useState<TableRow[]>(
-    Array.from({ length: 10 }, () =>
-      Array.from({ length: 4 }, (_, colIndex) =>
+    Array.from({ length: rowLenght }, () =>
+      Array.from({ length: columnLenght }, (_, colIndex) =>
         columnHeaders[colIndex] === "Measurement Picture" ? [] : ""
       )
     )
