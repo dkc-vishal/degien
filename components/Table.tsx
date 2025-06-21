@@ -30,6 +30,8 @@ import { RxDragHandleDots2 } from "react-icons/rx";
 export default function TechSpecSheet() {
   const [frozenColIndex, setFrozenColIndex] = useState<number | null>(null);
 
+  const [collapsed, setCollapsed] = useState(false);
+  const toggleSidebar = () => setCollapsed(!collapsed);
   const [isDragging, setIsDragging] = useState(false);
   const [history, setHistory] = useState<string[][][]>([]);
   const [redoStack, setRedoStack] = useState<string[][][]>([]);
@@ -666,6 +668,7 @@ export default function TechSpecSheet() {
           </ul>
         </div>
       )}
+      
       <main className="p-6">
         <div className="bg-white p-6 rounded-xl shadow" ref={tableRef}>
        

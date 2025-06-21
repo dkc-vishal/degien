@@ -7,10 +7,8 @@ import {
     FaWrench,
     FaTools,
 } from "react-icons/fa";
-export default function Header() {
-    const [collapsed, setCollapsed] = useState(false);
-
-    const toggleSidebar = () => setCollapsed(!collapsed);
+export default function Header({side}: any) {
+    const sidebar:any  = side;
     const menuItems = [
         { icon: <FaTachometerAlt />, label: "Dashboard" },
         { icon: <FaClipboardList />, label: "Tech Specs" },
@@ -23,7 +21,7 @@ export default function Header() {
             <header className="bg-white border-b shadow-sm px-6 py-4 text-gray-800">
                 <div className="flex justify-between items-center">
                     {/* Left: Search Bar */}
-                    <button onClick={toggleSidebar} className="text-black text-lg">
+                    <button onClick={sidebar} className="text-black text-lg">
                         <FaBars />
                     </button>
                     <div className="w-64">
