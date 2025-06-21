@@ -1,7 +1,6 @@
 "use client";
 
 import Header from "@/components/core/Header";
-import InputForm from "@/components/core/InputForm";
 import SheetTitle from "@/components/core/SheetTitle";
 import Sidebar from "@/components/core/Sidebar";
 import Table from "@/components/core/Table";
