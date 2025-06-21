@@ -7,10 +7,9 @@ import {
   FaWrench,
   FaTools,
 } from "react-icons/fa";
-export default function Sidebar() {
-      const [collapsed, setCollapsed] = useState(false);
-    
-  const toggleSidebar = () => setCollapsed(!collapsed);
+export default function Sidebar({side}: any) {
+    const Sidebar:any  = side;
+    console.log(Sidebar)
    const menuItems = [
      { icon: <FaTachometerAlt />, label: "Dashboard" },
      { icon: <FaClipboardList />, label: "Tech Specs" },
@@ -21,12 +20,12 @@ export default function Sidebar() {
     <>
 
         <aside
-          style={{ width: collapsed ? "0%" : "15%" }}
+          style={{ width: Sidebar ? "0%" : "15%" }}
           className={`transition-all duration-300 bg-gray-900 text-gray-100 flex flex-col`}
         >
           {/* Toggle Button */}
           <div className="flex items-center justify-between p-4 border-b border-gray-800">
-            {!collapsed && <h2 className="text-lg font-semibold">Admin</h2>}
+            {!Sidebar && <h2 className="text-lg font-semibold">Admin</h2>}
           </div>
 
           {/* Menu */}
@@ -38,7 +37,7 @@ export default function Sidebar() {
                 className="flex items-center px-3 py-2 rounded hover:bg-gray-800"
               >
                 <span className="text-lg">{item.icon}</span>
-                {!collapsed && (
+                {!Sidebar && (
                   <span className="ml-3 text-sm">{item.label}</span>
                 )}
               </a>
