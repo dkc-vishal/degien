@@ -812,6 +812,11 @@ export default function TechSpecSheet() {
                                   1
                                 );
                                 newRow.splice(i, 0, moved);
+                                let temp = colWidths[i]
+                                colWidths[i] = colWidths[draggedColIndex];
+                                colWidths[draggedColIndex] = temp;
+                                localStorage.setItem("table_colWidths", JSON.stringify(colWidths));
+
                                 return newRow;
                               });
                               setTableData(updated);
@@ -1035,7 +1040,8 @@ export default function TechSpecSheet() {
                                         <div className="flex flex-wrap gap-1 justify-center">
                                           {cell.map((src, i) => (
                                             <img
-                                              onClick={e => {
+
+                                              onDoubleClick={e => {
                                                 e.stopPropagation();
                                                 setimageSeleted({
                                                   rownumber: rowIndex,
@@ -1069,7 +1075,7 @@ export default function TechSpecSheet() {
                                                 );
                                               }}
                                               key={i}
-                                              src={src}
+                                              src={"https://drive.google.com/uc?export=view&id=1XFb9rA8CVVcisw7VUO00_nF5-RyYkqIx"}
                                               className="w-16 h-16 object-cover rounded"
                                             />
                                           ))}

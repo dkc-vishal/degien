@@ -108,7 +108,15 @@ const availableColors = [
   { name: "White", value: "#FFFFFF" },
   { name: "Transparent", value: "transparent" },
 ];
-
+const availableBackgroundColors = [
+  { name: "Light Gray", value: "#F5F5F5" },
+  { name: "Mint Cream", value: "#F5FFFA" },
+  { name: "Lavender", value: "#E6E6FA" },
+  { name: "Alice Blue", value: "#F0F8FF" },
+  { name: "Seashell", value: "#FFF5EE" },
+  { name: "White", value: "#FFFFFF" },
+  { name: "Transparent", value: "transparent" },
+];
 // const fontFamilies: FontFamily[] = [
 //   "sans-serif",
 //   "serif",
@@ -140,6 +148,7 @@ export default function ImageEditorModal({
   const [textInputPosition, setTextInputPosition] = useState<Point | null>(
     null
   );
+
   const [text, setText] = useState("");
   const [showCropConfirm, setShowCropConfirm] = useState(false);
   const [showCurveConfirm, setShowCurveConfirm] = useState(false);
@@ -406,15 +415,30 @@ export default function ImageEditorModal({
 
     // If background color is set and not transparent, draw it first
     if (style.backgroundColor && style.backgroundColor !== "transparent") {
+      const paddingX = 10;
+      const paddingY = 10;
+
+      ctx.font = style.font; // Set this before measuring
       const metrics = ctx.measureText(text);
-      const textHeight = style.fontSize;
+      const textHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+
+      // Draw background with padding
       ctx.fillStyle = style.backgroundColor;
       ctx.fillRect(
-        x,
-        y - textHeight + 4, // Adjust for baseline
-        metrics.width,
-        textHeight
+        x - paddingX,
+        y - metrics.actualBoundingBoxAscent - paddingY,
+        metrics.width + 2 * paddingX,
+        textHeight + 2 * paddingY
       );
+
+      // Draw text on top
+      ctx.fillStyle = style.textColor || 'black'; // fallback
+
+
+      ctx.fillText(text, x, y);
+
+
+
     }
 
     // Draw the text
@@ -844,7 +868,7 @@ export default function ImageEditorModal({
               <SelectValue placeholder="Background" />
             </SelectTrigger>
             <SelectContent>
-              {availableColors.map((color) => (
+              {availableBackgroundColors.map((color) => (
                 <SelectItem key={color.value} value={color.value}>
                   <div className="flex items-center">
                     <div
@@ -1407,7 +1431,7 @@ export default function ImageEditorModal({
                       <SelectValue placeholder="Select background" />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableColors.map((color) => (
+                      {availableBackgroundColors.map((color) => (
                         <SelectItem key={color.value} value={color.value}>
                           <div className="flex items-center">
                             <div
@@ -1435,7 +1459,16 @@ export default function ImageEditorModal({
               >
                 <Palette className="h-4 w-4" /> Color
               </Label>
-              <Select value={currentColor} onValueChange={setCurrentColor}>
+              <Select
+                value={currentColor || textStyle.color}
+                onValueChange={(value) => {
+                  setCurrentColor(value);
+                  setTextStyle((prev) => ({
+                    ...prev,
+                    color: value === "transparent" ? "black" : value,
+                  }));
+                }}
+              >
                 <SelectTrigger id="color-picker">
                   <SelectValue placeholder="Select color" />
                 </SelectTrigger>
@@ -1515,10 +1548,10 @@ export default function ImageEditorModal({
                   activeTool === "crop"
                     ? "crosshair"
                     : (activeTool as DrawingTool) === "text"
-                    ? "text"
-                    : activeTool === null
-                    ? "default"
-                    : "crosshair",
+                      ? "text"
+                      : activeTool === null
+                        ? "default"
+                        : "crosshair",
               }}
             />
 
