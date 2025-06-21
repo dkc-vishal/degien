@@ -418,7 +418,7 @@ export default function ImageEditorModal({
       const paddingX = 10;
       const paddingY = 10;
 
-      ctx.font = style.font; // Set this before measuring
+      ctx.font = `${style.fontSize}px ${style.fontFamily}`; // Set this before measuring
       const metrics = ctx.measureText(text);
       const textHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
 
@@ -432,7 +432,7 @@ export default function ImageEditorModal({
       );
 
       // Draw text on top
-      ctx.fillStyle = style.textColor || 'black'; // fallback
+      ctx.fillStyle = style.color || 'black'; // fallback
 
 
       ctx.fillText(text, x, y);
