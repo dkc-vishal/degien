@@ -27,7 +27,7 @@ import {
 } from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
 
-export default function TechSpecSheet() {
+export default function Table() {
   const [frozenColIndex, setFrozenColIndex] = useState<number | null>(null);
 
   const [isDragging, setIsDragging] = useState(false);
@@ -155,7 +155,7 @@ export default function TechSpecSheet() {
     };
   }, []);
   const [tableData, setTableData] = useState<TableRow[]>(
-    Array.from({ length: 5 }, () =>
+    Array.from({ length: 10 }, () =>
       Array.from({ length: 13 }, (_, colIndex) =>
         columnHeaders[colIndex] === "Measurement Picture" ? [] : ""
       )
