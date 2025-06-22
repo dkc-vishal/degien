@@ -33,7 +33,7 @@ export default function RootLayout({
           <Sidebar />
 
           <div
-            className="flex-1 flex flex-col"
+            className="flex-1 flex flex-col ml-[15%]"
             style={{ width: "calc(100vw - 15%)" }}
           >
             <Header />
