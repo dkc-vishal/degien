@@ -12,7 +12,7 @@ export default function QaIntialReport() {
       </div>
 
       {/* Page Content */}
-      <Table />
+      <Table col={12} row={10} imagecol={3} colwidth={[50,50,50,150,50,50,50,50,50,50]}/>
     </>
   );
 }

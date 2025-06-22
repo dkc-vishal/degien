@@ -27,7 +27,7 @@ import {
 } from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
 
-export default function Table({col, row, imagecol,colwidth}: any) {
+export default function Table({ col, row, imagecol, colwidth }: any) {
   const [frozenColIndex, setFrozenColIndex] = useState<number | null>(null);
 
   const [collapsed, setCollapsed] = useState(false);
@@ -57,8 +57,8 @@ export default function Table({col, row, imagecol,colwidth}: any) {
   const animationFrameRef = useRef<number | null>(null);
   const [columnHeaders, setColumnHeaders] = useState(
     Array.from({ length: col }, (_, colIndex) =>
-        colIndex === imagecol ? "Measurement Picture" : ``
-      )
+      colIndex === imagecol ? "Measurement Picture" : ``
+    )
   );
   const [imageopen, setIsTyping] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -648,11 +648,9 @@ export default function Table({col, row, imagecol,colwidth}: any) {
           </ul>
         </div>
       )}
-      
+
       <main className="mt-4">
         <div className=" rounded-xl shadow" ref={tableRef}>
-       
-       
           {/* Table */}
           <div
             ref={scrollContainerRef}
@@ -675,7 +673,7 @@ export default function Table({col, row, imagecol,colwidth}: any) {
                           width: colWidths[i], // Set default width
                           minWidth: "50px",
                           maxWidth: "500px",
-                          background: frozenColIndex === i ? "green" : "",
+                          background: frozenColIndex === i ? "#1f2937" : "",
                         }}
                         onContextMenu={(e) => {
                           e.preventDefault();
@@ -774,7 +772,7 @@ export default function Table({col, row, imagecol,colwidth}: any) {
                         key={rowIndex}
                         style={{
                           textAlign: "center",
-                          background: rowIndex === 0 ? "green" : "",
+                          background: rowIndex === 0 ? "#D3D3D3" : "",
                           fontWeight: rowIndex === 0 ? "600" : "",
                         }}
                         className={`bg-white even:bg-gray-50 `}
@@ -803,48 +801,179 @@ export default function Table({col, row, imagecol,colwidth}: any) {
                                 draggedRowIndex
                                   ? "cursor-grabbing"
                                   : "cursor-grab"
-                                  }`}
-                                draggable
-                                onDragStart={() =>
-                                  setDraggedRowIndex(rowIndex)
-                                }
-                                onDragOver={(e) => e.preventDefault()}
-                                onDrop={() => {
-                                  if (
-                                    draggedRowIndex === null ||
-                                    draggedRowIndex === rowIndex
+                              }`}
+                              draggable
+                              onDragStart={() => setDraggedRowIndex(rowIndex)}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={() => {
+                                if (
+                                  draggedRowIndex === null ||
+                                  draggedRowIndex === rowIndex
+                                )
+                                  return;
+                                const updated = [...tableData];
+                                const [draggedRow] = updated.splice(
+                                  draggedRowIndex,
+                                  1
+                                );
+                                updated.splice(rowIndex, 0, draggedRow);
+                                setTableData(updated);
+                                setDraggedRowIndex(null);
+                              }}
+                            >
+                              <RxDragHandleDots2 />
+                            </td>
+                          ) : colIndex === 1 ? (
+                            <td
+                              className={`border ${
+                                frozenColIndex
+                                  ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md `
+                                  : ""
+                              }`}
+                              style={{ textAlign: "center" }}
+                            >
+                              {rowIndex + 1}
+                            </td>
+                          ) : columnHeaders[colIndex] ===
+                            "Measurement Picture" ? (
+                            rowIndex === 0 ? (
+                              <td>
+                                   <textarea
+                                value={cell}
+                                readOnly={
+                                  !(
+                                    editingCell?.[0] === rowIndex &&
+                                    editingCell?.[1] === colIndex
                                   )
-                                    return;
-                                  const updated = [...tableData];
-                                  const [draggedRow] = updated.splice(
-                                    draggedRowIndex,
-                                    1
+                                }
+                                onChange={(e) => {
+                                  handleCellChange(
+                                    rowIndex,
+                                    colIndex,
+                                    e.target.value
                                   );
-                                  updated.splice(rowIndex, 0, draggedRow);
-                                  setTableData(updated);
-                                  setDraggedRowIndex(null);
+                                  autoResizeTextarea(e.target);
                                 }}
-                              >
-                                <RxDragHandleDots2 />
-                              </td>
-                            ) : colIndex === 1 ? (
+                                onDoubleClick={() => {
+                                  setEditingCell([rowIndex, colIndex]);
+                                }}
+                                onBlur={() => {
+                                  setEditingCell(null);
+                                }}
+                                onPaste={(e) => {
+                                  handlePaste(e, rowIndex, colIndex);
+                                  setTimeout(
+                                    () =>
+                                      autoResizeTextarea(
+                                        e.target as HTMLTextAreaElement
+                                      ),
+                                    0
+                                  );
+                                }}
+                                onMouseDown={() => {
+                                  setSelectionAnchor([rowIndex, colIndex]);
+                                  setSelectedCell([rowIndex, colIndex]);
+                                  setSelectedRange({
+                                    start: [rowIndex, colIndex],
+                                    end: [rowIndex, colIndex],
+                                  });
+                                  setIsDragging(true);
+                                }}
+                                onMouseEnter={() => {
+                                  if (isDragging && selectionAnchor) {
+                                    setSelectedCell([rowIndex, colIndex]);
+                                    setSelectedRange({
+                                      start: selectionAnchor,
+                                      end: [rowIndex, colIndex],
+                                    });
+                                  }
+                                }}
+                                onInput={(e) =>
+                                  autoResizeTextarea(
+                                    e.target as HTMLTextAreaElement
+                                  )
+                                }
+                                // onClick={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedCell([rowIndex, colIndex]);
+                                  setSelectionAnchor(null);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (
+                                    editingCell?.[0] === rowIndex &&
+                                    editingCell?.[1] === colIndex
+                                  ) {
+                                    if (e.key === "Escape") {
+                                      e.preventDefault();
+                                      setEditingCell(null);
+                                      return;
+                                    }
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                      e.preventDefault();
+                                      setEditingCell(null);
+                                      return;
+                                    }
+                                  }
+                                  if (!selectedCell) return;
+                                  const [row, col] = selectedCell;
+                                  let newRow = row;
+                                  let newCol = col;
+                                  if (e.key === "ArrowUp")
+                                    newRow = Math.max(0, row - 1);
+                                  else if (e.key === "ArrowDown")
+                                    newRow = Math.min(
+                                      tableData.length - 1,
+                                      row + 1
+                                    );
+                                  else if (e.key === "ArrowLeft")
+                                    newCol = Math.max(0, col - 1);
+                                  else if (e.key === "ArrowRight")
+                                    newCol = Math.min(
+                                      tableData[0].length - 1,
+                                      col + 1
+                                    );
+                                  else return;
+                                  e.preventDefault();
+                                  if (e.shiftKey) {
+                                    const anchor =
+                                      selectionAnchor || selectedCell;
+                                    setSelectedRange({
+                                      start: anchor,
+                                      end: [newRow, newCol],
+                                    });
+                                    setSelectedCell([newRow, newCol]);
+                                    if (!selectionAnchor)
+                                      setSelectionAnchor(selectedCell);
+                                  } else {
+                                    setEditingCell([newRow, newCol]);
 
-                              <td
-                                className={`border ${frozenColIndex ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md ` : ""}`}
-                                style={{ textAlign: "center" }}
-                              >
-                                {rowIndex + 1}
+                                    setSelectedCell([newRow, newCol]);
+                                    setSelectedRange(null);
+                                    setSelectionAnchor(null);
+                                  }
+                                }}
+                                className={`${
+                                  rowIndex === 0
+                                    ? "uppercase text-white p-3!"
+                                    : "p-0 px-2 py-1"
+                                } w-full h-auto  m-0 border   outline-none resize-none overflow-hidden whitespace-pre-wrap break-words`}
+                                rows={1}
+                              />
                               </td>
-                            ) : columnHeaders[colIndex] ===
-                              "Measurement Picture" ? (
-                              rowIndex === 0 ? <td>Issue Image</td> : (
-                                <td
-                                  style={{
-                                    width: colWidths[colIndex],
-                                    minWidth: 50,
-                                  }}
-                                  className={` border p-2 min-h-[80px]${frozenColIndex ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md ` : ""} ${selectedCell?.[0] === rowIndex &&
-                                    selectedCell?.[1] === colIndex
+                            ) : (
+                              <td
+                                style={{
+                                  width: colWidths[colIndex],
+                                  minWidth: 50,
+                                }}
+                                className={` border p-2 min-h-[80px]${
+                                  frozenColIndex
+                                    ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md `
+                                    : ""
+                                } ${
+                                  selectedCell?.[0] === rowIndex &&
+                                  selectedCell?.[1] === colIndex
                                     ? "border-blue-500 ring-2 ring-blue-400"
                                     : "border-gray-300"
                                 }
@@ -1157,7 +1286,11 @@ export default function Table({col, row, imagecol,colwidth}: any) {
                                     setSelectionAnchor(null);
                                   }
                                 }}
-                                className={`w-full h-auto p-0 m-0 border px-2 py-1  outline-none resize-none overflow-hidden whitespace-pre-wrap break-words`}
+                                className={`${
+                                  rowIndex === 0
+                                    ? "uppercase text-black p-3! text-[15px]!"
+                                    : "p-3!"
+                                } w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words`}
                                 rows={1}
                               />
                             </td>

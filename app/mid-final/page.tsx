@@ -152,7 +152,7 @@ const MidReportForm = () => {
         <div className="font-semibold text-base mt-2 p-1">RESULT</div>
       </div>
 
-      <Table col={12} row={10} imagecol={3} colwidth={[25,25,25,25,45,25,25,25,25]}/>
+      <Table col={12} row={10} imagecol={3} colwidth={[50,50,50,150,50,50,50,50,50,50]}/>
     </div>
   );
 };

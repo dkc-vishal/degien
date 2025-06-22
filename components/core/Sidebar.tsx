@@ -17,6 +17,10 @@ export default function Sidebar({ side }: any) {
     { icon: <FaTachometerAlt />, label: "Dashboard", path: "/dashboard" },
     { icon: <FaClipboardList />, label: "Tech Specs", path: "/tech-spec" },
     { icon: <FaTools />, label: "Inspections", path: "/mid-final" },
+    { icon: <FaTools />, label: "QA-Initial", path: "/qa-initial-report" },
+    { icon: <FaTools />, label: "Sampling Watch Point", path: "/SamplingWatchPoint" },
+    { icon: <FaTools />, label: "Feeding Sampling", path: "/FeedingSampling" },
+    { icon: <FaTools />, label: "Merchant Watch Point", path: "/MerchantWatchPoint" },
     { icon: <FaWrench />, label: "Settings", path: "/settings" },
   ];
 
