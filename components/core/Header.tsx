@@ -7,10 +7,8 @@ import {
   FaWrench,
   FaTools,
 } from "react-icons/fa";
-export default function Header() {
-  const [collapsed, setCollapsed] = useState(false);
-
-  const toggleSidebar = () => setCollapsed(!collapsed);
+export default function Header({sidebartoggle}:any) {
+  const toggleSidebar = sidebartoggle
   const menuItems = [
     { icon: <FaTachometerAlt />, label: "Dashboard" },
     { icon: <FaClipboardList />, label: "Tech Specs" },

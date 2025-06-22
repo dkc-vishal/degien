@@ -27,7 +27,7 @@ import {
 } from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
 
-export default function Table() {
+export default function Table({col, row, imagecol,colwidth}: any) {
   const [frozenColIndex, setFrozenColIndex] = useState<number | null>(null);
 
   const [collapsed, setCollapsed] = useState(false);
@@ -53,31 +53,17 @@ export default function Table() {
 
   })
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
-
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollDirectionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const animationFrameRef = useRef<number | null>(null);
-  const [columnHeaders, setColumnHeaders] = useState([
-    "",
-    "Sno.",
-    "Should Go to QA Inspection",
-    "Header",
-    "Measurement Type",
-    "Location",
-    "Measurement Picture",
-    "FIT Changed",
-    "FIT Grading Rule",
-    "PP Changed",
-    "PP Grading",
-    "TOP Changed",
-    "TOP Grading",
-    "sdfdsfdsf",
-  ]);
+  const [columnHeaders, setColumnHeaders] = useState(
+    Array.from({ length: col }, (_, colIndex) =>
+        colIndex === imagecol ? "Measurement Picture" : ``
+      )
+  );
   const [imageopen, setIsTyping] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
-  const [colWidths, setColWidths] = useState(
-    () => columnHeaders.map(() => 150) // default 150px per column
-  );
+  const [colWidths, setColWidths] = useState(colwidth);
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
   const [copiedImage, setCopiedImage] = useState<string | null>(null);
@@ -157,8 +143,8 @@ export default function Table() {
     };
   }, []);
   const [tableData, setTableData] = useState<TableRow[]>(
-    Array.from({ length: 10 }, () =>
-      Array.from({ length: 13 }, (_, colIndex) =>
+    Array.from({ length: row }, () =>
+      Array.from({ length: col }, (_, colIndex) =>
         columnHeaders[colIndex] === "Measurement Picture" ? [] : ""
       )
     )
@@ -426,7 +412,7 @@ export default function Table() {
   const insertCol = (index: number) => {
     // update columnHeaders
     const newHeaders = [...columnHeaders];
-    newHeaders.splice(index, 0, "New Column");
+    newHeaders.splice(index, 0, "");
     setColumnHeaders(newHeaders);
 
     // update tableData — ⚠️ THIS is likely missing or incorrect!
@@ -669,8 +655,8 @@ export default function Table() {
         </div>
       )}
       
-      <main className="p-6">
-        <div className="bg-white p-6 rounded-xl shadow" ref={tableRef}>
+      <main className="mt-4">
+        <div className=" rounded-xl shadow" ref={tableRef}>
        
        
           {/* Table */}
@@ -842,7 +828,7 @@ export default function Table() {
                               </td>
                             ) : columnHeaders[colIndex] ===
                               "Measurement Picture" ? (
-                              rowIndex === 0 ? <td>Image Column</td> : (
+                              rowIndex === 0 ? <td>Issue Image</td> : (
                                 <td
                                   style={{
                                     width: colWidths[colIndex],
