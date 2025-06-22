@@ -51,8 +51,6 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
     colnumber: 0,
     imgindex: 0,
   });
-    imgindex: 0,
-  });
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollDirectionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -101,7 +99,6 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
     setEditingImageInfo(null);
   };
 
-  const handleSaveEditedImage = (newImageDataUrl: string) => {
   const handleSaveEditedImage = (newImageDataUrl: string) => {
     const { rownumber, colnumber, imgindex } = imageSeleted;
     setTableData((prevData) => {
@@ -658,19 +655,13 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
           <div
             ref={scrollContainerRef}
             style={{ width: "100%" }}
-            style={{ width: "100%" }}
             onMouseMove={handleMouseMoveForScroll}
           >
             <div
               className="overflow-auto max-h-[800px] border rounded"
               style={{ width: "100%", overflow: "scroll" }}
             >
-            <div
-              className="overflow-auto max-h-[800px] border rounded"
-              style={{ width: "100%", overflow: "scroll" }}
-            >
               <table className="table-fixed w-full text-sm border-content">
-                <thead>
                 <thead>
                   <tr className="sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
                     {tableData[0]?.map((_, i) => (
@@ -704,21 +695,14 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                         }}
                         onDrop={() => {
                           if (draggedColIndex === null || draggedColIndex === i)
-                          if (draggedColIndex === null || draggedColIndex === i)
                             return;
                           const updated = tableData.map((row) => {
                             const newRow = [...row];
                             const [moved] = newRow.splice(draggedColIndex, 1);
-                            const [moved] = newRow.splice(draggedColIndex, 1);
                             newRow.splice(i, 0, moved);
-                            let temp = colWidths[i];
                             let temp = colWidths[i];
                             colWidths[i] = colWidths[draggedColIndex];
                             colWidths[draggedColIndex] = temp;
-                            localStorage.setItem(
-                              "table_colWidths",
-                              JSON.stringify(colWidths)
-                            );
                             localStorage.setItem(
                               "table_colWidths",
                               JSON.stringify(colWidths)
@@ -728,22 +712,9 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                           });
                           setTableData(updated);
                           console.log(updated);
-                          console.log(updated);
                           setDraggedColIndex(null);
                         }}
                         onDragOver={(e) => e.preventDefault()}
-                        className={`border ${
-                          i === frozenColIndex
-                            ? "sticky! left-0 z-10 shadow-md "
-                            : ""
-                        } ${
-                          frozenColIndex !== null &&
-                          i < frozenColIndex &&
-                          i !== 0 &&
-                          i !== 1
-                            ? "hidden"
-                            : ""
-                        }  ${isDragging ? "cursor-move" : "cursor-pointer"}`}
                         className={`border ${
                           i === frozenColIndex
                             ? "sticky! left-0 z-10 shadow-md "
@@ -770,7 +741,6 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                               handleMouseMove
                             );
                             document.addEventListener("mouseup", handleMouseUp);
-                            document.addEventListener("mouseup", handleMouseUp);
                           }}
                           style={{
                             position: "absolute",
@@ -795,7 +765,6 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                         (cell) =>
                           typeof cell === "string" &&
                           cell.toLowerCase().includes(searchTerm.toLowerCase())
-                          cell.toLowerCase().includes(searchTerm.toLowerCase())
                       )
                     )
                     .map((row, rowIndex) => (
@@ -809,27 +778,6 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                         className={`bg-white even:bg-gray-50 `}
                       >
                         {row.map((cell, colIndex) => {
-                          if (
-                            frozenColIndex !== null &&
-                            colIndex < frozenColIndex &&
-                            colIndex !== 0 &&
-                            colIndex !== 1
-                          )
-                            return null;
-
-                          return colIndex === 0 ? (
-                            <td
-                              style={{
-                                width: colWidths[colIndex],
-                                minWidth: 50,
-                              }}
-                              key={colIndex}
-                              className={`border ${
-                                colIndex === frozenColIndex
-                                  ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md `
-                                  : ""
-                              } ${
-                                draggedRowIndex
                           if (
                             frozenColIndex !== null &&
                             colIndex < frozenColIndex &&
@@ -1031,9 +979,6 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                                 }
                                   ${
                                     isCellInRange(rowIndex, colIndex)
-                                }
-                                  ${
-                                    isCellInRange(rowIndex, colIndex)
                                       ? " bg-blue-100"
                                       : ""
                                   }`}
@@ -1078,73 +1023,7 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                                       )
                                     )
                                       updated[rowIndex][colIndex] = [];
-                                  }`}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedCell([rowIndex, colIndex]);
-                                  setSelectionAnchor(null);
-                                }}
-                                onMouseDown={() => {
-                                  setSelectionAnchor([rowIndex, colIndex]);
-                                  setSelectedCell([rowIndex, colIndex]);
-                                  setSelectedRange({
-                                    start: [rowIndex, colIndex],
-                                    end: [rowIndex, colIndex],
-                                  });
-                                  // setIsDragging(true);
-                                }}
-                                onMouseEnter={() => {
-                                  if (isDragging && selectionAnchor) {
-                                    setSelectedCell([rowIndex, colIndex]);
-                                    setSelectedRange({
-                                      start: selectionAnchor,
-                                      end: [rowIndex, colIndex],
-                                    });
-                                  }
-                                }}
-                                onPaste={(e) => {
-                                  e.preventDefault();
-                                  console.log(e.clipboardData);
-                                  const items = e.clipboardData?.files;
-                                  if (items?.length)
-                                    handleImagePasteOrDrop(
-                                      items,
-                                      rowIndex,
-                                      colIndex
-                                    );
-                                  if (copiedImage) {
-                                    const updated = [...tableData];
-                                    if (
-                                      !Array.isArray(
-                                        updated[rowIndex][colIndex]
-                                      )
-                                    )
-                                      updated[rowIndex][colIndex] = [];
 
-                                    (
-                                      updated[rowIndex][colIndex] as string[]
-                                    ).push(copiedImage);
-                                    setTableData(updated);
-                                    console.log("Image pasted from clipboard");
-                                  }
-                                }}
-                                // onDrop={(e) => {
-                                //   e.preventDefault();
-                                //   const files = e.dataTransfer?.files;
-                                //   if (files?.length) handleImagePasteOrDrop(files, rowIndex, colIndex);
-                                // }}
-                                onDrop={(e) => {
-                                  e.preventDefault();
-                                  const files = e.dataTransfer?.files;
-                                  console.log(files);
-                                  console.log(draggedImageOrigin);
-                                  if (
-                                    draggedImageSource.current &&
-                                    draggedImageOrigin.current
-                                  ) {
-                                    const [fromRow, fromCol] =
-                                      draggedImageOrigin.current;
-                                    const updated = [...tableData];
                                     (
                                       updated[rowIndex][colIndex] as string[]
                                     ).push(copiedImage);
@@ -1177,13 +1056,6 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                                       (img) =>
                                         img !== draggedImageSource.current
                                     );
-                                    // Remove from old
-                                    updated[fromRow][fromCol] = (
-                                      updated[fromRow][fromCol] as string[]
-                                    ).filter(
-                                      (img) =>
-                                        img !== draggedImageSource.current
-                                    );
 
                                     // Add to new
                                     if (
@@ -1195,111 +1067,7 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                                     (
                                       updated[rowIndex][colIndex] as string[]
                                     ).push(draggedImageSource.current);
-                                    // Add to new
-                                    if (
-                                      !Array.isArray(
-                                        updated[rowIndex][colIndex]
-                                      )
-                                    )
-                                      updated[rowIndex][colIndex] = [];
-                                    (
-                                      updated[rowIndex][colIndex] as string[]
-                                    ).push(draggedImageSource.current);
 
-                                    setTableData(updated);
-                                    draggedImageSource.current = null;
-                                    draggedImageOrigin.current = null;
-                                  } else if (files?.length) {
-                                    handleImagePasteOrDrop(
-                                      files,
-                                      rowIndex,
-                                      colIndex
-                                    );
-                                  }
-                                }}
-                                onDragOver={(e) => e.preventDefault()}
-                              >
-                                {Array.isArray(cell) ? (
-                                  <div className="flex flex-wrap gap-1 justify-center">
-                                    {cell.map((src, i) => (
-                                      <img
-                                        onDoubleClick={(e) => {
-                                          e.stopPropagation();
-                                          setimageSeleted({
-                                            rownumber: rowIndex,
-                                            colnumber: colIndex,
-                                            imgindex: i,
-                                          });
-                                          handleOpenImageEditor(src, src);
-                                        }}
-                                        style={{
-                                          width: "100%",
-                                          height: "100%",
-                                          aspectRatio: "9/16",
-                                        }}
-                                        onKeyDown={(e) => {
-                                          if (
-                                            (e.ctrlKey || e.metaKey) &&
-                                            e.key === "c"
-                                          ) {
-                                            setCopiedImage(src);
-                                          }
-                                        }}
-                                        onContextMenu={(e) => {
-                                          e.preventDefault();
-                                          setCopiedImage(src); // Store this image's src
-                                          console.log("Image copied:", src);
-                                        }}
-                                        draggable
-                                        onDragStart={(e) => {
-                                          draggedImageSource.current = src;
-                                          draggedImageOrigin.current = [
-                                            rowIndex,
-                                            colIndex,
-                                          ];
-                                          e.dataTransfer.setData(
-                                            "text/plain",
-                                            src
-                                          );
-                                        }}
-                                        key={i}
-                                        src={src}
-                                        className="w-16 h-16 object-cover rounded"
-                                      />
-                                    ))}
-                                  </div>
-                                ) : (
-                                  ""
-                                )}
-                                <p className="text-sm text-gray-400">
-                                  Drop or paste image
-                                </p>
-                              </td>
-                            )
-                          ) : (
-                            <td
-                              style={{
-                                width: colWidths[colIndex],
-                                minWidth: 50,
-                              }}
-                              key={colIndex}
-                              onContextMenu={(e) => {
-                                e.preventDefault();
-                                setContextMenu({
-                                  visible: true,
-                                  x: e.pageX,
-                                  y: e.pageY,
-                                  row: rowIndex,
-                                  col: colIndex,
-                                });
-                              }}
-                              className={` border ${
-                                colIndex === frozenColIndex
-                                  ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md `
-                                  : ""
-                              } ${
-                                selectedCell?.[0] === rowIndex &&
-                                selectedCell?.[1] === colIndex
                                     setTableData(updated);
                                     draggedImageSource.current = null;
                                     draggedImageOrigin.current = null;
@@ -1512,122 +1280,6 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                                       setSelectionAnchor(selectedCell);
                                   } else {
                                     setEditingCell([newRow, newCol]);
-                              }
-                                  ${
-                                    isCellInRange(rowIndex, colIndex)
-                                      ? "bg-blue-100"
-                                      : ""
-                                  }`}
-                            >
-                              <textarea
-                                value={cell}
-                                readOnly={
-                                  !(
-                                    editingCell?.[0] === rowIndex &&
-                                    editingCell?.[1] === colIndex
-                                  )
-                                }
-                                onChange={(e) => {
-                                  handleCellChange(
-                                    rowIndex,
-                                    colIndex,
-                                    e.target.value
-                                  );
-                                  autoResizeTextarea(e.target);
-                                }}
-                                onDoubleClick={() => {
-                                  setEditingCell([rowIndex, colIndex]);
-                                }}
-                                onBlur={() => {
-                                  setEditingCell(null);
-                                }}
-                                onPaste={(e) => {
-                                  handlePaste(e, rowIndex, colIndex);
-                                  setTimeout(
-                                    () =>
-                                      autoResizeTextarea(
-                                        e.target as HTMLTextAreaElement
-                                      ),
-                                    0
-                                  );
-                                }}
-                                onMouseDown={() => {
-                                  setSelectionAnchor([rowIndex, colIndex]);
-                                  setSelectedCell([rowIndex, colIndex]);
-                                  setSelectedRange({
-                                    start: [rowIndex, colIndex],
-                                    end: [rowIndex, colIndex],
-                                  });
-                                  setIsDragging(true);
-                                }}
-                                onMouseEnter={() => {
-                                  if (isDragging && selectionAnchor) {
-                                    setSelectedCell([rowIndex, colIndex]);
-                                    setSelectedRange({
-                                      start: selectionAnchor,
-                                      end: [rowIndex, colIndex],
-                                    });
-                                  }
-                                }}
-                                onInput={(e) =>
-                                  autoResizeTextarea(
-                                    e.target as HTMLTextAreaElement
-                                  )
-                                }
-                                // onClick={(e) => e.stopPropagation()}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedCell([rowIndex, colIndex]);
-                                  setSelectionAnchor(null);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (
-                                    editingCell?.[0] === rowIndex &&
-                                    editingCell?.[1] === colIndex
-                                  ) {
-                                    if (e.key === "Escape") {
-                                      e.preventDefault();
-                                      setEditingCell(null);
-                                      return;
-                                    }
-                                    if (e.key === "Enter" && !e.shiftKey) {
-                                      e.preventDefault();
-                                      setEditingCell(null);
-                                      return;
-                                    }
-                                  }
-                                  if (!selectedCell) return;
-                                  const [row, col] = selectedCell;
-                                  let newRow = row;
-                                  let newCol = col;
-                                  if (e.key === "ArrowUp")
-                                    newRow = Math.max(0, row - 1);
-                                  else if (e.key === "ArrowDown")
-                                    newRow = Math.min(
-                                      tableData.length - 1,
-                                      row + 1
-                                    );
-                                  else if (e.key === "ArrowLeft")
-                                    newCol = Math.max(0, col - 1);
-                                  else if (e.key === "ArrowRight")
-                                    newCol = Math.min(
-                                      tableData[0].length - 1,
-                                      col + 1
-                                    );
-                                  else return;
-                                  e.preventDefault();
-                                  if (e.shiftKey) {
-                                    const anchor =
-                                      selectionAnchor || selectedCell;
-                                    setSelectedRange({
-                                      start: anchor,
-                                      end: [newRow, newCol],
-                                    });
-                                    setSelectedCell([newRow, newCol]);
-                                    if (!selectionAnchor)
-                                      setSelectionAnchor(selectedCell);
-                                  } else {
-                                    setEditingCell([newRow, newCol]);
 
                                     setSelectedCell([newRow, newCol]);
                                     setSelectedRange(null);
@@ -1644,7 +1296,6 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                             </td>
                           );
                         })}
-                        })}
                       </tr>
                     ))}
                 </tbody>
@@ -1660,7 +1311,6 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
           isOpen={isImageEditorOpen}
           onClose={handleCloseImageEditor}
           image={editingImageInfo.image}
-          onSave={(newImageDataUrl) => handleSaveEditedImage(newImageDataUrl)}
           onSave={(newImageDataUrl) => handleSaveEditedImage(newImageDataUrl)}
         />
       )}

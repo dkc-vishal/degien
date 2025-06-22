@@ -27,7 +27,7 @@ export default function Sidebar({ side }: any) {
   return (
     <aside
       style={{ width: Sidebar ? "0%" : "15%" }}
-      className={`transition-all duration-300 bg-gray-900 text-gray-100 flex flex-col`}
+      className={`transition-all duration-300 fixed h-screen bg-gray-900 text-gray-100 flex flex-col`}
     >
       {/* Toggle Button */}
       <div className="flex items-center justify-between p-4 border-b border-gray-800">
