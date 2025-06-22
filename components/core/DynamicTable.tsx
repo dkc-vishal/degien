@@ -27,7 +27,13 @@ import {
 } from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
 
-export default function Table({col, row, imagecol,colwidth}: any) {
+export default function DynamicTable({
+  rowLenght,
+  columnLenght,
+}: {
+  rowLenght: number;
+  columnLenght: number;
+}) {
   const [frozenColIndex, setFrozenColIndex] = useState<number | null>(null);
 
   const [collapsed, setCollapsed] = useState(false);
@@ -52,17 +58,25 @@ export default function Table({col, row, imagecol,colwidth}: any) {
     imgindex: 0,
   });
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollDirectionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const animationFrameRef = useRef<number | null>(null);
-  const [columnHeaders, setColumnHeaders] = useState(
-    Array.from({ length: col }, (_, colIndex) =>
-        colIndex === imagecol ? "Measurement Picture" : ``
-      )
-  );
+  const [columnHeaders, setColumnHeaders] = useState([
+    "",
+    "Sno.",
+    "Should Go to QA Inspection",
+    "Header",
+  ]);
   const [imageopen, setIsTyping] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
-  const [colWidths, setColWidths] = useState(colwidth);
+  const [colWidths, setColWidths] = useState(
+    () => columnHeaders.map(() => 150) // default 150px per column
+  );
+  colWidths[0] = 50; // Set first column width
+  colWidths[1] = 50; // Set second column width
+  colWidths[2] = 200; // Set third column width
+  colWidths[3] = 200; // Set fourth column width
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
   const [copiedImage, setCopiedImage] = useState<string | null>(null);
@@ -138,8 +152,8 @@ export default function Table({col, row, imagecol,colwidth}: any) {
     };
   }, []);
   const [tableData, setTableData] = useState<TableRow[]>(
-    Array.from({ length: row }, () =>
-      Array.from({ length: col }, (_, colIndex) =>
+    Array.from({ length: rowLenght }, () =>
+      Array.from({ length: columnLenght }, (_, colIndex) =>
         columnHeaders[colIndex] === "Measurement Picture" ? [] : ""
       )
     )
@@ -407,7 +421,7 @@ export default function Table({col, row, imagecol,colwidth}: any) {
   const insertCol = (index: number) => {
     // update columnHeaders
     const newHeaders = [...columnHeaders];
-    newHeaders.splice(index, 0, "");
+    newHeaders.splice(index, 0, "New Column");
     setColumnHeaders(newHeaders);
 
     // update tableData — ⚠️ THIS is likely missing or incorrect!
@@ -648,11 +662,9 @@ export default function Table({col, row, imagecol,colwidth}: any) {
           </ul>
         </div>
       )}
-      
-      <main className="mt-4">
-        <div className=" rounded-xl shadow" ref={tableRef}>
-       
-       
+
+      <main className="p-6">
+        <div className="bg-white p-6 rounded-xl shadow" ref={tableRef}>
           {/* Table */}
           <div
             ref={scrollContainerRef}
@@ -803,48 +815,56 @@ export default function Table({col, row, imagecol,colwidth}: any) {
                                 draggedRowIndex
                                   ? "cursor-grabbing"
                                   : "cursor-grab"
-                                  }`}
-                                draggable
-                                onDragStart={() =>
-                                  setDraggedRowIndex(rowIndex)
-                                }
-                                onDragOver={(e) => e.preventDefault()}
-                                onDrop={() => {
-                                  if (
-                                    draggedRowIndex === null ||
-                                    draggedRowIndex === rowIndex
-                                  )
-                                    return;
-                                  const updated = [...tableData];
-                                  const [draggedRow] = updated.splice(
-                                    draggedRowIndex,
-                                    1
-                                  );
-                                  updated.splice(rowIndex, 0, draggedRow);
-                                  setTableData(updated);
-                                  setDraggedRowIndex(null);
-                                }}
-                              >
-                                <RxDragHandleDots2 />
-                              </td>
-                            ) : colIndex === 1 ? (
-
+                              }`}
+                              draggable
+                              onDragStart={() => setDraggedRowIndex(rowIndex)}
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={() => {
+                                if (
+                                  draggedRowIndex === null ||
+                                  draggedRowIndex === rowIndex
+                                )
+                                  return;
+                                const updated = [...tableData];
+                                const [draggedRow] = updated.splice(
+                                  draggedRowIndex,
+                                  1
+                                );
+                                updated.splice(rowIndex, 0, draggedRow);
+                                setTableData(updated);
+                                setDraggedRowIndex(null);
+                              }}
+                            >
+                              <RxDragHandleDots2 />
+                            </td>
+                          ) : colIndex === 1 ? (
+                            <td
+                              className={`border ${
+                                frozenColIndex
+                                  ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md `
+                                  : ""
+                              }`}
+                              style={{ textAlign: "center" }}
+                            >
+                              {rowIndex + 1}
+                            </td>
+                          ) : columnHeaders[colIndex] ===
+                            "Measursement Picture" ? (
+                            rowIndex === 0 ? (
+                              <td>Image Column</td>
+                            ) : (
                               <td
-                                className={`border ${frozenColIndex ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md ` : ""}`}
-                                style={{ textAlign: "center" }}
-                              >
-                                {rowIndex + 1}
-                              </td>
-                            ) : columnHeaders[colIndex] ===
-                              "Measurement Picture" ? (
-                              rowIndex === 0 ? <td>Issue Image</td> : (
-                                <td
-                                  style={{
-                                    width: colWidths[colIndex],
-                                    minWidth: 50,
-                                  }}
-                                  className={` border p-2 min-h-[80px]${frozenColIndex ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md ` : ""} ${selectedCell?.[0] === rowIndex &&
-                                    selectedCell?.[1] === colIndex
+                                style={{
+                                  width: colWidths[colIndex],
+                                  minWidth: 50,
+                                }}
+                                className={` border p-2 min-h-[80px]${
+                                  frozenColIndex
+                                    ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md `
+                                    : ""
+                                } ${
+                                  selectedCell?.[0] === rowIndex &&
+                                  selectedCell?.[1] === colIndex
                                     ? "border-blue-500 ring-2 ring-blue-400"
                                     : "border-gray-300"
                                 }

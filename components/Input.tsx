@@ -13,6 +13,7 @@ type InputProps = {
   name?: string;
   id?: string;
   value?: string;
+  type?: "text" | "email" | "password" | "number" | "tel" | "url";
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
@@ -29,23 +30,24 @@ const Input: React.FC<InputProps> = ({
   name,
   id,
   value,
+  type,
   onChange,
 }) => {
+  // Determine border color based on value
+  const borderColor = value ? "border-black" : "border-red-500";
+
   return (
-    <div className="flex flex-col mb-4 gap-2">
+    <div className="flex items-center mb-4 w-full">
       {label && (
-        <label
-          htmlFor={id}
-          className="block mb-2 text-sm font-medium text-gray-700"
-        >
+        <label htmlFor={id} className="mr-4 text-lg text-black min-w-max">
           {label} :
         </label>
       )}
       <input
-        type="text"
+        type={type}
         id={id}
         name={name}
-        className={`${className}`}
+        className={`flex-1 border-2 ${borderColor}  bg-transparent focus:ring-0 focus:border-blue-500 text-base px-2 py-1 outline-none ${className}`}
         placeholder={placeholder}
         disabled={disabled}
         autoFocus={autoFocus}
