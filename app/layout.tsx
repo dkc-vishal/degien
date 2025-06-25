@@ -30,13 +30,16 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <div className="flex h-screen font-sans bg-gray-100">
-          <Sidebar />
-
+          <div className="no-print">
+            <Sidebar />
+          </div>
           <div
-            className="flex-1 flex flex-col ml-[15%]"
-            style={{ width: "calc(100vw - 15%)" }}
+            className="removesidebarspace flex-1 flex flex-col ml-[15%]"
+            style={{ width: "calc(100vw - 30%)" }}
           >
-            <Header />
+            <div className="no-print">
+              <Header />
+            </div>
 
             {children}
           </div>

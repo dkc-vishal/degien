@@ -1,8 +1,8 @@
 "use client";
 import React, { useState } from "react";
-import Input from "../../components/Input";
 import Table from "@/components/core/Table";
-import DynamicTable from "@/components/core/DynamicTable";
+import SheetTitle from "@/components/core/SheetTitle";
+import InputForm from "@/components/core/InputForm";
 
 const page = () => {
   const [sampleName, setSampleName] = useState("");
@@ -14,42 +14,21 @@ const page = () => {
   };
 
   return (
-    <div className="mt-4 mx-4 bg-white p-4 ">
-      <div className="flex flex-row mb-6 justify-between align-center height-16 px-6">
-        <h1 className="text-3xl font-bold mb-6 ml-[42%]">
-          Simpling Watch point
-        </h1>
+      <div className=" flex-1 flex flex-col p-6">
+        {/* Form inputs */}
+        <div className="">
+          <SheetTitle title="Sampling Watchpoint" version="v1.4" />
 
-        <div>
-          <p>Version - 23</p>
-          <p>Last Updated - 2024-01-01</p>
+          <InputForm
+            label={[
+              ["Style Name","JC Number","Sampling Merchant"],
+            ]}
+          />
         </div>
+
+        {/* Page Content */}
+        <Table col={10} row={10} imagecol={5} colwidth={[25,25,25,25,45,25,25,25,25]}/>
       </div>
-      <form onSubmit={handleSubmit} className="mb-6 px-6 flex flex-row gap-4">
-        <Input
-          label="Sample Name"
-          value={sampleName}
-          onChange={(e) => setSampleName(e.target.value)}
-          type="text"
-          required
-        />
-        <Input
-          label="JC Number"
-          value={sampleName}
-          onChange={(e) => setSampleName(e.target.value)}
-          type="text"
-          required
-        />
-        <Input
-          label="Sampling Merchant "
-          value={sampleName}
-          onChange={(e) => setSampleName(e.target.value)}
-          type="text"
-          required
-        />
-      </form>
-      <DynamicTable rowLenght={10} columnLenght={7} />
-    </div>
   );
 };
 

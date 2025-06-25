@@ -31,107 +31,76 @@ export default function QaIntialReport() {
   return (
     <div className="p-6">
       <div>
-        <SheetTitle title="QA Intial Report" version="v1.4" />
+        <SheetTitle title="Tech Final & QA Mid Reports" version="v1.4" />
       </div>
 
-      {/* QA Report */}
-      <div>
-        {/* Inspection Form Header */}
-        <div>
-          {/* Form title */}
-          <div className="text-center font-medium border border-black py-1">
-            Inspection Form 127 for Initial -- Approved
+      <div className="mid  mx-auto border-2 border-black text-xs leading-tight">
+        {/* Form title */}
+
+
+        {/* Row 1 */}
+        <div className="data grid grid-cols-6 border border-t-0 border-black">
+          <div className="col-span-1 border-r border-black p-1">
+            Inspection Stage
           </div>
-
-          {/* Row 1 */}
-          <div className="grid grid-cols-6 border border-t-0 border-black">
-            <div className="col-span-1 border-r border-black p-1">
-              Inspection Stage
-            </div>
-            <input
-              className="col-span-1 outline-none border-2 border-red-500 p-1"
-              placeholder="MERCHANT TO FILL"
-            />
-            <div className="col-span-1 border-r border-black p-1">
-              Style Number
-            </div>
-            <input
-              className="col-span-1 outline-none border-2 border-red-500 p-1"
-              placeholder="MERCHANT TO FILL"
-            />
-
-            <div className="col-span-1 border-r border-black p-1">Dated</div>
-            <input
-              className="col-span-1 outline-none border-2 border-red-500 p-1"
-              placeholder="MERCHANT TO FILL"
-            />
+          <input
+            className="col-span-1 outline-none border-2 border-red-500 p-1"
+            placeholder="MERCHANT TO FILL"
+          />
+          <div className="col-span-1 border-r border-black p-1">
+            Style Number
           </div>
+          <input
+            className="col-span-1 outline-none border-2 border-red-500 p-1"
+            placeholder="MERCHANT TO FILL"
+          />
 
-          {/* Row 2 */}
-          <div className="grid grid-cols-8 border border-t-0 border-black">
-            <div className="col-span-1 border-r border-black p-1">QA Name</div>
-            <input
-              className="col-span-1 outline-none border-2 border-red-500 p-1"
-              placeholder="MERCHANT TO FILL"
-            />
-            <div className="col-span-1 border-r border-black p-1">
-              DKC Merchant Name
-            </div>
-            <input
-              className="col-span-1 outline-none border-2 border-red-500 p-1"
-              placeholder="MERCHANT TO FILL"
-            />
-            <div className="col-span-1 border-r border-black p-1">Vendor</div>
-            <input
-              className="col-span-1 outline-none border-2 border-red-500 p-1"
-              placeholder="MERCHANT TO FILL"
-            />
-            <div className="col-span-1 border-r border-black p-1">T&A Date</div>
-            <input
-              className="col-span-1 outline-none border-2 border-red-500 p-1"
-              placeholder="MERCHANT TO FILL"
-            />
+          <div className="col-span-1 border-r border-black p-1">Dated</div>
+          <input
+            className="col-span-1 outline-none border-2 border-red-500 p-1"
+            placeholder="MERCHANT TO FILL"
+          />
+        </div>
+
+        {/* Row 2 */}
+        <div className="data grid grid-cols-8 border border-t-0 border-black">
+          <div className="col-span-1 border-r border-black p-1">QA Name</div>
+          <input
+            className="col-span-1 outline-none border-2 border-red-500 p-1"
+            placeholder="MERCHANT TO FILL"
+          />
+          <div className="col-span-1 border-r border-black p-1">
+            DKC Merchant Name
           </div>
+          <input
+            className="col-span-1 outline-none border-2 border-red-500 p-1"
+            placeholder="MERCHANT TO FILL"
+          />
+          <div className="col-span-1 border-r border-black p-1">Vendor</div>
+          <input
+            className="col-span-1 outline-none border-2 border-red-500 p-1"
+            placeholder="MERCHANT TO FILL"
+          />
+          <div className="col-span-1 border-r border-black p-1">T&A Date</div>
+          <input
+            className="col-span-1 outline-none border-2 border-red-500 p-1"
+            placeholder="MERCHANT TO FILL"
+          />
+        </div>
 
-          {/* Row 3 (Color headers) */}
-          <div className="grid grid-cols-7 border border-t-0 border-black text-center font-medium">
-            <div className="border-r col-span-1 border-black p-1">
-              PO Number
-            </div>
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className={`${
-                  i === 5 ? "" : "border-r"
-                } col-span-1 border-black `}
-              >
-                Color {i + 1}
-                <div
-                  key={i}
-                  className={`${
-                    !poNumber.some((num) => num && num.trim() !== "")
-                      ? "border-2 border-red-500"
-                      : "border-r border-black"
-                  }`}
-                >
-                  <input
-                    key={i}
-                    className="border-none outline-none p-1"
-                    placeholder="MERCHANT TO FILL"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Buyer PO Rows */}
-
+        {/* Row 3 (Color headers) */}
+        <div className="grid grid-cols-7 border border-t-0 border-black text-center font-medium">
+          <div className="border-r col-span-1 border-black p-1">PO Number</div>
           {[...Array(6)].map((_, i) => (
             <div
               key={i}
-              className="grid grid-cols-7 border border-t-0 border-black"
+              className={`${
+                i === 5 ? "" : "border-r"
+              } col-span-1 border-black `}
             >
+              Color {i + 1}
               <div
+                key={i}
                 className={`${
                   !poNumber.some((num) => num && num.trim() !== "")
                     ? "border-2 border-red-500"
@@ -139,43 +108,64 @@ export default function QaIntialReport() {
                 }`}
               >
                 <input
-                  className={`outline-none p-1`}
-                  placeholder="PO Number"
-                  value={poNumber[i]}
-                  onChange={(e) => handlePoNumberChange(i, e.target.value)}
+                  key={i}
+                  className="border-none outline-none p-1"
+                  placeholder="MERCHANT TO FILL"
                 />
               </div>
-              {[...Array(6)].map((_, j) => (
-                <input
-                  key={i * j}
-                  className={`${j === 5 ? "" : "border-r"} outline-none p-1 ${
-                    !poNumber.some((num) => num && num.trim() !== "")
-                      ? "border-2 border-red-500"
-                      : "border-r border-black"
-                  }`}
-                  placeholder="MERCHANT TO FILL"
-                  // value={colorValues[i]?.[j]}
-                  // onChange={(e) => handleColorChange(i, j, e.target.value)}
-                />
-              ))}
             </div>
           ))}
-
-          {/* Total Row */}
-          <div className="grid grid-cols-7 border border-t-0 border-black font-medium text-center">
-            <div className="border-r border-black p-1">Total</div>
-            {[...Array(6)].map((_, i) => (
-              <div
-                key={i}
-                className={`${i === 5 ? "" : "border-r"} border-black p-1`}
-              >
-                0
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* Instructions Section */}
+        {/* Buyer PO Rows */}
+
+        {[...Array(6)].map((_, i) => (
+          <div
+            key={i}
+            className="grid grid-cols-7 border border-t-0 border-black"
+          >
+            <div
+              className={`${
+                !poNumber.some((num) => num && num.trim() !== "")
+                  ? "border-2 border-red-500"
+                  : "border-r border-black"
+              }`}
+            >
+              <input
+                className={`outline-none p-1`}
+                placeholder="PO Number"
+                value={poNumber[i]}
+                onChange={(e) => handlePoNumberChange(i, e.target.value)}
+              />
+            </div>
+            {[...Array(6)].map((_, j) => (
+              <input
+                key={i * j}
+                className={`${j === 5 ? "" : "border-r"} outline-none p-1 ${
+                  !poNumber.some((num) => num && num.trim() !== "")
+                    ? "border-2 border-red-500"
+                    : "border-r border-black"
+                }`}
+                placeholder="MERCHANT TO FILL"
+                // value={colorValues[i]?.[j]}
+                // onChange={(e) => handleColorChange(i, j, e.target.value)}
+              />
+            ))}
+          </div>
+        ))}
+
+        {/* Total Row */}
+        <div className="grid grid-cols-7 border border-t-0 border-black font-medium text-center">
+          <div className="border-r border-black p-1">Total</div>
+          {[...Array(6)].map((_, i) => (
+            <div
+              key={i}
+              className={`${i === 5 ? "" : "border-r"} border-black p-1`}
+            >
+              0
+            </div>
+          ))}
+        </div>
         <div className="grid grid-cols-5 gap-4 my-4">
           {/* Left Instructions */}
           <div className="border border-b-0 border-black text-sm col-span-2">
@@ -254,13 +244,26 @@ export default function QaIntialReport() {
         </div>
       </div>
 
-      {/* Page Content */}
-      <Table col={12} row={10} imagecol={3} colwidth={[50,50,50,150,50,50,50,50,50,50]}/>
-
-      {/* Submit Button */}
-      <button className="bg-purple-500 text-white px-4 py-2 mt-4 rounded">
-        Submit
-      </button>
+      <Table
+        col={12}
+        row={10}
+        imagecol={3}
+        tablename="initial-report"
+        columnheaders={[
+          "MOVE",
+          "Sno",
+          "ISSUE",
+          "Issue Image",
+          "FT", // You have multiple "FT" columns; you can make them unique if needed.
+          "FT",
+          "FT",
+          "FT",
+          "FT",
+          "FT",
+          "MAJOR",
+          "MINOR",
+        ]}
+      />
     </div>
   );
 }

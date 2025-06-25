@@ -23,7 +23,7 @@ const MidReportForm = () => {
             Inspection Stage
           </div>
           <input className="col-span-1 border-r border-black p-1" />
-          <div  className="col-span-1 border-r border-black p-1">
+          <div className="col-span-1 border-r border-black p-1">
             Style Number
           </div>
           <input className="col-span-1 border-2 border-red-600 p-1" />
@@ -101,7 +101,6 @@ const MidReportForm = () => {
             </div>
           </div>
           <div>
-
             {[
               "DKC MERCHANT   TO ALLOW PCS TO CUT",
               "DKC MERCHANT ALLOWED PCS TO STITCH",
@@ -152,7 +151,26 @@ const MidReportForm = () => {
         <div className="font-semibold text-base mt-2 p-1">RESULT</div>
       </div>
 
-      <Table col={12} row={10} imagecol={3} colwidth={[50,50,50,150,50,50,50,50,50,50]}/>
+      <Table
+        col={12}
+        row={10}
+        imagecol={3}
+        tablename="mid-final"
+        columnheaders={[
+          "MOVE",
+          "Sno",
+          "ISSUE",
+          "Issue Image",
+          "FT", // You have multiple "FT" columns; you can make them unique if needed.
+          "FT",
+          "FT",
+          "FT",
+          "FT",
+          "FT",
+          "MAJOR",
+          "MINOR",
+        ]}
+      />
     </div>
   );
 };

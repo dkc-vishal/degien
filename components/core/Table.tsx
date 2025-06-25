@@ -27,11 +27,9 @@ import {
 } from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
 
-export default function Table({ col, row, imagecol, colwidth }: any) {
+export default function Table({ tablename, col, row, imagecol ,columnheaders}: any) {
   const [frozenColIndex, setFrozenColIndex] = useState<number | null>(null);
 
-  const [collapsed, setCollapsed] = useState(false);
-  const toggleSidebar = () => setCollapsed(!collapsed);
   const [isDragging, setIsDragging] = useState(false);
   const [history, setHistory] = useState<string[][][]>([]);
   const [redoStack, setRedoStack] = useState<string[][][]>([]);
@@ -45,7 +43,6 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
     issueId: string;
     image: string;
   } | null>(null);
-  const [issues, setIssues] = useState<Issue[]>([]);
   const [imageSeleted, setimageSeleted] = useState({
     rownumber: 0,
     colnumber: 0,
@@ -57,12 +54,18 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
   const animationFrameRef = useRef<number | null>(null);
   const [columnHeaders, setColumnHeaders] = useState(
     Array.from({ length: col }, (_, colIndex) =>
-      colIndex === imagecol ? "Measurement Picture" : ``
+      colIndex === imagecol ? "Measurement Picture" : columnheaders[colIndex]
     )
   );
-  const [imageopen, setIsTyping] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
-  const [colWidths, setColWidths] = useState(colwidth);
+  useEffect(() => {
+    const savedColWidths = localStorage.getItem(`table_colWidths_${tablename}`);
+    console.log(savedColWidths)
+    if (savedColWidths) {
+      setColWidths(JSON.parse(savedColWidths));
+    }
+  }, []);
+  const [colWidths, setColWidths] = useState([25, 25, 25, 25, 45, 25, 25, 25, 25]);
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
   const [copiedImage, setCopiedImage] = useState<string | null>(null);
@@ -79,7 +82,7 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
         const updatedWidths = [...colWidths];
         updatedWidths[resizingColIndex.current] = newWidth;
         setColWidths(updatedWidths);
-        localStorage.setItem("table_colWidths", JSON.stringify(updatedWidths));
+        localStorage.setItem(`table_colWidths_${tablename}`, JSON.stringify(updatedWidths));
       }
     }
   };
@@ -178,7 +181,7 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
     startCol: number
   ) => {
     e.preventDefault();
-
+    console.log(e.clipboardData)
     const clipboard = e.clipboardData.getData("text");
 
     const rows = clipboard
@@ -407,13 +410,13 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
   const insertCol = (index: number) => {
     // update columnHeaders
     const newHeaders = [...columnHeaders];
-    newHeaders.splice(index, 0, "");
+    newHeaders.splice(index, 0, "vishal");
     setColumnHeaders(newHeaders);
 
     // update tableData — ⚠️ THIS is likely missing or incorrect!
     const newData = tableData.map((row) => {
       const newRow = [...row];
-      newRow.splice(index, 0, ""); // <-- this part is crucial
+      newRow.splice(index, 0, "vishal"); // <-- this part is crucial
       return newRow;
     });
     setTableData(newData);
@@ -545,7 +548,7 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
     return () => document.removeEventListener("click", handleClick);
   }, []);
   useEffect(() => {
-    const savedWidths = localStorage.getItem("table_colWidths");
+    const savedWidths = localStorage.getItem(`table_colWidths_${tablename}`);
     if (savedWidths) {
       setColWidths(JSON.parse(savedWidths));
     }
@@ -704,7 +707,7 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                             colWidths[i] = colWidths[draggedColIndex];
                             colWidths[draggedColIndex] = temp;
                             localStorage.setItem(
-                              "table_colWidths",
+                              `table_colWidths_${tablename}`,
                               JSON.stringify(colWidths)
                             );
 
@@ -838,128 +841,128 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                             "Measurement Picture" ? (
                             rowIndex === 0 ? (
                               <td>
-                                   <textarea
-                                value={cell}
-                                readOnly={
-                                  !(
-                                    editingCell?.[0] === rowIndex &&
-                                    editingCell?.[1] === colIndex
-                                  )
-                                }
-                                onChange={(e) => {
-                                  handleCellChange(
-                                    rowIndex,
-                                    colIndex,
-                                    e.target.value
-                                  );
-                                  autoResizeTextarea(e.target);
-                                }}
-                                onDoubleClick={() => {
-                                  setEditingCell([rowIndex, colIndex]);
-                                }}
-                                onBlur={() => {
-                                  setEditingCell(null);
-                                }}
-                                onPaste={(e) => {
-                                  handlePaste(e, rowIndex, colIndex);
-                                  setTimeout(
-                                    () =>
-                                      autoResizeTextarea(
-                                        e.target as HTMLTextAreaElement
-                                      ),
-                                    0
-                                  );
-                                }}
-                                onMouseDown={() => {
-                                  setSelectionAnchor([rowIndex, colIndex]);
-                                  setSelectedCell([rowIndex, colIndex]);
-                                  setSelectedRange({
-                                    start: [rowIndex, colIndex],
-                                    end: [rowIndex, colIndex],
-                                  });
-                                  setIsDragging(true);
-                                }}
-                                onMouseEnter={() => {
-                                  if (isDragging && selectionAnchor) {
+                                <textarea
+                                  value={columnHeaders[colIndex]}
+                                  readOnly={
+                                    !(
+                                      editingCell?.[0] === rowIndex &&
+                                      editingCell?.[1] === colIndex
+                                    )
+                                  }
+                                  onChange={(e) => {
+                                    handleCellChange(
+                                      rowIndex,
+                                      colIndex,
+                                      e.target.value
+                                    );
+                                    autoResizeTextarea(e.target);
+                                  }}
+                                  onDoubleClick={() => {
+                                    setEditingCell([rowIndex, colIndex]);
+                                  }}
+                                  onBlur={() => {
+                                    setEditingCell(null);
+                                  }}
+                                  onPaste={(e) => {
+                                    handlePaste(e, rowIndex, colIndex);
+                                    setTimeout(
+                                      () =>
+                                        autoResizeTextarea(
+                                          e.target as HTMLTextAreaElement
+                                        ),
+                                      0
+                                    );
+                                  }}
+                                  onMouseDown={() => {
+                                    setSelectionAnchor([rowIndex, colIndex]);
                                     setSelectedCell([rowIndex, colIndex]);
                                     setSelectedRange({
-                                      start: selectionAnchor,
+                                      start: [rowIndex, colIndex],
                                       end: [rowIndex, colIndex],
                                     });
-                                  }
-                                }}
-                                onInput={(e) =>
-                                  autoResizeTextarea(
-                                    e.target as HTMLTextAreaElement
-                                  )
-                                }
-                                // onClick={(e) => e.stopPropagation()}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedCell([rowIndex, colIndex]);
-                                  setSelectionAnchor(null);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (
-                                    editingCell?.[0] === rowIndex &&
-                                    editingCell?.[1] === colIndex
-                                  ) {
-                                    if (e.key === "Escape") {
-                                      e.preventDefault();
-                                      setEditingCell(null);
-                                      return;
+                                    setIsDragging(true);
+                                  }}
+                                  onMouseEnter={() => {
+                                    if (isDragging && selectionAnchor) {
+                                      setSelectedCell([rowIndex, colIndex]);
+                                      setSelectedRange({
+                                        start: selectionAnchor,
+                                        end: [rowIndex, colIndex],
+                                      });
                                     }
-                                    if (e.key === "Enter" && !e.shiftKey) {
-                                      e.preventDefault();
-                                      setEditingCell(null);
-                                      return;
-                                    }
+                                  }}
+                                  onInput={(e) =>
+                                    autoResizeTextarea(
+                                      e.target as HTMLTextAreaElement
+                                    )
                                   }
-                                  if (!selectedCell) return;
-                                  const [row, col] = selectedCell;
-                                  let newRow = row;
-                                  let newCol = col;
-                                  if (e.key === "ArrowUp")
-                                    newRow = Math.max(0, row - 1);
-                                  else if (e.key === "ArrowDown")
-                                    newRow = Math.min(
-                                      tableData.length - 1,
-                                      row + 1
-                                    );
-                                  else if (e.key === "ArrowLeft")
-                                    newCol = Math.max(0, col - 1);
-                                  else if (e.key === "ArrowRight")
-                                    newCol = Math.min(
-                                      tableData[0].length - 1,
-                                      col + 1
-                                    );
-                                  else return;
-                                  e.preventDefault();
-                                  if (e.shiftKey) {
-                                    const anchor =
-                                      selectionAnchor || selectedCell;
-                                    setSelectedRange({
-                                      start: anchor,
-                                      end: [newRow, newCol],
-                                    });
-                                    setSelectedCell([newRow, newCol]);
-                                    if (!selectionAnchor)
-                                      setSelectionAnchor(selectedCell);
-                                  } else {
-                                    setEditingCell([newRow, newCol]);
-
-                                    setSelectedCell([newRow, newCol]);
-                                    setSelectedRange(null);
+                                  // onClick={(e) => e.stopPropagation()}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedCell([rowIndex, colIndex]);
                                     setSelectionAnchor(null);
-                                  }
-                                }}
-                                className={`${
-                                  rowIndex === 0
-                                    ? "uppercase text-white p-3!"
-                                    : "p-0 px-2 py-1"
-                                } w-full h-auto  m-0 border   outline-none resize-none overflow-hidden whitespace-pre-wrap break-words`}
-                                rows={1}
-                              />
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (
+                                      editingCell?.[0] === rowIndex &&
+                                      editingCell?.[1] === colIndex
+                                    ) {
+                                      if (e.key === "Escape") {
+                                        e.preventDefault();
+                                        setEditingCell(null);
+                                        return;
+                                      }
+                                      if (e.key === "Enter" && !e.shiftKey) {
+                                        e.preventDefault();
+                                        setEditingCell(null);
+                                        return;
+                                      }
+                                    }
+                                    if (!selectedCell) return;
+                                    const [row, col] = selectedCell;
+                                    let newRow = row;
+                                    let newCol = col;
+                                    if (e.key === "ArrowUp")
+                                      newRow = Math.max(0, row - 1);
+                                    else if (e.key === "ArrowDown")
+                                      newRow = Math.min(
+                                        tableData.length - 1,
+                                        row + 1
+                                      );
+                                    else if (e.key === "ArrowLeft")
+                                      newCol = Math.max(0, col - 1);
+                                    else if (e.key === "ArrowRight")
+                                      newCol = Math.min(
+                                        tableData[0].length - 1,
+                                        col + 1
+                                      );
+                                    else return;
+                                    e.preventDefault();
+                                    if (e.shiftKey) {
+                                      const anchor =
+                                        selectionAnchor || selectedCell;
+                                      setSelectedRange({
+                                        start: anchor,
+                                        end: [newRow, newCol],
+                                      });
+                                      setSelectedCell([newRow, newCol]);
+                                      if (!selectionAnchor)
+                                        setSelectionAnchor(selectedCell);
+                                    } else {
+                                      setEditingCell([newRow, newCol]);
+
+                                      setSelectedCell([newRow, newCol]);
+                                      setSelectedRange(null);
+                                      setSelectionAnchor(null);
+                                    }
+                                  }}
+                                  className={`${
+                                     rowIndex === 0
+                                    ? "uppercase text-black p-3! text-[15px]!"
+                                    : "p-3!"
+                                }  w-full h-auto  m-0 border   outline-none resize-none overflow-hidden whitespace-pre-wrap break-words`}
+                                  rows={1}
+                                />
                               </td>
                             ) : (
                               <td
@@ -1007,7 +1010,8 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                                 }}
                                 onPaste={(e) => {
                                   e.preventDefault();
-                                  console.log(e.clipboardData);
+                                  console.log(e.clipboardData.getData("text"));
+
                                   const items = e.clipboardData?.files;
                                   if (items?.length)
                                     handleImagePasteOrDrop(
@@ -1139,7 +1143,164 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                               </td>
                             )
                           ) : (
-                            <td
+                           rowIndex === 0 ?(
+                               <td
+                              style={{
+                                width: colWidths[colIndex],
+                                minWidth: 50,
+                              }}
+                              key={colIndex}
+                              onContextMenu={(e) => {
+                                e.preventDefault();
+                                setContextMenu({
+                                  visible: true,
+                                  x: e.pageX,
+                                  y: e.pageY,
+                                  row: rowIndex,
+                                  col: colIndex,
+                                });
+                              }}
+                              className={` border ${
+                                colIndex === frozenColIndex
+                                  ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md `
+                                  : ""
+                              } ${
+                                selectedCell?.[0] === rowIndex &&
+                                selectedCell?.[1] === colIndex
+                                  ? "border-blue-500 ring-2 ring-blue-400"
+                                  : "border-gray-300"
+                              }
+                                  ${
+                                    isCellInRange(rowIndex, colIndex)
+                                      ? "bg-blue-100"
+                                      : ""
+                                  }`}
+                            >
+                              <textarea
+                                value={columnHeaders[colIndex]}
+                                readOnly={
+                                  !(
+                                    editingCell?.[0] === rowIndex &&
+                                    editingCell?.[1] === colIndex
+                                  )
+                                }
+                                onChange={(e) => {
+                                  handleCellChange(
+                                    rowIndex,
+                                    colIndex,
+                                    e.target.value
+                                  );
+                                  autoResizeTextarea(e.target);
+                                }}
+                                onDoubleClick={() => {
+                                  setEditingCell([rowIndex, colIndex]);
+                                }}
+                                onBlur={() => {
+                                  setEditingCell(null);
+                                }}
+                                onPaste={(e) => {
+                                  handlePaste(e, rowIndex, colIndex);
+                                  setTimeout(
+                                    () =>
+                                      autoResizeTextarea(
+                                        e.target as HTMLTextAreaElement
+                                      ),
+                                    0
+                                  );
+                                }}
+                                onMouseDown={() => {
+                                  setSelectionAnchor([rowIndex, colIndex]);
+                                  setSelectedCell([rowIndex, colIndex]);
+                                  setSelectedRange({
+                                    start: [rowIndex, colIndex],
+                                    end: [rowIndex, colIndex],
+                                  });
+                                  setIsDragging(true);
+                                }}
+                                onMouseEnter={() => {
+                                  if (isDragging && selectionAnchor) {
+                                    setSelectedCell([rowIndex, colIndex]);
+                                    setSelectedRange({
+                                      start: selectionAnchor,
+                                      end: [rowIndex, colIndex],
+                                    });
+                                  }
+                                }}
+                                onInput={(e) =>
+                                  autoResizeTextarea(
+                                    e.target as HTMLTextAreaElement
+                                  )
+                                }
+                                // onClick={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedCell([rowIndex, colIndex]);
+                                  setSelectionAnchor(null);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (
+                                    editingCell?.[0] === rowIndex &&
+                                    editingCell?.[1] === colIndex
+                                  ) {
+                                    if (e.key === "Escape") {
+                                      e.preventDefault();
+                                      setEditingCell(null);
+                                      return;
+                                    }
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                      e.preventDefault();
+                                      setEditingCell(null);
+                                      return;
+                                    }
+                                  }
+                                  if (!selectedCell) return;
+                                  const [row, col] = selectedCell;
+                                  let newRow = row;
+                                  let newCol = col;
+                                  if (e.key === "ArrowUp")
+                                    newRow = Math.max(0, row - 1);
+                                  else if (e.key === "ArrowDown")
+                                    newRow = Math.min(
+                                      tableData.length - 1,
+                                      row + 1
+                                    );
+                                  else if (e.key === "ArrowLeft")
+                                    newCol = Math.max(0, col - 1);
+                                  else if (e.key === "ArrowRight")
+                                    newCol = Math.min(
+                                      tableData[0].length - 1,
+                                      col + 1
+                                    );
+                                  else return;
+                                  e.preventDefault();
+                                  if (e.shiftKey) {
+                                    const anchor =
+                                      selectionAnchor || selectedCell;
+                                    setSelectedRange({
+                                      start: anchor,
+                                      end: [newRow, newCol],
+                                    });
+                                    setSelectedCell([newRow, newCol]);
+                                    if (!selectionAnchor)
+                                      setSelectionAnchor(selectedCell);
+                                  } else {
+                                    setEditingCell([newRow, newCol]);
+
+                                    setSelectedCell([newRow, newCol]);
+                                    setSelectedRange(null);
+                                    setSelectionAnchor(null);
+                                  }
+                                }}
+                                className={`${
+                                  rowIndex === 0
+                                    ? "uppercase text-black p-3! text-[15px]!"
+                                    : "p-3!"
+                                } w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words`}
+                                rows={1}
+                              />
+                            </td>
+                           ):(
+                             <td
                               style={{
                                 width: colWidths[colIndex],
                                 minWidth: 50,
@@ -1294,7 +1455,8 @@ export default function Table({ col, row, imagecol, colwidth }: any) {
                                 rows={1}
                               />
                             </td>
-                          );
+                           )
+                          )
                         })}
                       </tr>
                     ))}

@@ -177,6 +177,15 @@ th .resize-handle {
 }
 
 .data > div {
-  font-size: 15px;
-  padding: 8px;
+  font-size: 14px;
+  padding-top: 10px;
+}
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .removesidebarspace{
+    margin-left: 0 !important;
+    width: 100vw;
+  }
 }

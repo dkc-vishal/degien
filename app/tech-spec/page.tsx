@@ -1,12 +1,14 @@
 "use client";
 import React, { useState } from "react";
 import Table from "@/components/core/Table";
+import Link from "next/link";
+
 import {
-  FaBars,
   FaTachometerAlt,
   FaClipboardList,
   FaWrench,
   FaTools,
+  FaPrint
 } from "react-icons/fa";
 import SheetTitle from "@/components/core/SheetTitle";
 import InputForm from "@/components/core/InputForm";
@@ -22,7 +24,18 @@ export default function TechSpecSheet() {
       <div className=" flex-1 flex flex-col p-6">
         {/* Form inputs */}
         <div className="">
-          <SheetTitle title="Tech Specs Measurement Sheet" version="v1.4" />
+          <SheetTitle
+            title="Tech Specs Measurement Sheet"
+            version="v1.4"
+            printpage="/techspecprintpage"
+          />
+          <Link
+            href="/printpage"
+            className="flex items-center gap-1  font-medium px-4 py-1 rounded-xl shadow-md transition duration-200"
+          >
+            <FaPrint />
+            
+          </Link>
 
           <InputForm
             label={[
@@ -34,7 +47,30 @@ export default function TechSpecSheet() {
         </div>
 
         {/* Page Content */}
-        <Table col={10} row={10} imagecol={5} colwidth={[25,25,25,25,45,25,25,25,25]}/>
+        <Table
+          col={16}
+          row={10}
+          tablename="Tech Specs"
+          imagecol={6}
+          columnheaders={[
+            "Move",
+            "Sno",
+            "SHOULD GO TO QA INSPECTION ?",
+            "HEADER",
+            "MEASUREMENT TYPE",
+            "LOCATION",
+            "MEASUREMENT PICTURE URL",
+            "MSR MEASUREMENT",
+            "MSR GRADING RULE",
+            "REAL TIME GRADING RULE",
+            "XS",
+            "S",
+            "M",
+            "L",
+            "XL",
+            "HELPER COLUMN FOR MEASUREMENT",
+          ]}
+        />
       </div>
     </>
   );
