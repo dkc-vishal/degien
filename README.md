@@ -13,7 +13,7 @@ pnpm dev
 # or
 bun dev
 ```
-https://chatgpt.com/c/684f064c-2f78-8010-b455-e5f20c1a0958
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
@@ -33,17 +33,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-
-
-
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 
-
-
-
-add qa in input
-
-
-
-110 -> as it is here -> original extract using filter -> create sheet mid1 -> filtered for mid 1 only -> format copied mid 1
+1. Simpling folder create krega aur usmay apna point add krega-----------> merchant ke pass jayega aur merchant vendor ke behalf pr style create krega -----------> then tech apna data opr spec add krega
