@@ -1,49 +1,28 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+- All new users can only be created by Admin 
 
-## Getting Started
+- First original and 1 Repeat is displayed on the webpage. When user hit "Create Repeat", then a backend call executes and create a empty cells for rows and columns which will be returned back with websocket. In frontend we statically display original & repeat labels by giving a static columns space. 
 
-First, run the development server:
+- Print view (Merchant, Feeding Sampling)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-https://chatgpt.com/c/684f064c-2f78-8010-b455-e5f20c1a0958
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- import style from sampling  
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- create new style 
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Users List -> All users -> Add new User  Name. 
 
-## Learn More
+Mark user as inactive. Trash icon
 
-To learn more about Next.js, take a look at the following resources:
+Sampling -> Protected Route only DKC people will see it. , Production -> Sabko in DKC
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Sampling mai folder jaisa dikhega jisme style ka naam aayega. On the top there will be a button called Create new style. 
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Inside style. Sampling Watchpoints ki sheet hogi. 
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Order received. 
 
 
+Production: 
 
+Style -> Master -> Order -> Create New order / 110 -> each order will then have all the folders. 
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-
-
-
-
-add qa in input
-
-
-
-110 -> as it is here -> original extract using filter -> create sheet mid1 -> filtered for mid 1 only -> format copied mid 1
+- Pending of ()

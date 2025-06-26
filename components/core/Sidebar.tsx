@@ -14,7 +14,7 @@ export default function Sidebar({ side }: any) {
   const router = useRouter();
 
   const menuItems = [
-    { icon: <FaTachometerAlt />, label: "Dashboard", path: "/dashboard" },
+    { icon: <FaTachometerAlt />, label: "Dashboard", path: "/Dashboard" },
     { icon: <FaClipboardList />, label: "Tech Specs", path: "/tech-spec" },
     { icon: <FaTools />, label: "Inspections", path: "/mid-final" },
     { icon: <FaTools />, label: "QA-Initial", path: "/qa-initial-report" },
