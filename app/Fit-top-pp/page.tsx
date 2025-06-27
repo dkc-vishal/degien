@@ -21,7 +21,7 @@ const MidReportForm = () => {
       `}</style>
       <div className="p-6">
         <div>
-          <SheetTitle title="QA MID-FINAL" version="v1.4" />
+          <SheetTitle title="FIT/PP/TOP/WEB" version="v1.4" />
           <button
             onClick={handlePrint}
             className="flex items-center gap-1  font-medium px-4 py-1 mb-2 rounded-xl shadow-md transition duration-200"
@@ -171,7 +171,7 @@ const MidReportForm = () => {
             col={12}
             row={20}
             imagecol={3}
-            tablename="mid-final"
+            tablename="web/pp/top"
             columnheaders={[
               "MOVE",
               "Sno",

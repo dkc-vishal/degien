@@ -111,36 +111,37 @@ export default function PrintPage() {
     },
   ];
   const headers = [
-    { label: "S No", rowspan: 2, width: "40px" },
-    { label: "Header", rowspan: 2, width: "80px" },
-    { label: "Measurement Type", rowspan: 2, width: "190px" },
-    { label: "Location", rowspan: 2, width: "90px" },
-    { label: "Picture", rowspan: 2, width: "130px" },
-    { label: "Grading Rule", rowspan: 2, width: "70px" },
-    { label: "XS", rowspan: 2, width: "80px" },
-    { label: "S", rowspan: 2, width: "80px" },
-    { label: "Factory QA", rowspan: 2, width: "80px" },
+    { label: "S No", rowspan: 2, width: "20px" },
+    { label: "Header", rowspan: 2, width: "50px" },
+    { label: "Measurement Type", rowspan: 2, width: "220px" },
+    { label: "Location", rowspan: 2, width: "100px" },
+    { label: "Picture", rowspan: 2, width: "218px" },
+    { label: "Grading Rule", rowspan: 2, width: "50px" },
+    { label: "XS", rowspan: 2, width: "50px" },
+    { label: "S", rowspan: 2, width: "50px" },
+    { label: "Factory QA", rowspan: 2, width: "50px" },
     {
       label: "DKC Tech",
       colspan: 2,
+      width: "100px",
       children: [
-        { label: "Left", width: "20px" },
-        { label: "Right", width: "20px" },
+        { label: "Right", width: "50px" },
+        { label: "Left", width: "50px" },
       ],
     },
-    { label: "Difference", rowspan: 2, width: "80px" },
+    { label: "Difference", rowspan: 2, width: "60px" },
   ];
 
-  const tdStyle:CSSProperties = {
+  const tdStyle: CSSProperties = {
     border: "1px solid #000",
-    padding: "4px",
+    // padding: "4px",
     fontSize: "15px",
     textAlign: "center",
     verticalAlign: "middle",
     wordWrap: "break-word",
   };
 
-  const tdStyleHeaderRotated:CSSProperties = {
+  const tdStyleHeaderRotated: CSSProperties = {
     ...tdStyle,
     writingMode: "vertical-rl",
     transform: "rotate(180deg)",
@@ -150,7 +151,7 @@ export default function PrintPage() {
 
   const paginate = (data: any[]) => {
     const pages = [];
-    pages.push(data.slice(0, 2));
+    pages.push(data.slice(0, 3));
     for (let i = 4; i < data.length; i += 3) {
       pages.push(data.slice(i, i + 3));
     }
@@ -159,32 +160,37 @@ export default function PrintPage() {
 
   const pages = paginate(measurements);
   const PrintHeader = () => (
-    <div style={{ marginBottom: 10, fontSize: 12, fontFamily: "Arial" }}>
-      <div
-        className="onprint"
-        style={{
-          display: "none",
-          justifyContent: "space-between",
-          fontWeight: 500,
-        }}
-      >
-        <div>
+    <>
+          <div className="pt-5"></div>
+
+      <div style={{ marginBottom: 5, fontSize: 12, fontFamily: "Arial" }}>
+        <div
+          className="onprint"
+          style={{
+            display: "none",
+            justifyContent: "space-between",
+            fontWeight: 500,
+            padding: "0",
+          }}
+        >
           <div>
-            <strong>Print Id</strong> – 1020
+            <div>
+              <strong>Print Id</strong> – 1020
+            </div>
+            <div>
+              <strong>Print date</strong> – {new Date().toISOString()}
+            </div>
           </div>
-          <div>
-            <strong>Print date</strong> – 2025‑06‑23
+          <div style={{ fontSize: "20px" }}>Style Name – FORM NAME</div>
+          <div style={{ textAlign: "right" }}>
+            <div>
+              <strong>Form Version</strong> – 1.0
+            </div>
+            <div>Form Version date – 2025‑06‑23</div>
           </div>
-        </div>
-        <div style={{ fontSize: "20px" }}>Style Name – FORM NAME</div>
-        <div style={{ textAlign: "right" }}>
-          <div>
-            <strong>Form Version</strong> – 1.0
-          </div>
-          <div>Form Version date – 2025‑06‑23</div>
         </div>
       </div>
-    </div>
+    </>
   );
 
   return (
@@ -201,18 +207,20 @@ export default function PrintPage() {
             font-family: Arial;
             background: #f5f6f8;
             border-bottom: 2px solid #ccc;
-            padding: 8px 10px;
+            // padding: 8px 10px;
             z-index: 9999;
           }
+
           .onprint {
             display: flex !important;
           }
           body {
-            margin-top: 10px !important;
-            padding: 10px !important;
+            // margin-top: 5px !important;
+            // padding: 5px !important;
           }
           .widthchange {
             width: 100% !important;
+            padding: 0 !important;
           }
           thead {
             display: table-header-group;
@@ -226,11 +234,11 @@ export default function PrintPage() {
         }
       `}</style>
 
-      <div className="widthchange p-5 w-[60%]">
+      <div className="widthchange pl-3 w-[80%]">
         <div>
           <button
             onClick={handlePrint}
-            className="flex items-center gap-1  font-medium px-4 py-1 rounded-xl shadow-md transition duration-200"
+            className="flex items-center gap-1  font-medium px-2 py-1 rounded-xl shadow-md transition duration-200"
           >
             <FaPrint />
           </button>
@@ -239,7 +247,7 @@ export default function PrintPage() {
           <>
             <PrintHeader />
 
-            <div key={pageIndex} style={{ marginBottom: "40px" }}>
+            <div key={pageIndex} style={{ marginBottom: "10px" }}>
               {/* Only first page shows the extra info box */}
               {pageIndex === 0 && (
                 <div
@@ -247,21 +255,26 @@ export default function PrintPage() {
                     display: "flex",
                     justifyContent: "space-between",
                     border: "1px solid black",
-                    padding: "10px",
+                    // padding: "10px",
                     margin: "10px 0",
                   }}
                 >
                   <div>
                     Style Name ________________ <br />
                     Vendor Name ________________ <br />
-                    QA/Tech Name ________________ <br />
-                    Merchant ________________
+                    Tech Name ________________ <br />
+                    Merchant Name ________________
                   </div>
                   <div>
                     Style Number ________________ <br />
                     Inspection Type ________________ <br />
                     Color ________________ <br />
                     Size ________________
+                  </div>
+                  <div>
+                    TNA DATE ________________ <br />
+                    Recived Date ________________ <br />
+                    Check Date ________________ <br />
                   </div>
                 </div>
               )}
@@ -283,11 +296,11 @@ export default function PrintPage() {
                         rowSpan={h.rowspan || 1}
                         style={{
                           border: "1px solid #000",
-                          padding: "4px",
+                          // padding: "4px",
                           backgroundColor: "#f0f0f0",
                           fontSize: "11px",
                           minWidth: 10,
-                          width: h.width || "auto",
+                          width: h.width  || "auto",
                           textAlign: "center",
                         }}
                       >
@@ -305,7 +318,7 @@ export default function PrintPage() {
                               key={`${i}-${j}`}
                               style={{
                                 border: "1px solid #000",
-                                padding: "4px",
+                                // padding: "4px",
                                 backgroundColor: "#f9f9f9",
                                 fontSize: "11px",
                                 minWidth: "10px",
@@ -334,7 +347,7 @@ export default function PrintPage() {
                             textAlign: "center",
                             padding: "0px",
                             width: "150px",
-                            height: "150px",
+                            height: "200px",
                           }}
                         >
                           <div
@@ -346,7 +359,7 @@ export default function PrintPage() {
                             }}
                           >
                             <img
-                              src={row.imageUrl}
+                               src={`images/${idx}.jpg`}
                               alt="Measurement"
                               style={{
                                 width: "100%",
@@ -363,8 +376,9 @@ export default function PrintPage() {
                             border: "1px solid #000",
                             textAlign: "center",
                             padding: "0px",
-                            width: "130px",
-                            height: "150px",
+                            
+                            width: "150px",
+                            height: "200px",
                           }}
                         >
                           <div
@@ -376,7 +390,7 @@ export default function PrintPage() {
                             }}
                           >
                             <img
-                              src={row.imageUrl}
+                              src={`images/${idx}.jpg`}
                               alt="Measurement"
                               style={{
                                 width: "100%",

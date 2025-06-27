@@ -173,8 +173,8 @@ export default function PrintPage() {
   const paginate = (data: any[]) => {
     const pages = [];
     pages.push(data.slice(0, 4));
-    for (let i = 4; i < data.length; i += 5) {
-      pages.push(data.slice(i, i + 5));
+    for (let i = 4; i < data.length; i += 4) {
+      pages.push(data.slice(i, i + 4));
     }
     return pages;
   };
@@ -328,7 +328,7 @@ export default function PrintPage() {
                             }}
                           >
                             <img
-                              src={row.imageUrl}
+                              src={`images/${idx}.jpg`}
                               alt="Measurement"
                               style={{
                                 width: "100%",
@@ -345,8 +345,8 @@ export default function PrintPage() {
                             border: "1px solid #000",
                             textAlign: "center",
                             padding: "0px",
-                            width: "120px",
-                            height: "190px",
+                            width: "170px",
+                            height: "250px",
                           }}
                         >
                           <div
@@ -358,7 +358,7 @@ export default function PrintPage() {
                             }}
                           >
                             <img
-                              src={row.imageUrl}
+                              src={`images/${idx}.jpg`}
                               alt="Measurement"
                               style={{
                                 width: "100%",

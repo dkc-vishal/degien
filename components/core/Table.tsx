@@ -27,7 +27,14 @@ import {
 } from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
 
-export default function Table({ tablename, col, row, imagecol ,columnheaders}: any) {
+export default function Table({
+  tablename,
+  col,
+  row,
+  imagecol,
+  imagecol2,
+  columnheaders,
+}: any) {
   const [frozenColIndex, setFrozenColIndex] = useState<number | null>(null);
 
   const [isDragging, setIsDragging] = useState(false);
@@ -54,18 +61,30 @@ export default function Table({ tablename, col, row, imagecol ,columnheaders}: a
   const animationFrameRef = useRef<number | null>(null);
   const [columnHeaders, setColumnHeaders] = useState(
     Array.from({ length: col }, (_, colIndex) =>
-      colIndex === imagecol ? "Measurement Picture" : columnheaders[colIndex]
+      colIndex === imagecol || colIndex === imagecol2
+        ? "Measurement Picture"
+        : columnheaders[colIndex]
     )
   );
+
   const tableRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const savedColWidths = localStorage.getItem(`table_colWidths_${tablename}`);
-    console.log(savedColWidths)
+    console.log(savedColWidths);
     if (savedColWidths) {
       setColWidths(JSON.parse(savedColWidths));
     }
   }, []);
-  const [colWidths, setColWidths] = useState([25, 25, 25, 25, 45, 25, 25, 25, 25]);
+
+  useEffect(() => {
+    const shareddata = localStorage.getItem(`table_data_${tablename}`);
+    if (shareddata) {
+      setTableData(JSON.parse(shareddata));
+    }
+  }, []);
+  const [colWidths, setColWidths] = useState([
+    5, 5, 25, 25, 150, 25, 25, 25, 150,
+  ]);
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
   const [copiedImage, setCopiedImage] = useState<string | null>(null);
@@ -82,7 +101,10 @@ export default function Table({ tablename, col, row, imagecol ,columnheaders}: a
         const updatedWidths = [...colWidths];
         updatedWidths[resizingColIndex.current] = newWidth;
         setColWidths(updatedWidths);
-        localStorage.setItem(`table_colWidths_${tablename}`, JSON.stringify(updatedWidths));
+        localStorage.setItem(
+          `table_colWidths_${tablename}`,
+          JSON.stringify(updatedWidths)
+        );
       }
     }
   };
@@ -181,7 +203,7 @@ export default function Table({ tablename, col, row, imagecol ,columnheaders}: a
     startCol: number
   ) => {
     e.preventDefault();
-    console.log(e.clipboardData)
+    console.log(e.clipboardData);
     const clipboard = e.clipboardData.getData("text");
 
     const rows = clipboard
@@ -216,7 +238,9 @@ export default function Table({ tablename, col, row, imagecol ,columnheaders}: a
     // pushToHistory(tableData);
     setTableData(updated);
   };
-
+  useEffect(() => {
+    localStorage.setItem(`table_data_${tablename}`, JSON.stringify(tableData));
+  }, [tableData]);
   const menuItems = [
     { icon: <FaTachometerAlt />, label: "Dashboard" },
     { icon: <FaClipboardList />, label: "Tech Specs" },
@@ -661,102 +685,211 @@ export default function Table({ tablename, col, row, imagecol ,columnheaders}: a
             onMouseMove={handleMouseMoveForScroll}
           >
             <div
-              className="overflow-auto max-h-[800px] border rounded"
+              className="removeminheight overflow-auto max-h-[800px] border rounded"
               style={{ width: "100%", overflow: "scroll" }}
             >
               <table className="table-fixed w-full text-sm border-content">
                 <thead>
                   <tr className="sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
                     {tableData[0]?.map((_, i) => (
-                      <th
-                        key={i}
-                        draggable
-                        style={{
-                          position: "relative",
-                          width: colWidths[i], // Set default width
-                          minWidth: "50px",
-                          maxWidth: "500px",
-                          background: frozenColIndex === i ? "#1f2937" : "",
-                        }}
-                        onContextMenu={(e) => {
-                          e.preventDefault();
-                          setContextMenu1({
-                            visible: true,
-                            x: e.pageX,
-                            y: e.pageY,
-                            row: null,
-                            col: i,
-                            isHeader: true,
-                          });
-                        }}
-                        onDragStart={(e) => {
-                          if (isResizing.current) {
-                            e.preventDefault();
-                            return;
-                          }
-                          setDraggedColIndex(i);
-                        }}
-                        onDrop={() => {
-                          if (draggedColIndex === null || draggedColIndex === i)
-                            return;
-                          const updated = tableData.map((row) => {
-                            const newRow = [...row];
-                            const [moved] = newRow.splice(draggedColIndex, 1);
-                            newRow.splice(i, 0, moved);
-                            let temp = colWidths[i];
-                            colWidths[i] = colWidths[draggedColIndex];
-                            colWidths[draggedColIndex] = temp;
-                            localStorage.setItem(
-                              `table_colWidths_${tablename}`,
-                              JSON.stringify(colWidths)
-                            );
-
-                            return newRow;
-                          });
-                          setTableData(updated);
-                          console.log(updated);
-                          setDraggedColIndex(null);
-                        }}
-                        onDragOver={(e) => e.preventDefault()}
-                        className={`border ${
-                          i === frozenColIndex
-                            ? "sticky! left-0 z-10 shadow-md "
-                            : ""
-                        } ${
-                          frozenColIndex !== null &&
-                          i < frozenColIndex &&
-                          i !== 0 &&
-                          i !== 1
-                            ? "hidden"
-                            : ""
-                        }  ${isDragging ? "cursor-move" : "cursor-pointer"}`}
-                      >
-                        {getColumnLetter(i)}
-
-                        {/* Resize Handle */}
-                        <div
-                          onMouseDown={(e) => {
-                            e.stopPropagation();
-                            isResizing.current = true;
-                            resizingColIndex.current = i;
-                            document.addEventListener(
-                              "mousemove",
-                              handleMouseMove
-                            );
-                            document.addEventListener("mouseup", handleMouseUp);
-                          }}
+                      <>
+                        <th
+                          key={i}
+                          draggable
                           style={{
-                            position: "absolute",
-                            top: 0,
-                            right: 0,
-                            bottom: 0,
-                            width: "6px",
-                            cursor: "col-resize",
-                            zIndex: 10,
-                            userSelect: "none",
+                            position: "relative",
+                            width: colWidths[i], // Set default width
+                            minWidth: "50px",
+                            maxWidth: "500px",
+                            background: frozenColIndex === i ? "#1f2937" : "",
                           }}
-                        />
-                      </th>
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            setContextMenu1({
+                              visible: true,
+                              x: e.pageX,
+                              y: e.pageY,
+                              row: null,
+                              col: i,
+                              isHeader: true,
+                            });
+                          }}
+                          onDragStart={(e) => {
+                            if (isResizing.current) {
+                              e.preventDefault();
+                              return;
+                            }
+                            setDraggedColIndex(i);
+                          }}
+                          onDrop={() => {
+                            if (
+                              draggedColIndex === null ||
+                              draggedColIndex === i
+                            )
+                              return;
+                            const updated = tableData.map((row) => {
+                              const newRow = [...row];
+                              const [moved] = newRow.splice(draggedColIndex, 1);
+                              newRow.splice(i, 0, moved);
+                              let temp = colWidths[i];
+                              colWidths[i] = colWidths[draggedColIndex];
+                              colWidths[draggedColIndex] = temp;
+                              localStorage.setItem(
+                                `table_colWidths_${tablename}`,
+                                JSON.stringify(colWidths)
+                              );
+
+                              return newRow;
+                            });
+                            setTableData(updated);
+                            console.log(updated);
+                            setDraggedColIndex(null);
+                          }}
+                          onDragOver={(e) => e.preventDefault()}
+                          className={`border ${
+                            i === frozenColIndex
+                              ? "sticky! left-0 z-10 shadow-md "
+                              : ""
+                          } ${
+                            frozenColIndex !== null &&
+                            i < frozenColIndex &&
+                            i !== 0 &&
+                            i !== 1
+                              ? "hidden"
+                              : ""
+                          }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${i === 0 ? "no-print" : ""}`}
+                        >
+                          {getColumnLetter(i)}
+
+                          {/* Resize Handle */}
+                          <div
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              isResizing.current = true;
+                              resizingColIndex.current = i;
+                              document.addEventListener(
+                                "mousemove",
+                                handleMouseMove
+                              );
+                              document.addEventListener(
+                                "mouseup",
+                                handleMouseUp
+                              );
+                            }}
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              right: 0,
+                              bottom: 0,
+                              width: "6px",
+                              cursor: "col-resize",
+                              zIndex: 10,
+                              userSelect: "none",
+                            }}
+                          />
+                        </th>
+                      </>
+                    ))}
+                  </tr>
+                  <tr>
+                    {columnHeaders?.map((_, i) => (
+                      <>
+                        <th
+                          key={i}
+                          draggable
+                          style={{
+                            position: "relative",
+                            width: colWidths[i], // Set default width
+                            minWidth: "50px",
+                            maxWidth: "500px",
+                            background: frozenColIndex === i ? "#1f2937" : "",
+                          }}
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            setContextMenu1({
+                              visible: true,
+                              x: e.pageX,
+                              y: e.pageY,
+                              row: null,
+                              col: i,
+                              isHeader: true,
+                            });
+                          }}
+                          onDragStart={(e) => {
+                            if (isResizing.current) {
+                              e.preventDefault();
+                              return;
+                            }
+                            setDraggedColIndex(i);
+                          }}
+                          onDrop={() => {
+                            if (
+                              draggedColIndex === null ||
+                              draggedColIndex === i
+                            )
+                              return;
+                            const updated = tableData.map((row) => {
+                              const newRow = [...row];
+                              const [moved] = newRow.splice(draggedColIndex, 1);
+                              newRow.splice(i, 0, moved);
+                              let temp = colWidths[i];
+                              colWidths[i] = colWidths[draggedColIndex];
+                              colWidths[draggedColIndex] = temp;
+                              localStorage.setItem(
+                                `table_colWidths_${tablename}`,
+                                JSON.stringify(colWidths)
+                              );
+
+                              return newRow;
+                            });
+                            setTableData(updated);
+                            console.log(updated);
+                            setDraggedColIndex(null);
+                          }}
+                          onDragOver={(e) => e.preventDefault()}
+                          className={`border ${
+                            i === frozenColIndex
+                              ? "sticky! left-0 z-10 shadow-md "
+                              : ""
+                          } ${
+                            frozenColIndex !== null &&
+                            i < frozenColIndex &&
+                            i !== 0 &&
+                            i !== 1
+                              ? "hidden"
+                              : ""
+                          }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${i === 0 ? "no-print" : ""}`}
+                        >
+                          {columnHeaders[i]}
+
+                          {/* Resize Handle */}
+                          <div
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              isResizing.current = true;
+                              resizingColIndex.current = i;
+                              document.addEventListener(
+                                "mousemove",
+                                handleMouseMove
+                              );
+                              document.addEventListener(
+                                "mouseup",
+                                handleMouseUp
+                              );
+                            }}
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              right: 0,
+                              bottom: 0,
+                              width: "6px",
+                              cursor: "col-resize",
+                              zIndex: 10,
+                              userSelect: "none",
+                            }}
+                          />
+                        </th>
+                      </>
                     ))}
                   </tr>
                 </thead>
@@ -773,11 +906,7 @@ export default function Table({ tablename, col, row, imagecol ,columnheaders}: a
                     .map((row, rowIndex) => (
                       <tr
                         key={rowIndex}
-                        style={{
-                          textAlign: "center",
-                          background: rowIndex === 0 ? "#D3D3D3" : "",
-                          fontWeight: rowIndex === 0 ? "600" : "",
-                        }}
+                        
                         className={`bg-white even:bg-gray-50 `}
                       >
                         {row.map((cell, colIndex) => {
@@ -796,7 +925,7 @@ export default function Table({ tablename, col, row, imagecol ,columnheaders}: a
                                 minWidth: 50,
                               }}
                               key={colIndex}
-                              className={`border ${
+                              className={`no-print border ${
                                 colIndex === frozenColIndex
                                   ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md `
                                   : ""
@@ -839,7 +968,7 @@ export default function Table({ tablename, col, row, imagecol ,columnheaders}: a
                             </td>
                           ) : columnHeaders[colIndex] ===
                             "Measurement Picture" ? (
-                            rowIndex === 0 ? (
+                            rowIndex === -1 ? (
                               <td>
                                 <textarea
                                   value={columnHeaders[colIndex]}
@@ -956,11 +1085,8 @@ export default function Table({ tablename, col, row, imagecol ,columnheaders}: a
                                       setSelectionAnchor(null);
                                     }
                                   }}
-                                  className={`${
-                                     rowIndex === 0
-                                    ? "uppercase text-black p-3! text-[15px]!"
-                                    : "p-3!"
-                                }  w-full h-auto  m-0 border   outline-none resize-none overflow-hidden whitespace-pre-wrap break-words`}
+                                  className={`
+                                     w-full h-auto  m-0 border   outline-none resize-none overflow-hidden whitespace-pre-wrap break-words`}
                                   rows={1}
                                 />
                               </td>
@@ -970,7 +1096,7 @@ export default function Table({ tablename, col, row, imagecol ,columnheaders}: a
                                   width: colWidths[colIndex],
                                   minWidth: 50,
                                 }}
-                                className={` border p-2 min-h-[80px]${
+                                className={` border-2 border-black p-2 min-h-[80px]${
                                   frozenColIndex
                                     ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md `
                                     : ""
@@ -1137,170 +1263,13 @@ export default function Table({ tablename, col, row, imagecol ,columnheaders}: a
                                 ) : (
                                   ""
                                 )}
-                                <p className="text-sm text-gray-400">
+                                <p className="no-print text-sm text-gray-400">
                                   Drop or paste image
                                 </p>
                               </td>
                             )
                           ) : (
-                           rowIndex === 0 ?(
-                               <td
-                              style={{
-                                width: colWidths[colIndex],
-                                minWidth: 50,
-                              }}
-                              key={colIndex}
-                              onContextMenu={(e) => {
-                                e.preventDefault();
-                                setContextMenu({
-                                  visible: true,
-                                  x: e.pageX,
-                                  y: e.pageY,
-                                  row: rowIndex,
-                                  col: colIndex,
-                                });
-                              }}
-                              className={` border ${
-                                colIndex === frozenColIndex
-                                  ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md `
-                                  : ""
-                              } ${
-                                selectedCell?.[0] === rowIndex &&
-                                selectedCell?.[1] === colIndex
-                                  ? "border-blue-500 ring-2 ring-blue-400"
-                                  : "border-gray-300"
-                              }
-                                  ${
-                                    isCellInRange(rowIndex, colIndex)
-                                      ? "bg-blue-100"
-                                      : ""
-                                  }`}
-                            >
-                              <textarea
-                                value={columnHeaders[colIndex]}
-                                readOnly={
-                                  !(
-                                    editingCell?.[0] === rowIndex &&
-                                    editingCell?.[1] === colIndex
-                                  )
-                                }
-                                onChange={(e) => {
-                                  handleCellChange(
-                                    rowIndex,
-                                    colIndex,
-                                    e.target.value
-                                  );
-                                  autoResizeTextarea(e.target);
-                                }}
-                                onDoubleClick={() => {
-                                  setEditingCell([rowIndex, colIndex]);
-                                }}
-                                onBlur={() => {
-                                  setEditingCell(null);
-                                }}
-                                onPaste={(e) => {
-                                  handlePaste(e, rowIndex, colIndex);
-                                  setTimeout(
-                                    () =>
-                                      autoResizeTextarea(
-                                        e.target as HTMLTextAreaElement
-                                      ),
-                                    0
-                                  );
-                                }}
-                                onMouseDown={() => {
-                                  setSelectionAnchor([rowIndex, colIndex]);
-                                  setSelectedCell([rowIndex, colIndex]);
-                                  setSelectedRange({
-                                    start: [rowIndex, colIndex],
-                                    end: [rowIndex, colIndex],
-                                  });
-                                  setIsDragging(true);
-                                }}
-                                onMouseEnter={() => {
-                                  if (isDragging && selectionAnchor) {
-                                    setSelectedCell([rowIndex, colIndex]);
-                                    setSelectedRange({
-                                      start: selectionAnchor,
-                                      end: [rowIndex, colIndex],
-                                    });
-                                  }
-                                }}
-                                onInput={(e) =>
-                                  autoResizeTextarea(
-                                    e.target as HTMLTextAreaElement
-                                  )
-                                }
-                                // onClick={(e) => e.stopPropagation()}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedCell([rowIndex, colIndex]);
-                                  setSelectionAnchor(null);
-                                }}
-                                onKeyDown={(e) => {
-                                  if (
-                                    editingCell?.[0] === rowIndex &&
-                                    editingCell?.[1] === colIndex
-                                  ) {
-                                    if (e.key === "Escape") {
-                                      e.preventDefault();
-                                      setEditingCell(null);
-                                      return;
-                                    }
-                                    if (e.key === "Enter" && !e.shiftKey) {
-                                      e.preventDefault();
-                                      setEditingCell(null);
-                                      return;
-                                    }
-                                  }
-                                  if (!selectedCell) return;
-                                  const [row, col] = selectedCell;
-                                  let newRow = row;
-                                  let newCol = col;
-                                  if (e.key === "ArrowUp")
-                                    newRow = Math.max(0, row - 1);
-                                  else if (e.key === "ArrowDown")
-                                    newRow = Math.min(
-                                      tableData.length - 1,
-                                      row + 1
-                                    );
-                                  else if (e.key === "ArrowLeft")
-                                    newCol = Math.max(0, col - 1);
-                                  else if (e.key === "ArrowRight")
-                                    newCol = Math.min(
-                                      tableData[0].length - 1,
-                                      col + 1
-                                    );
-                                  else return;
-                                  e.preventDefault();
-                                  if (e.shiftKey) {
-                                    const anchor =
-                                      selectionAnchor || selectedCell;
-                                    setSelectedRange({
-                                      start: anchor,
-                                      end: [newRow, newCol],
-                                    });
-                                    setSelectedCell([newRow, newCol]);
-                                    if (!selectionAnchor)
-                                      setSelectionAnchor(selectedCell);
-                                  } else {
-                                    setEditingCell([newRow, newCol]);
-
-                                    setSelectedCell([newRow, newCol]);
-                                    setSelectedRange(null);
-                                    setSelectionAnchor(null);
-                                  }
-                                }}
-                                className={`${
-                                  rowIndex === 0
-                                    ? "uppercase text-black p-3! text-[15px]!"
-                                    : "p-3!"
-                                } w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words`}
-                                rows={1}
-                              />
-                            </td>
-                           ):(
-                             <td
+                            <td
                               style={{
                                 width: colWidths[colIndex],
                                 minWidth: 50,
@@ -1455,8 +1424,7 @@ export default function Table({ tablename, col, row, imagecol ,columnheaders}: a
                                 rows={1}
                               />
                             </td>
-                           )
-                          )
+                          );
                         })}
                       </tr>
                     ))}

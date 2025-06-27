@@ -49,7 +49,7 @@ export default function TechSpecSheet() {
         {/* Page Content */}
         <Table
           col={16}
-          row={10}
+          row={20}
           tablename="Tech Specs"
           imagecol={6}
           columnheaders={[

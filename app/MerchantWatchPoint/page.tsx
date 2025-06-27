@@ -5,10 +5,6 @@ import InputForm from "@/components/core/InputForm";
 import SheetTitle from "@/components/core/SheetTitle";
 
 const page = () => {
-  const [sampleName, setSampleName] = useState("");
-  const [quantity, setQuantity] = useState("");
-
-
   return (
       <div className=" flex-1 flex flex-col p-6">
         {/* Form inputs */}

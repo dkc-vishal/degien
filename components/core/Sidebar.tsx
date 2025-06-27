@@ -19,8 +19,9 @@ export default function Sidebar({ side }: any) {
     { icon: <FaTools />, label: "Inspections", path: "/mid-final" },
     { icon: <FaTools />, label: "QA-Initial", path: "/qa-initial-report" },
     { icon: <FaTools />, label: "Sampling Watch Point", path: "/SamplingWatchPoint" },
-    { icon: <FaTools />, label: "Feeding Sampling", path: "/FeedingSampling" },
+    { icon: <FaTools />, label: "Master 110", path: "/form-110" },
     { icon: <FaTools />, label: "Merchant Watch Point", path: "/MerchantWatchPoint" },
+    { icon: <FaTools />, label: "Fit/PP/TOP/WEB", path: "/Fit-top-pp" },
     { icon: <FaWrench />, label: "Settings", path: "/settings" },
   ];
 
