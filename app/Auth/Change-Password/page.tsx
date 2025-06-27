@@ -163,7 +163,7 @@ const ChangePasswordPage: React.FC = () => {
         {/* Submit */}
         <button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded-md transition duration-200"
+          className="w-full bg-blue-400 hover:bg-blue-500 text-white cursor-pointer text-sm font-medium py-2 rounded-md transition duration-200"
         >
           Change Password
         </button>

@@ -26,3 +26,16 @@ Production:
 Style -> Master -> Order -> Create New order / 110 -> each order will then have all the folders. 
 
 - Pending of ()
+
+- sidebar (sampling styles, production styles, user management, dashboard, shipped styles) 
+
+- dashboard (no of running orders -> card: number ; no of running styles ; pendings -> according to shipment x-date; shipped style )
+
+- text wrapping in style name 
+- order qty large 
+- 5 layout cards 
+- order qty in tabular structure 
+- information easy to view - large 
+
+- vendors (master - production_watchpoints, tech_specs -> file), quantity 
+- qa audit analysis (initial-2, mid-8) 

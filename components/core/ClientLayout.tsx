@@ -10,7 +10,7 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isAuthRoute = pathname.startsWith("/Auth"); // lowercase!
+  const isAuthRoute = pathname === "/" || pathname.startsWith("/Auth"); // lowercase!
 
   return isAuthRoute ? (
     <div className="min-h-screen bg-gray-100">{children}</div>
