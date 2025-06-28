@@ -41,6 +41,8 @@ export default function Table({
   const [history, setHistory] = useState<string[][][]>([]);
   const [redoStack, setRedoStack] = useState<string[][][]>([]);
   type TableRow = (string | string[])[];
+  const [cellShapes, setCellShapes] = useState<Record<string, string>>({});
+
   const [draggedRowIndex, setDraggedRowIndex] = useState<number | null>(null);
   const [draggedColIndex, setDraggedColIndex] = useState<number | null>(null);
   const draggedImageSource = useRef<string | null>(null);
@@ -55,6 +57,7 @@ export default function Table({
     colnumber: 0,
     imgindex: 0,
   });
+
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollDirectionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -282,6 +285,9 @@ export default function Table({
     }
     // el.style.height = "auto"; // Reset height
   };
+  const [cellColors, setCellColors] = useState<string[][]>(() =>
+    tableData.map((row) => row.map(() => ""))
+  );
 
   useEffect(() => {
     const handleMouseUp = () => {
@@ -434,13 +440,12 @@ export default function Table({
   const insertCol = (index: number) => {
     // update columnHeaders
     const newHeaders = [...columnHeaders];
-    newHeaders.splice(index, 0, "vishal");
+    newHeaders.splice(index, 0, "");
     setColumnHeaders(newHeaders);
 
-    // update tableData — ⚠️ THIS is likely missing or incorrect!
     const newData = tableData.map((row) => {
       const newRow = [...row];
-      newRow.splice(index, 0, "vishal"); // <-- this part is crucial
+      newRow.splice(index, 0, "");
       return newRow;
     });
     setTableData(newData);
@@ -524,53 +529,63 @@ export default function Table({
     }
   };
 
-const handleMouseMoveForScroll = (e: { clientX: number; clientY: number }) => {
-  if (!isDragging || !scrollContainerRef.current) return;
+  const handleMouseMoveForScroll = (e: {
+    clientX: number;
+    clientY: number;
+  }) => {
+    if (!isDragging || !scrollContainerRef.current) return;
 
-  const container = scrollContainerRef.current;
-  const rect = container.getBoundingClientRect();
-  const margin = 40;
-  const speed = 15;
+    const container = scrollContainerRef.current;
+    const rect = container.getBoundingClientRect();
+    const margin = 40;
+    const speed = 15;
 
-  const direction = { x: 0, y: 0 };
+    const direction = { x: 0, y: 0 };
 
-  if (e.clientY < rect.top + margin) direction.y = -speed;
-  else if (e.clientY > rect.bottom - margin) direction.y = speed;
+    if (e.clientY < rect.top + margin) direction.y = -speed;
+    else if (e.clientY > rect.bottom - margin) direction.y = speed;
 
-  if (e.clientX < rect.left + margin) direction.x = -speed;
-  else if (e.clientX > rect.right - margin) direction.x = speed;
+    if (e.clientX < rect.left + margin) direction.x = -speed;
+    else if (e.clientX > rect.right - margin) direction.x = speed;
 
-  scrollDirectionRef.current = direction;
+    scrollDirectionRef.current = direction;
 
-  if (direction.x !== 0 || direction.y !== 0) {
-    startAutoScroll();
-  } else {
-    stopAutoScroll();
-  }
-};
-
-useEffect(() => {
-  if (!isDragging) return;
-
-  const handleMove = (e: MouseEvent) => {
-    // Convert MouseEvent to React.MouseEvent-like object
-    handleMouseMoveForScroll({
-      clientX: e.clientX,
-      clientY: e.clientY,
-      // @ts-ignore
-      preventDefault: () => {},
-    });
+    if (direction.x !== 0 || direction.y !== 0) {
+      startAutoScroll();
+    } else {
+      stopAutoScroll();
+    }
   };
+  useEffect(() => {
+    setCellColors((prevColors) =>
+      tableData.map((row, rowIndex) =>
+        row.map((_, colIndex) => prevColors[rowIndex]?.[colIndex] || "")
+      )
+    );
+  }, [tableData]);
 
-  window.addEventListener("mousemove", handleMove);
-  window.addEventListener("mouseup", stopAutoScroll);
+  useEffect(() => {
+    if (!isDragging) return;
 
-  return () => {
-    window.removeEventListener("mousemove", handleMove);
-    window.removeEventListener("mouseup", stopAutoScroll);
-    stopAutoScroll();
-  };
-}, [isDragging]);
+    const handleMove = (e: MouseEvent) => {
+      // Convert MouseEvent to React.MouseEvent-like object
+      handleMouseMoveForScroll({
+        clientX: e.clientX,
+        clientY: e.clientY,
+        // @ts-ignore
+        preventDefault: () => {},
+      });
+    };
+
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", stopAutoScroll);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", stopAutoScroll);
+      stopAutoScroll();
+    };
+  }, [isDragging]);
   function getColumnLetter(index: number): string {
     let result = "";
     while (index >= 0) {
@@ -590,6 +605,44 @@ useEffect(() => {
       setColWidths(JSON.parse(savedWidths));
     }
   }, []);
+  //   const handleFillColor = (color: string) => {
+  //   setCellColors((prev) => {
+  //     const newColors = [...prev.map((r) => [...r])];
+
+  //     if (selectedRange) {
+  //       const startRow = Math.min(selectedRange.start[0], selectedRange.end[0]);
+  //       const endRow = Math.max(selectedRange.start[0], selectedRange.end[0]);
+  //       const startCol = Math.min(selectedRange.start[1], selectedRange.end[1]);
+  //       const endCol = Math.max(selectedRange.start[1], selectedRange.end[1]);
+
+  //       for (let row = startRow; row <= endRow; row++) {
+  //         for (let col = startCol; col <= endCol; col++) {
+  //           newColors[row][col] = color;
+  //         }
+  //       }
+  //     } else if (selectedCell) {
+  //       const [row, col] = selectedCell;
+  //       newColors[row][col] = color;
+  //     }
+
+  //     return newColors;
+  //   });
+  // };
+  const highlightRow = (rowIndex: number, color = "#fff3cd") => {
+    setCellColors((prev) => {
+      const updated = [...prev];
+      updated[rowIndex] = updated[rowIndex].map(() => color);
+      return updated;
+    });
+  };
+  const unhighlightRow = (rowIndex: number) => {
+    setCellColors((prev) => {
+      const updated = [...prev];
+      updated[rowIndex] = updated[rowIndex].map(() => "");
+      return updated;
+    });
+  };
+
   return (
     <>
       {contextMenu1?.visible && (
@@ -665,7 +718,49 @@ useEffect(() => {
             >
               Insert Column Right
             </li>
-
+            <li
+              onClick={() => {
+                highlightRow(contextMenu.row);
+                setContextMenu(null);
+              }}
+              className="hover:bg-gray-100 px-4 py-2 cursor-pointer text-yellow-600"
+            >
+              Highlight Row
+            </li>
+            <li
+              onClick={() => {
+                unhighlightRow(contextMenu.row);
+                setContextMenu(null);
+              }}
+              className="hover:bg-gray-100 px-4 py-2 cursor-pointer text-gray-600"
+            >
+              Unhighlight Row
+            </li>
+            <li
+              onClick={() => {
+                const key = `${contextMenu.row}-${contextMenu.col}`;
+                setCellShapes((prev) => ({ ...prev, [key]: "star" }));
+                setContextMenu(null);
+              }}
+              className="hover:bg-gray-100 px-4 py-2 cursor-pointer"
+            >
+              Add Star
+            </li>
+            {contextMenu &&
+              cellShapes[`${contextMenu.row}-${contextMenu.col}`] && (
+                <li
+                  onClick={() => {
+                    const key = `${contextMenu.row}-${contextMenu.col}`;
+                    const updated = { ...cellShapes };
+                    delete updated[key];
+                    setCellShapes(updated);
+                    setContextMenu(null);
+                  }}
+                  className="hover:bg-gray-100 px-4 py-2 cursor-pointer"
+                >
+                  Remove Star
+                </li>
+              )}
             <li
               onClick={() => {
                 deleteRow(contextMenu.row);
@@ -692,6 +787,7 @@ useEffect(() => {
       <main className="mt-4">
         <div className=" rounded-xl shadow" ref={tableRef}>
           {/* Table */}
+
           <div
             ref={scrollContainerRef}
             style={{ width: "100%" }}
@@ -770,7 +866,9 @@ useEffect(() => {
                             i !== 1
                               ? "hidden"
                               : ""
-                          }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${i === 0 ? "no-print" : ""}`}
+                          }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${
+                            i === 0 ? "no-print" : ""
+                          }`}
                         >
                           {getColumnLetter(i)}
 
@@ -871,7 +969,9 @@ useEffect(() => {
                             i !== 1
                               ? "hidden"
                               : ""
-                          }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${i === 0 ? "no-print" : ""}`}
+                          }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${
+                            i === 0 ? "no-print" : ""
+                          }`}
                         >
                           {columnHeaders[i]}
 
@@ -919,7 +1019,6 @@ useEffect(() => {
                     .map((row, rowIndex) => (
                       <tr
                         key={rowIndex}
-                        
                         className={`bg-white even:bg-gray-50 `}
                       >
                         {row.map((cell, colIndex) => {
@@ -934,6 +1033,8 @@ useEffect(() => {
                           return colIndex === 0 ? (
                             <td
                               style={{
+                                backgroundColor:
+                                  cellColors?.[rowIndex]?.[colIndex] || "",
                                 width: colWidths[colIndex],
                                 minWidth: 50,
                               }}
@@ -1106,6 +1207,8 @@ useEffect(() => {
                             ) : (
                               <td
                                 style={{
+                                  backgroundColor:
+                                    cellColors?.[rowIndex]?.[colIndex] || "",
                                   width: colWidths[colIndex],
                                   minWidth: 50,
                                 }}
@@ -1284,6 +1387,8 @@ useEffect(() => {
                           ) : (
                             <td
                               style={{
+                                backgroundColor:
+                                  cellColors?.[rowIndex]?.[colIndex] || "",
                                 width: colWidths[colIndex],
                                 minWidth: 50,
                               }}
@@ -1314,6 +1419,15 @@ useEffect(() => {
                                       : ""
                                   }`}
                             >
+                              {cellShapes[`${rowIndex}-${colIndex}`] ===
+                                "star" && (
+                                <div
+                                  className="absolute top-1 right-1 text-yellow-500 text-xl pointer-events-none"
+                                  title="Star"
+                                >
+                                  ★
+                                </div>
+                              )}
                               <textarea
                                 value={cell}
                                 readOnly={
@@ -1436,6 +1550,111 @@ useEffect(() => {
                                 } w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words`}
                                 rows={1}
                               />
+                              {/* <div
+                                contentEditable={
+                                  editingCell?.[0] === rowIndex &&
+                                  editingCell?.[1] === colIndex
+                                }
+                                suppressContentEditableWarning={true}
+                                onInput={(e) => {
+                                  const value = (e.target as HTMLDivElement)
+                                    .innerText;
+                                  handleCellChange(rowIndex, colIndex, value);
+                                }}
+                                onDoubleClick={() =>
+                                  setEditingCell([rowIndex, colIndex])
+                                }
+                                onBlur={() => setEditingCell(null)}
+                                onPaste={(e) => {
+                                  handlePaste(e, rowIndex, colIndex);
+                                  setTimeout(() => {
+                                    // Optional: Add height auto-resize logic if needed
+                                  }, 0);
+                                }}
+                                onMouseDown={() => {
+                                  setSelectionAnchor([rowIndex, colIndex]);
+                                  setSelectedCell([rowIndex, colIndex]);
+                                  setSelectedRange({
+                                    start: [rowIndex, colIndex],
+                                    end: [rowIndex, colIndex],
+                                  });
+                                  setIsDragging(true);
+                                }}
+                                onMouseEnter={() => {
+                                  if (isDragging && selectionAnchor) {
+                                    setSelectedCell([rowIndex, colIndex]);
+                                    setSelectedRange({
+                                      start: selectionAnchor,
+                                      end: [rowIndex, colIndex],
+                                    });
+                                  }
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedCell([rowIndex, colIndex]);
+                                  setSelectionAnchor(null);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (
+                                    editingCell?.[0] === rowIndex &&
+                                    editingCell?.[1] === colIndex
+                                  ) {
+                                    if (e.key === "Escape") {
+                                      e.preventDefault();
+                                      setEditingCell(null);
+                                      return;
+                                    }
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                      e.preventDefault();
+                                      setEditingCell(null);
+                                      return;
+                                    }
+                                  }
+                                  if (!selectedCell) return;
+                                  const [row, col] = selectedCell;
+                                  let newRow = row;
+                                  let newCol = col;
+                                  if (e.key === "ArrowUp")
+                                    newRow = Math.max(0, row - 1);
+                                  else if (e.key === "ArrowDown")
+                                    newRow = Math.min(
+                                      tableData.length - 1,
+                                      row + 1
+                                    );
+                                  else if (e.key === "ArrowLeft")
+                                    newCol = Math.max(0, col - 1);
+                                  else if (e.key === "ArrowRight")
+                                    newCol = Math.min(
+                                      tableData[0].length - 1,
+                                      col + 1
+                                    );
+                                  else return;
+                                  e.preventDefault();
+                                  if (e.shiftKey) {
+                                    const anchor =
+                                      selectionAnchor || selectedCell;
+                                    setSelectedRange({
+                                      start: anchor,
+                                      end: [newRow, newCol],
+                                    });
+                                    setSelectedCell([newRow, newCol]);
+                                    if (!selectionAnchor)
+                                      setSelectionAnchor(selectedCell);
+                                  } else {
+                                    setEditingCell([newRow, newCol]);
+                                    setSelectedCell([newRow, newCol]);
+                                    setSelectedRange(null);
+                                    setSelectionAnchor(null);
+                                  }
+                                }}
+                                className={`${
+                                  rowIndex === 0
+                                    ? "uppercase text-black text-[15px]"
+                                    : ""
+                                } w-full h-full m-0 border outline-none whitespace-pre-wrap break-words px-3 py-2 resize-none flex items-center `}
+                              >
+                                {cell}
+                              </div> */}
                             </td>
                           );
                         })}
