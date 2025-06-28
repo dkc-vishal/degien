@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import Table from "@/components/core/Table";
+import Table from "@/components/core/Table copy";
 import Link from "next/link";
 
 import {
@@ -8,7 +8,7 @@ import {
   FaClipboardList,
   FaWrench,
   FaTools,
-  FaPrint
+  FaPrint,
 } from "react-icons/fa";
 import SheetTitle from "@/components/core/SheetTitle";
 import InputForm from "@/components/core/InputForm";
@@ -31,10 +31,9 @@ export default function TechSpecSheet() {
           />
           <Link
             href="/printpage"
-            className="flex items-center gap-1  font-medium px-4 py-1 rounded-xl shadow-md transition duration-200"
+            className="py-1 rounded-xl shadow-md transition duration-200"
           >
             <FaPrint />
-            
           </Link>
 
           <InputForm
@@ -48,13 +47,13 @@ export default function TechSpecSheet() {
 
         {/* Page Content */}
         <Table
-          col={16}
+          col={23}
           row={20}
           tablename="Tech Specs"
           imagecol={6}
           columnheaders={[
-            "Move",
-            "Sno",
+            "",
+            "",
             "SHOULD GO TO QA INSPECTION ?",
             "HEADER",
             "MEASUREMENT TYPE",
@@ -62,7 +61,14 @@ export default function TechSpecSheet() {
             "MEASUREMENT PICTURE URL",
             "MSR MEASUREMENT",
             "MSR GRADING RULE",
+            "FIT CHANGED MEASUREMENT",
+            "FIT GRADING RULE",
+            "PP CHANGED MEASUREMENT",
+            "PP CHANGED GRADING RULE",
+            "TOP CHANGED MEASUREMENT",
+            "TOP CHANGED GRADING RULE",
             "REAL TIME GRADING RULE",
+            "REAL TIME MEASUREMENT",
             "XS",
             "S",
             "M",

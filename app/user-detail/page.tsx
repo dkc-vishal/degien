@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { Pencil, Trash2, UserPlus } from "lucide-react";
-import AddUserForm from "./AddUserForm";
+import AddUserForm from "../../components/core/AddUserForm";
 import { RxCross2 } from "react-icons/rx";
 
 interface User {

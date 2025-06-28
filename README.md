@@ -49,3 +49,21 @@ add qa in input
 110 -> as it is here -> original extract using filter -> create sheet mid1 -> filtered for mid 1 only -> format copied mid 1
 
 add border in 110 feeding window
+
+
+add the funcnality to fogzee mutiple column
+
+
+
+ action
+
+every one can upload image 
+tech spec must be filled by the tech team
+watch must be added by the merchant
+fit pp top web report must be added by the tech team
+intial file data red data must be cumpolsy to add
+merchant can only create order
+shipment complted will done by tech team
+vendor can only view the spec and alll sheet
+tech graded must be added by tech team
+no one can edit the view file

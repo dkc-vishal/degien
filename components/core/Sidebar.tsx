@@ -20,25 +20,8 @@ export default function Sidebar({ side }: any) {
   const pathname = usePathname(); // 👈 get current route
 
   const menuItems = [
-    { icon: <FaTachometerAlt />, label: "Dashboard", path: "/dashboard" },
-    { icon: <FaClipboardList />, label: "Tech Specs", path: "/tech-spec" },
-    { icon: <FaTools />, label: "Inspections", path: "/mid-final" },
-    { icon: <FaTools />, label: "QA-Initial", path: "/qa-initial-report" },
-    {
-      icon: <FaTools />,
-      label: "Sampling Watch Point",
-      path: "/SamplingWatchPoint",
-    },
-    { icon: <FaTools />, label: "Master 110", path: "/form-110" },
-    {
-      icon: <FaTools />,
-      label: "Merchant Watch Point",
-      path: "/MerchantWatchPoint",
-    },
-    { icon: <FaTools />, label: "Fit/PP/TOP/WEB", path: "/Fit-top-pp" },
-    { icon: <FaWrench />, label: "Settings", path: "/settings" },
-    { icon: <MdDashboard />, label: "Dashboard", path: "/dashboard" },
-    { icon: <FaUserFriends />, label: "User Management", path: "/user-detail" },
+    { icon: <MdDashboard />, label: "Dashboard", path: "/Dashboard" },
+    
     {
       icon: <GiSewingMachine />,
       label: "Sampling Styles",
@@ -54,6 +37,8 @@ export default function Sidebar({ side }: any) {
       label: "Shipped Styles",
       path: "/shipped-styles",
     },
+    { icon: <FaUserFriends />, label: "User Management", path: "/user-detail" },
+
   ];
 
   return (

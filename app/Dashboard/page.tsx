@@ -12,7 +12,7 @@ interface FolderCard {
 const Dashboard: React.FC = ({styleName} : {styleName?: string}) => {
 
   return (
-    <div className="min-h-screen min-w-full flex bg-gray-100 flex-col ml-10 mt-10 gap-10">
+    <div className="flex bg-gray-100 flex-col ml-10 mt-10 gap-10">
       <p>No of Running Orders -> card: number</p>
       <p>No of Running Styles</p>
       <p>Pendings: according to shipment x-date</p>

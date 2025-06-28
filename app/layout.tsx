@@ -29,7 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="flex h-screen font-sans bg-gray-100">
+        {/* <div className="flex h-screen font-sans bg-gray-100">
           <div className="no-print">
             <Sidebar />
           </div>
@@ -43,7 +43,8 @@ export default function RootLayout({
 
             {children}
           </div>
-        </div>
+        </div> */}
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );

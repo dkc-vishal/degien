@@ -61,7 +61,7 @@ const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose }) => {
       setSuccess("");
       return;
     }
-
+    onClose()
     setSuccess("Style added successfully!");
     setError("");
   };
@@ -69,7 +69,7 @@ const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose }) => {
   const renderField = (label: string, name: keyof typeof form, type: string = "text") => (
     <div className="flex flex-col">
       <label className="text-sm font-medium text-gray-700 mb-1" htmlFor={name}>
-        {label} <span className="text-red-500">{fieldErrors[name] && "*"}</span>
+        {label} <span className="text-red-500">{fieldErrors.styleName && "*"}</span>
       </label>
       <input
         type={type}
@@ -78,12 +78,12 @@ const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose }) => {
         value={form[name]}
         onChange={handleChange}
         className={`w-full px-4 py-2 border rounded-md text-sm shadow-sm focus:outline-none focus:ring-2 ${
-          fieldErrors[name]
+          fieldErrors.styleName
             ? "border-red-500 focus:ring-red-300"
             : "border-gray-300 focus:ring-blue-400"
         }`}
       />
-      {fieldErrors[name] && <span className="text-xs text-red-500 mt-1">{fieldErrors[name]}</span>}
+      {fieldErrors.styleName && <span className="text-xs text-red-500 mt-1">{fieldErrors.styleName}</span>}
     </div>
   );
 

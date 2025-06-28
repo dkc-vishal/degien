@@ -49,6 +49,7 @@ const AddUserForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
             setSuccess("");
             return;
         }
+        onClose()
         setSuccess("User added successfully!");
         setError("");
     };

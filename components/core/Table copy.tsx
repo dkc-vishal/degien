@@ -3,12 +3,6 @@ import ImageEditorModal from "@/components/image-editor/ImageEditorModal";
 import { toast } from "@/hooks/use-toast";
 import { useEffect, useRef } from "react"; // Make sure useRef is imported
 import React, { useState } from "react";
-// export interface IssueImage {
-//   id: string;
-//   url: string;
-//   file: File;
-//   name: string;
-// }
 
 export interface Issue {
   id: string;
@@ -26,6 +20,57 @@ import {
   FaTools,
 } from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
+function parseFraction(input: string): number {
+  input = input.trim();
+  if (!input) return 0;
+  // Mixed fraction (e.g., "1 1/4")
+  if (input.includes(" ")) {
+    const [whole, frac] = input.split(" ");
+    const [num, den] = frac.split("/");
+    return parseInt(whole) + parseInt(num) / parseInt(den);
+  }
+  // Simple fraction (e.g., "3/8")
+  if (input.includes("/")) {
+    const [num, den] = input.split("/");
+    return parseInt(num) / parseInt(den);
+  }
+  // Whole number
+  return parseFloat(input);
+}
+
+// Helper to convert decimal to fraction string (up to 1/16 precision)
+function toFractionString(value: number): string {
+  if (isNaN(value)) return "";
+  const whole = Math.floor(value);
+  let frac = value - whole;
+  let closest = "";
+  let minDiff = 1;
+  for (let d = 2; d <= 16; d++) {
+    const n = Math.round(frac * d);
+    const diff = Math.abs(frac - n / d);
+    if (n > 0 && diff < minDiff) {
+      closest = `${n}/${d}`;
+      minDiff = diff;
+    }
+  }
+  if (closest && whole > 0) return `${whole} ${closest}`;
+  if (closest) return closest;
+  return `${whole}`;
+}
+
+type Row = {
+  gradingInput: string;
+  baseSizeInput: string;
+  baseSizeType: "XS" | "S" | "M" | "L" | "XL";
+};
+
+function parseGradingArray(input: string): number[] {
+  // Accepts comma-separated grading values, e.g. "0,0,1,0"
+  return input
+    .split(",")
+    .map((v) => parseFraction(v))
+    .slice(0, 4); // Only take up to 4 values
+}
 
 export default function Table({
   tablename,
@@ -269,12 +314,159 @@ export default function Table({
     setRedoStack([]); // clear redo stack on new action
   };
 
+  // const handleCellChange = (rowIdx: number, colIdx: number, value: string) => {
+  //   const updated = [...tableData];
+  //   updated[rowIdx][colIdx] = value;
+  //   const topIdx = columnHeaders.indexOf("TOP CHANGED GRADING RULE");
+  //   const ppIdx = columnHeaders.indexOf("PP CHANGED GRADING RULE");
+  //   const fitIdx = columnHeaders.indexOf("FIT GRADING RULE");
+  //   const msrIdx = columnHeaders.indexOf("MSR GRADING RULE");
+  //   const realTimeIdx = columnHeaders.indexOf("REAL TIME GRADING RULE");
+
+  //   function updateRealTimeGradingRule(row: any) {
+  //     row[realTimeIdx] =
+  //       row[topIdx] || row[ppIdx] || row[fitIdx] || row[msrIdx] || "";
+  //   }
+  //     if (
+  //   [topIdx, ppIdx, fitIdx, msrIdx].includes(colIdx)
+  // ) {
+  //   updateRealTimeGradingRule(tableData[rowIdx]);
+  // }
+  //   setTableData(updated);
+  //   const msrMeasurementCol = columnHeaders.findIndex((header) =>
+  //     header.includes("MSR MEASUREMENT")
+  //   );
+  //   const msrGradingRuleCol = columnHeaders.findIndex((header) =>
+  //     header.includes("REAL TIME GRADING RULE")
+  //   );
+  //   const msrBaseSizeTypeCol = columnHeaders.findIndex((header) =>
+  //     header.includes("base size type")
+  //   );
+
+  //   if (colIdx === msrMeasurementCol || colIdx === msrGradingRuleCol) {
+  //     const baseSizeInput = updated[rowIdx][msrMeasurementCol] as string;
+  //     const gradingInput = updated[rowIdx][msrGradingRuleCol] as string;
+  //     const baseSizeType = "S";
+
+  //     const sizes = calculateSizes(baseSizeType, baseSizeInput, gradingInput);
+  //     console.log("Calculated sizes:", sizes);
+
+  //     // Optionally, update other columns in the row with the calculated sizes
+  //     // For example, if you have columns for XS, S, M, L, XL:
+  //     const xsCol = columnHeaders.findIndex((header) => header === "XS");
+  //     const sCol = columnHeaders.findIndex((header) => header === "S");
+  //     const mCol = columnHeaders.findIndex((header) => header === "M");
+  //     const lCol = columnHeaders.findIndex((header) => header === "L");
+  //     const xlCol = columnHeaders.findIndex((header) => header === "XL");
+
+  //     if (xsCol !== -1)
+  //       updated[rowIdx][xsCol] = toFractionString(sizes.xs).toString();
+  //     if (sCol !== -1)
+  //       updated[rowIdx][sCol] = toFractionString(sizes.s).toString();
+  //     if (mCol !== -1)
+  //       updated[rowIdx][mCol] = toFractionString(sizes.m).toString();
+  //     if (lCol !== -1)
+  //       updated[rowIdx][lCol] = toFractionString(sizes.l).toString();
+  //     if (xlCol !== -1)
+  //       updated[rowIdx][xlCol] = toFractionString(sizes.xl).toString();
+
+  //     setTableData(updated);
+  //   }
+  // };
+  const [RealTimeMeasurment, setRealTimemeasuremtn] = useState<string[]>([]);
+  const [RealTimeGradingRule, setRealTimeGradingRule] = useState<string[]>([]);
   const handleCellChange = (rowIdx: number, colIdx: number, value: string) => {
     const updated = [...tableData];
     updated[rowIdx][colIdx] = value;
+    setTableData(updated);
+
+    const topMeasIdx = columnHeaders.indexOf("TOP CHANGED MEASUREMENT");
+    const ppMeasIdx = columnHeaders.indexOf("PP CHANGED MEASUREMENT");
+    const fitMeasIdx = columnHeaders.indexOf("FIT CHANGED MEASUREMENT");
+    const msrMeasIdx = columnHeaders.indexOf("MSR MEASUREMENT");
+    const realTimeMeasIdx = columnHeaders.indexOf("REAL TIME MEASUREMENT");
+    function updateRealTimeMeasurement(row: any) {
+      row[realTimeMeasIdx] =
+        row[topMeasIdx] ||
+        row[ppMeasIdx] ||
+        row[fitMeasIdx] ||
+        row[msrMeasIdx] ||
+        "";
+    }
+    if ([topMeasIdx, ppMeasIdx, fitMeasIdx, msrMeasIdx].includes(colIdx)) {
+      updateRealTimeMeasurement(updated[rowIdx]);
+    }
+
+    // Inside handleCellChange, after updating the cell:
+    if ([topMeasIdx, ppMeasIdx, fitMeasIdx, msrMeasIdx].includes(colIdx)) {
+      updateRealTimeMeasurement(updated[rowIdx]);
+    }
+    // Grading rule logic
+    const topIdx = columnHeaders.indexOf("TOP CHANGED GRADING RULE");
+    const ppIdx = columnHeaders.indexOf("PP CHANGED GRADING RULE");
+    const fitIdx = columnHeaders.indexOf("FIT GRADING RULE");
+    const msrIdx = columnHeaders.indexOf("MSR GRADING RULE");
+    const realTimeIdx = columnHeaders.indexOf("REAL TIME GRADING RULE");
+
+    function updateRealTimeGradingRule(row: any) {
+      row[realTimeIdx] =
+        row[topIdx] || row[ppIdx] || row[fitIdx] || row[msrIdx] || "";
+    }
+    if ([topIdx, ppIdx, fitIdx, msrIdx].includes(colIdx)) {
+      updateRealTimeGradingRule(updated[rowIdx]);
+    }
+
+    // Always recalculate sizes on any cell change
+    const msrMeasurementCol = columnHeaders.findIndex((header) =>
+      header.includes("MSR MEASUREMENT")
+    );
+    const msrGradingRuleCol = columnHeaders.findIndex((header) =>
+      header.includes("REAL TIME GRADING RULE")
+    );
+
+    const msrBaseSizeTypeCol = columnHeaders.findIndex((header) =>
+      header.includes("base size type")
+    );
+
+   const baseSizeInput = updated[rowIdx][realTimeMeasIdx] as string;
+    const gradingInput = updated[rowIdx][msrGradingRuleCol] as string;
+    // You can use the value from the table if you want:
+    // const baseSizeType = updated[rowIdx][msrBaseSizeTypeCol] as Row["baseSizeType"] || "S";
+    const baseSizeType = "S";
+    console.log(
+      baseSizeType,
+      String(RealTimeMeasurment[realTimeIdx]),
+      gradingInput
+    );
+    const sizes = calculateSizes(baseSizeType, baseSizeInput, gradingInput);
+
+    const xsCol = columnHeaders.findIndex((header) => header === "XS");
+    const sCol = columnHeaders.findIndex((header) => header === "S");
+    const mCol = columnHeaders.findIndex((header) => header === "M");
+    const lCol = columnHeaders.findIndex((header) => header === "L");
+    const xlCol = columnHeaders.findIndex((header) => header === "XL");
+
+    if (xsCol !== -1)
+      updated[rowIdx][xsCol] = toFractionString(sizes.xs).toString();
+    if (sCol !== -1)
+      updated[rowIdx][sCol] = toFractionString(sizes.s).toString();
+    if (mCol !== -1)
+      updated[rowIdx][mCol] = toFractionString(sizes.m).toString();
+    if (lCol !== -1)
+      updated[rowIdx][lCol] = toFractionString(sizes.l).toString();
+    if (xlCol !== -1)
+      updated[rowIdx][xlCol] = toFractionString(sizes.xl).toString();
 
     setTableData(updated);
   };
+  function handlepastecellChange(colIndex: number) {
+    const column = tableData.map((row) => row[colIndex]);
+    for (let i = 0; i < column.length; i++) {
+      let noWhitespaceText = (column[i] as string).split(/\s+/).join(" ");
+      console.log(noWhitespaceText);
+      handleCellChange(i, colIndex, noWhitespaceText);
+    }
+  }
   const autoResizeTextarea = (el: HTMLTextAreaElement) => {
     if (el && el.parentElement) {
       el.parentElement.style.height = "auto"; // Reset height
@@ -524,53 +716,120 @@ export default function Table({
     }
   };
 
-const handleMouseMoveForScroll = (e: { clientX: number; clientY: number }) => {
-  if (!isDragging || !scrollContainerRef.current) return;
+  const handleMouseMoveForScroll = (e: {
+    clientX: number;
+    clientY: number;
+  }) => {
+    if (!isDragging || !scrollContainerRef.current) return;
 
-  const container = scrollContainerRef.current;
-  const rect = container.getBoundingClientRect();
-  const margin = 40;
-  const speed = 15;
+    const container = scrollContainerRef.current;
+    const rect = container.getBoundingClientRect();
+    const margin = 40;
+    const speed = 15;
 
-  const direction = { x: 0, y: 0 };
+    const direction = { x: 0, y: 0 };
 
-  if (e.clientY < rect.top + margin) direction.y = -speed;
-  else if (e.clientY > rect.bottom - margin) direction.y = speed;
+    if (e.clientY < rect.top + margin) direction.y = -speed;
+    else if (e.clientY > rect.bottom - margin) direction.y = speed;
 
-  if (e.clientX < rect.left + margin) direction.x = -speed;
-  else if (e.clientX > rect.right - margin) direction.x = speed;
+    if (e.clientX < rect.left + margin) direction.x = -speed;
+    else if (e.clientX > rect.right - margin) direction.x = speed;
 
-  scrollDirectionRef.current = direction;
+    scrollDirectionRef.current = direction;
 
-  if (direction.x !== 0 || direction.y !== 0) {
-    startAutoScroll();
-  } else {
-    stopAutoScroll();
+    if (direction.x !== 0 || direction.y !== 0) {
+      startAutoScroll();
+    } else {
+      stopAutoScroll();
+    }
+  };
+  function calculateSizes(
+    baseSizeType: Row["baseSizeType"],
+    baseSizeInput: string,
+    gradingInput: string
+  ) {
+    const gradingArr = parseGradingArray(gradingInput);
+    const isSpecial = gradingArr.length === 4;
+    const grading = isSpecial
+      ? gradingArr
+      : [
+          parseFraction(gradingInput),
+          parseFraction(gradingInput),
+          parseFraction(gradingInput),
+          parseFraction(gradingInput),
+        ];
+    let xs = NaN,
+      s = NaN,
+      m = NaN,
+      l = NaN,
+      xl = NaN;
+
+    // Base size value
+    let base = parseFraction(baseSizeInput);
+
+    // Logic: left of base size is -, right is +
+    switch (baseSizeType) {
+      case "XS":
+        xs = base;
+        s = xs + grading[0];
+        m = s + grading[1];
+        l = m + grading[2];
+        xl = l + grading[3];
+        break;
+      case "S":
+        s = base;
+        xs = s - grading[0];
+        m = s + grading[1];
+        l = m + grading[2];
+        xl = l + grading[3];
+        break;
+      case "M":
+        m = base;
+        s = m - grading[1];
+        xs = s - grading[0];
+        l = m + grading[2];
+        xl = l + grading[3];
+        break;
+      case "L":
+        l = base;
+        m = l - grading[2];
+        s = m - grading[1];
+        xs = s - grading[0];
+        xl = l + grading[3];
+        break;
+      case "XL":
+        xl = base;
+        l = xl - grading[3];
+        m = l - grading[2];
+        s = m - grading[1];
+        xs = s - grading[0];
+        break;
+    }
+    return { xs, s, m, l, xl };
   }
-};
 
-useEffect(() => {
-  if (!isDragging) return;
+  useEffect(() => {
+    if (!isDragging) return;
 
-  const handleMove = (e: MouseEvent) => {
-    // Convert MouseEvent to React.MouseEvent-like object
-    handleMouseMoveForScroll({
-      clientX: e.clientX,
-      clientY: e.clientY,
-      // @ts-ignore
-      preventDefault: () => {},
-    });
-  };
+    const handleMove = (e: MouseEvent) => {
+      // Convert MouseEvent to React.MouseEvent-like object
+      handleMouseMoveForScroll({
+        clientX: e.clientX,
+        clientY: e.clientY,
+        // @ts-ignore
+        preventDefault: () => {},
+      });
+    };
 
-  window.addEventListener("mousemove", handleMove);
-  window.addEventListener("mouseup", stopAutoScroll);
+    window.addEventListener("mousemove", handleMove);
+    window.addEventListener("mouseup", stopAutoScroll);
 
-  return () => {
-    window.removeEventListener("mousemove", handleMove);
-    window.removeEventListener("mouseup", stopAutoScroll);
-    stopAutoScroll();
-  };
-}, [isDragging]);
+    return () => {
+      window.removeEventListener("mousemove", handleMove);
+      window.removeEventListener("mouseup", stopAutoScroll);
+      stopAutoScroll();
+    };
+  }, [isDragging]);
   function getColumnLetter(index: number): string {
     let result = "";
     while (index >= 0) {
@@ -770,7 +1029,9 @@ useEffect(() => {
                             i !== 1
                               ? "hidden"
                               : ""
-                          }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${i === 0 ? "no-print" : ""}`}
+                          }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${
+                            i === 0 ? "no-print" : ""
+                          }`}
                         >
                           {getColumnLetter(i)}
 
@@ -871,7 +1132,9 @@ useEffect(() => {
                             i !== 1
                               ? "hidden"
                               : ""
-                          }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${i === 0 ? "no-print" : ""}`}
+                          }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${
+                            i === 0 ? "no-print" : ""
+                          }`}
                         >
                           {columnHeaders[i]}
 
@@ -919,7 +1182,6 @@ useEffect(() => {
                     .map((row, rowIndex) => (
                       <tr
                         key={rowIndex}
-                        
                         className={`bg-white even:bg-gray-50 `}
                       >
                         {row.map((cell, colIndex) => {
@@ -1338,6 +1600,7 @@ useEffect(() => {
                                 }}
                                 onPaste={(e) => {
                                   handlePaste(e, rowIndex, colIndex);
+                                  console.log(rowIndex, colIndex);
                                   setTimeout(
                                     () =>
                                       autoResizeTextarea(
@@ -1345,6 +1608,7 @@ useEffect(() => {
                                       ),
                                     0
                                   );
+                                  handlepastecellChange(colIndex);
                                 }}
                                 onMouseDown={() => {
                                   setSelectionAnchor([rowIndex, colIndex]);

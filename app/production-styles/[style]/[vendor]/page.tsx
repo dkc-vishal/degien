@@ -18,7 +18,7 @@ const StyleDashboardPage = ({
   const styleName = convertKebabToTitle(style);
   const vendorName = convertKebabToTitle(vendor);
 
-  return <Dashboard styleName={styleName} vendorName={vendorName} />;
+  return <Dashboard />;
 };
 
 export default StyleDashboardPage;

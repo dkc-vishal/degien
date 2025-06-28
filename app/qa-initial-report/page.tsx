@@ -269,7 +269,7 @@ export default function QaIntialReport() {
             tablename="initial-report"
             columnheaders={[
               "",
-              "Sno",
+              "",
               "ISSUE",
               "Issue Image",
               "FT", 
