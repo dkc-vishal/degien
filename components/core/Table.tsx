@@ -799,7 +799,7 @@ export default function Table({
             >
               <table className="table-fixed w-full text-sm border-content">
                 <thead>
-                  <tr className="sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
+                  <tr className="no-print sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
                     {tableData[0]?.map((_, i) => (
                       <>
                         <th
@@ -902,7 +902,7 @@ export default function Table({
                       </>
                     ))}
                   </tr>
-                  <tr>
+                  <tr className="sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
                     {columnHeaders?.map((_, i) => (
                       <>
                         <th
