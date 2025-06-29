@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 const convertKebabToTitle = (kebab: string) =>
   kebab.split("-").map((word) => word[0].toUpperCase() + word.slice(1)).join(" ");
 
-const StyleDashboardPage = ({
+const StyleDashboardPage = async ({
   params,
 }: {
   params: { style: string; vendor: string };

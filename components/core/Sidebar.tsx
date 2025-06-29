@@ -13,6 +13,7 @@ import {
 import { MdDashboard } from "react-icons/md";
 import { MdLocalShipping } from "react-icons/md";
 import { GiSewingMachine } from "react-icons/gi";
+import { CgProfile } from "react-icons/cg";
 
 export default function Sidebar({ side }: any) {
   const Sidebar: any = side;
@@ -38,7 +39,10 @@ export default function Sidebar({ side }: any) {
       path: "/shipped-styles",
     },
     { icon: <FaUserFriends />, label: "User Management", path: "/user-detail" },
-
+    { icon: <GiSewingMachine />, label: "Sampling Styles", path: "/sampling-styles" },
+    { icon: <FaTshirt />, label: "Production Styles", path: "/production-styles" },
+    { icon: <MdLocalShipping />, label: "Shipped Styles", path: "/shipped-styles" },
+    { icon: <CgProfile />, label: "My Profile", path: "/my-profile" },
   ];
 
   return (
@@ -52,7 +56,8 @@ export default function Sidebar({ side }: any) {
 
       <nav className="flex flex-col p-2 space-y-1">
         {menuItems.map((item, idx) => {
-          const isActive = pathname === item.path;
+
+          const isActive = pathname.startsWith(item.path);
 
           return (
             <button
