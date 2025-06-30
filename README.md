@@ -67,3 +67,58 @@ shipment complted will done by tech team
 vendor can only view the spec and alll sheet
 tech graded must be added by tech team
 no one can edit the view file
+
+
+
+ctrl b , ctrl i, ctrl u not working for formatting not needed
+
+even after dropping image, placeholder text showing 'drop or paste image' (needed this kind of feature, it's not bug it's feature)  
+
+resize row (good to have) 
+multiple line edit ( good to have)
+
+ctrl shift down arrow + ctrl d not working (good to have)  
+
+after dropping image, image not getting removed on backspace button click  (image delete feature, required) ( 45min) (done)
+
+
+auto fill not working (1 -> 1, 1, 1 || 1, 2 -> 3, 4, 5 || formula adjusting) (not needed) ( need merchant confirmation)  
+
+
+
+shift > button (right, bottom, top) to multi select horizontal cells  (same as line 78)  (1hr) (remove)
+
+ctrl z ctrl y not working  (2hr)
+
+
+
+insert row above, insert row below modal/pop-up/dialog not coming in any cell of measurement picture (30min) (done)
+
+insert row above dialog not disappearingn (bug, needs fix) (20min) (done)
+
+column is value is copy paste at the time of drag not working (84) 
+
+if freeze a column that other some column is hide  (1.5hr)
+
+
+*! HUGE ISSUE IN COPY PASTE, NOT SMOOTH*! very imp  (2hr) (done)
+
+scrolling feature is not run properly (good to have)  (45min) 
+
+column width is not in resize correct colimn j (good to have) (30min)   (done)
+
+
+first column may write karte time if  scroll hai that time text sahi dikhta hai  (crucial) (45min)
+
+drag and iscon is not write choice (99)
+
+reduce the image height of the column on image delete
+
+
+chat gpt
+
+https://chatgpt.com/share/68628966-8cb0-8011-8514-b70acdf8f0c1
+
+
+
+

@@ -131,20 +131,16 @@ export default function Table({
       updated[resizingColIndex.current] = newWidth;
       setColWidths(updated);
     }
-    localStorage.setItem(
-      `table_colWidths_${tablename}`,
-      JSON.stringify(updated)
-    );
   };
   const handleMouseUp = () => {
     isResizing.current = false;
     resizingColIndex.current = null;
-    // localStorage.setItem(
-    //   `table_colWidths_${tablename}`,
-    //   JSON.stringify(colWidths)
-    // );
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
+    localStorage.setItem(
+      `table_colWidths_${tablename}`,
+      JSON.stringify(colWidths)
+    );
   };
   const handleOpenImageEditor = (issueId: string, image: string) => {
     setEditingImageInfo({ issueId, image });
@@ -546,23 +542,17 @@ export default function Table({
   };
 
   const insertCol = (index: number) => {
-    // Update column headers
+    // update columnHeaders
     const newHeaders = [...columnHeaders];
     newHeaders.splice(index, 0, "");
     setColumnHeaders(newHeaders);
 
-    // Update table data
     const newData = tableData.map((row) => {
       const newRow = [...row];
       newRow.splice(index, 0, "");
       return newRow;
     });
     setTableData(newData);
-
-    // Update column widths
-    const newWidths = [...colWidths];
-    newWidths.splice(index, 0, 100); // 100 is default width; change as needed
-    setColWidths(newWidths);
   };
 
   const deleteRow = (index: number) => {

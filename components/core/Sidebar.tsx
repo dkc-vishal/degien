@@ -23,21 +23,21 @@ export default function Sidebar({ side }: any) {
   const menuItems = [
     { icon: <MdDashboard />, label: "Dashboard", path: "/Dashboard" },
     
-    {
-      icon: <GiSewingMachine />,
-      label: "Sampling Styles",
-      path: "/sampling-styles",
-    },
-    {
-      icon: <FaTshirt />,
-      label: "Production Styles",
-      path: "/production-styles",
-    },
-    {
-      icon: <MdLocalShipping />,
-      label: "Shipped Styles",
-      path: "/shipped-styles",
-    },
+    // {
+    //   icon: <GiSewingMachine />,
+    //   label: "Sampling Styles",
+    //   path: "/sampling-styles",
+    // },
+    // {
+    //   icon: <FaTshirt />,
+    //   label: "Production Styles",
+    //   path: "/production-styles",
+    // },
+    // {
+    //   icon: <MdLocalShipping />,
+    //   label: "Shipped Styles",
+    //   path: "/shipped-styles",
+    // },
     { icon: <FaUserFriends />, label: "User Management", path: "/user-detail" },
     { icon: <GiSewingMachine />, label: "Sampling Styles", path: "/sampling-styles" },
     { icon: <FaTshirt />, label: "Production Styles", path: "/production-styles" },

@@ -175,7 +175,9 @@ th .resize-handle {
   outline: none;
   width: 100%;
 }
-
+.no-select {
+  user-select: none;
+}
 .data > div {
   font-size: 14px;
   padding-top: 10px;

@@ -11,14 +11,14 @@ const StyleDashboardPage = async ({
 }: {
   params: { style: string; vendor: string };
 }) => {
-  const { style, vendor } = params;
+  const { style, vendor } = await params;
 
   if (!style || !vendor) return notFound();
 
   const styleName = convertKebabToTitle(style);
   const vendorName = convertKebabToTitle(vendor);
 
-  return <Dashboard />;
+  return <Dashboard styleName={styleName} vendorName={vendorName}/>;
 };
 
 export default StyleDashboardPage;

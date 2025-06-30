@@ -4,6 +4,7 @@ import { toast } from "@/hooks/use-toast";
 import { useEffect, useRef } from "react"; // Make sure useRef is imported
 import React, { useState } from "react";
 
+
 export interface Issue {
   id: string;
   // description: string;
@@ -80,12 +81,14 @@ export default function Table({
   imagecol2,
   columnheaders,
 }: any) {
-  const [frozenColIndex, setFrozenColIndex] = useState<number | null>(null);
+  const [frozenColIndices, setFrozenColIndices] = useState<number[]>([]);
 
   const [isDragging, setIsDragging] = useState(false);
   const [history, setHistory] = useState<string[][][]>([]);
   const [redoStack, setRedoStack] = useState<string[][][]>([]);
   type TableRow = (string | string[])[];
+  const [cellShapes, setCellShapes] = useState<Record<string, string>>({});
+
   const [draggedRowIndex, setDraggedRowIndex] = useState<number | null>(null);
   const [draggedColIndex, setDraggedColIndex] = useState<number | null>(null);
   const draggedImageSource = useRef<string | null>(null);
@@ -100,6 +103,7 @@ export default function Table({
     colnumber: 0,
     imgindex: 0,
   });
+
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollDirectionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -314,66 +318,8 @@ export default function Table({
     setRedoStack([]); // clear redo stack on new action
   };
 
-  // const handleCellChange = (rowIdx: number, colIdx: number, value: string) => {
-  //   const updated = [...tableData];
-  //   updated[rowIdx][colIdx] = value;
-  //   const topIdx = columnHeaders.indexOf("TOP CHANGED GRADING RULE");
-  //   const ppIdx = columnHeaders.indexOf("PP CHANGED GRADING RULE");
-  //   const fitIdx = columnHeaders.indexOf("FIT GRADING RULE");
-  //   const msrIdx = columnHeaders.indexOf("MSR GRADING RULE");
-  //   const realTimeIdx = columnHeaders.indexOf("REAL TIME GRADING RULE");
-
-  //   function updateRealTimeGradingRule(row: any) {
-  //     row[realTimeIdx] =
-  //       row[topIdx] || row[ppIdx] || row[fitIdx] || row[msrIdx] || "";
-  //   }
-  //     if (
-  //   [topIdx, ppIdx, fitIdx, msrIdx].includes(colIdx)
-  // ) {
-  //   updateRealTimeGradingRule(tableData[rowIdx]);
-  // }
-  //   setTableData(updated);
-  //   const msrMeasurementCol = columnHeaders.findIndex((header) =>
-  //     header.includes("MSR MEASUREMENT")
-  //   );
-  //   const msrGradingRuleCol = columnHeaders.findIndex((header) =>
-  //     header.includes("REAL TIME GRADING RULE")
-  //   );
-  //   const msrBaseSizeTypeCol = columnHeaders.findIndex((header) =>
-  //     header.includes("base size type")
-  //   );
-
-  //   if (colIdx === msrMeasurementCol || colIdx === msrGradingRuleCol) {
-  //     const baseSizeInput = updated[rowIdx][msrMeasurementCol] as string;
-  //     const gradingInput = updated[rowIdx][msrGradingRuleCol] as string;
-  //     const baseSizeType = "S";
-
-  //     const sizes = calculateSizes(baseSizeType, baseSizeInput, gradingInput);
-  //     console.log("Calculated sizes:", sizes);
-
-  //     // Optionally, update other columns in the row with the calculated sizes
-  //     // For example, if you have columns for XS, S, M, L, XL:
-  //     const xsCol = columnHeaders.findIndex((header) => header === "XS");
-  //     const sCol = columnHeaders.findIndex((header) => header === "S");
-  //     const mCol = columnHeaders.findIndex((header) => header === "M");
-  //     const lCol = columnHeaders.findIndex((header) => header === "L");
-  //     const xlCol = columnHeaders.findIndex((header) => header === "XL");
-
-  //     if (xsCol !== -1)
-  //       updated[rowIdx][xsCol] = toFractionString(sizes.xs).toString();
-  //     if (sCol !== -1)
-  //       updated[rowIdx][sCol] = toFractionString(sizes.s).toString();
-  //     if (mCol !== -1)
-  //       updated[rowIdx][mCol] = toFractionString(sizes.m).toString();
-  //     if (lCol !== -1)
-  //       updated[rowIdx][lCol] = toFractionString(sizes.l).toString();
-  //     if (xlCol !== -1)
-  //       updated[rowIdx][xlCol] = toFractionString(sizes.xl).toString();
-
-  //     setTableData(updated);
-  //   }
-  // };
   const [RealTimeMeasurment, setRealTimemeasuremtn] = useState<string[]>([]);
+
   const [RealTimeGradingRule, setRealTimeGradingRule] = useState<string[]>([]);
   const handleCellChange = (rowIdx: number, colIdx: number, value: string) => {
     const updated = [...tableData];
@@ -474,6 +420,9 @@ export default function Table({
     }
     // el.style.height = "auto"; // Reset height
   };
+  const [cellColors, setCellColors] = useState<string[][]>(() =>
+    tableData.map((row) => row.map(() => ""))
+  );
 
   useEffect(() => {
     const handleMouseUp = () => {
@@ -626,13 +575,12 @@ export default function Table({
   const insertCol = (index: number) => {
     // update columnHeaders
     const newHeaders = [...columnHeaders];
-    newHeaders.splice(index, 0, "vishal");
+    newHeaders.splice(index, 0, "");
     setColumnHeaders(newHeaders);
 
-    // update tableData — ⚠️ THIS is likely missing or incorrect!
     const newData = tableData.map((row) => {
       const newRow = [...row];
-      newRow.splice(index, 0, "vishal"); // <-- this part is crucial
+      newRow.splice(index, 0, "");
       return newRow;
     });
     setTableData(newData);
@@ -807,7 +755,6 @@ export default function Table({
     }
     return { xs, s, m, l, xl };
   }
-
   useEffect(() => {
     if (!isDragging) return;
 
@@ -849,6 +796,52 @@ export default function Table({
       setColWidths(JSON.parse(savedWidths));
     }
   }, []);
+  //   const handleFillColor = (color: string) => {
+  //   setCellColors((prev) => {
+  //     const newColors = [...prev.map((r) => [...r])];
+
+  //     if (selectedRange) {
+  //       const startRow = Math.min(selectedRange.start[0], selectedRange.end[0]);
+  //       const endRow = Math.max(selectedRange.start[0], selectedRange.end[0]);
+  //       const startCol = Math.min(selectedRange.start[1], selectedRange.end[1]);
+  //       const endCol = Math.max(selectedRange.start[1], selectedRange.end[1]);
+
+  //       for (let row = startRow; row <= endRow; row++) {
+  //         for (let col = startCol; col <= endCol; col++) {
+  //           newColors[row][col] = color;
+  //         }
+  //       }
+  //     } else if (selectedCell) {
+  //       const [row, col] = selectedCell;
+  //       newColors[row][col] = color;
+  //     }
+
+  //     return newColors;
+  //   });
+  // };
+  const highlightRow = (rowIndex: number, color = "#fff3cd") => {
+    setCellColors((prev) => {
+      const updated = [...prev];
+      updated[rowIndex] = updated[rowIndex].map(() => color);
+      return updated;
+    });
+  };
+  const unhighlightRow = (rowIndex: number) => {
+    setCellColors((prev) => {
+      const updated = [...prev];
+      updated[rowIndex] = updated[rowIndex].map(() => "");
+      return updated;
+    });
+  };
+  const getStickyLeftOffset = (colIndex: number): string | undefined => {
+    const frozen = [...frozenColIndices].sort((a, b) => a - b);
+    let left = 0;
+    for (const i of frozen) {
+      if (i === colIndex) return `${left}px`;
+      left += colWidths[i] || 100; // fallback to 100px
+    }
+    return undefined;
+  };
   return (
     <>
       {contextMenu1?.visible && (
@@ -857,25 +850,27 @@ export default function Table({
           style={{ top: contextMenu1.y, left: contextMenu1.x }}
           onClick={() => setContextMenu1(null)}
         >
-          {frozenColIndex === null || contextMenu1.col !== frozenColIndex ? (
+          {frozenColIndices.includes(contextMenu1.col) ? (
             <li
               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
               onClick={() => {
-                setFrozenColIndex(contextMenu1.col);
+                setFrozenColIndices((prev) =>
+                  prev.filter((i) => i !== contextMenu1.col)
+                );
                 setContextMenu1(null);
               }}
             >
-              Freeze column here
+              Unfreeze column
             </li>
           ) : (
             <li
               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
               onClick={() => {
-                setFrozenColIndex(null);
+                setFrozenColIndices((prev) => [...prev, contextMenu1.col]);
                 setContextMenu1(null);
               }}
             >
-              Unfreeze columns
+              Freeze column
             </li>
           )}
         </ul>
@@ -924,7 +919,49 @@ export default function Table({
             >
               Insert Column Right
             </li>
-
+            <li
+              onClick={() => {
+                highlightRow(contextMenu.row);
+                setContextMenu(null);
+              }}
+              className="hover:bg-gray-100 px-4 py-2 cursor-pointer text-yellow-600"
+            >
+              Highlight Row
+            </li>
+            <li
+              onClick={() => {
+                unhighlightRow(contextMenu.row);
+                setContextMenu(null);
+              }}
+              className="hover:bg-gray-100 px-4 py-2 cursor-pointer text-gray-600"
+            >
+              Unhighlight Row
+            </li>
+            <li
+              onClick={() => {
+                const key = `${contextMenu.row}-${contextMenu.col}`;
+                setCellShapes((prev) => ({ ...prev, [key]: "star" }));
+                setContextMenu(null);
+              }}
+              className="hover:bg-gray-100 px-4 py-2 cursor-pointer"
+            >
+              Add Star
+            </li>
+            {contextMenu &&
+              cellShapes[`${contextMenu.row}-${contextMenu.col}`] && (
+                <li
+                  onClick={() => {
+                    const key = `${contextMenu.row}-${contextMenu.col}`;
+                    const updated = { ...cellShapes };
+                    delete updated[key];
+                    setCellShapes(updated);
+                    setContextMenu(null);
+                  }}
+                  className="hover:bg-gray-100 px-4 py-2 cursor-pointer"
+                >
+                  Remove Star
+                </li>
+              )}
             <li
               onClick={() => {
                 deleteRow(contextMenu.row);
@@ -951,6 +988,7 @@ export default function Table({
       <main className="mt-4">
         <div className=" rounded-xl shadow" ref={tableRef}>
           {/* Table */}
+
           <div
             ref={scrollContainerRef}
             style={{ width: "100%" }}
@@ -962,18 +1000,29 @@ export default function Table({
             >
               <table className="table-fixed w-full text-sm border-content">
                 <thead>
-                  <tr className="sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
+                  <tr className="no-print sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
                     {tableData[0]?.map((_, i) => (
                       <>
                         <th
                           key={i}
                           draggable
                           style={{
-                            position: "relative",
+                            // position: "relative",
                             width: colWidths[i], // Set default width
                             minWidth: "50px",
                             maxWidth: "500px",
-                            background: frozenColIndex === i ? "#1f2937" : "",
+                            position: frozenColIndices.includes(i)
+                              ? "sticky"
+                              : "relative",
+                            left: frozenColIndices.includes(i)
+                              ? getStickyLeftOffset(i)
+                              : undefined,
+                            zIndex: frozenColIndices.includes(i)
+                              ? 10
+                              : undefined,
+                            background: frozenColIndices.includes(i)
+                              ? "#fff"
+                              : undefined,
                           }}
                           onContextMenu={(e) => {
                             e.preventDefault();
@@ -1018,13 +1067,10 @@ export default function Table({
                             setDraggedColIndex(null);
                           }}
                           onDragOver={(e) => e.preventDefault()}
-                          className={`border ${
-                            i === frozenColIndex
-                              ? "sticky! left-0 z-10 shadow-md "
-                              : ""
-                          } ${
-                            frozenColIndex !== null &&
-                            i < frozenColIndex &&
+                          className={`border  ${
+                            frozenColIndices.length > 0 &&
+                            !frozenColIndices.includes(i) &&
+                            i < Math.max(...frozenColIndices) &&
                             i !== 0 &&
                             i !== 1
                               ? "hidden"
@@ -1065,18 +1111,29 @@ export default function Table({
                       </>
                     ))}
                   </tr>
-                  <tr>
+                  <tr className="sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
                     {columnHeaders?.map((_, i) => (
                       <>
                         <th
                           key={i}
                           draggable
                           style={{
-                            position: "relative",
+                            // position: "relative",
                             width: colWidths[i], // Set default width
                             minWidth: "50px",
                             maxWidth: "500px",
-                            background: frozenColIndex === i ? "#1f2937" : "",
+                            position: frozenColIndices.includes(i)
+                              ? "sticky"
+                              : "relative",
+                            left: frozenColIndices.includes(i)
+                              ? getStickyLeftOffset(i)
+                              : undefined,
+                            zIndex: frozenColIndices.includes(i)
+                              ? 10
+                              : undefined,
+                            background: frozenColIndices.includes(i)
+                              ? "#fff"
+                              : undefined,
                           }}
                           onContextMenu={(e) => {
                             e.preventDefault();
@@ -1121,13 +1178,10 @@ export default function Table({
                             setDraggedColIndex(null);
                           }}
                           onDragOver={(e) => e.preventDefault()}
-                          className={`border ${
-                            i === frozenColIndex
-                              ? "sticky! left-0 z-10 shadow-md "
-                              : ""
-                          } ${
-                            frozenColIndex !== null &&
-                            i < frozenColIndex &&
+                          className={`border  ${
+                            frozenColIndices.length > 0 &&
+                            !frozenColIndices.includes(i) &&
+                            i < Math.max(...frozenColIndices) &&
                             i !== 0 &&
                             i !== 1
                               ? "hidden"
@@ -1186,8 +1240,9 @@ export default function Table({
                       >
                         {row.map((cell, colIndex) => {
                           if (
-                            frozenColIndex !== null &&
-                            colIndex < frozenColIndex &&
+                            frozenColIndices.length > 0 &&
+                            !frozenColIndices.includes(colIndex) &&
+                            colIndex < Math.max(...frozenColIndices) &&
                             colIndex !== 0 &&
                             colIndex !== 1
                           )
@@ -1196,15 +1251,23 @@ export default function Table({
                           return colIndex === 0 ? (
                             <td
                               style={{
+                                backgroundColor:
+                                  cellColors?.[rowIndex]?.[colIndex] || "",
                                 width: colWidths[colIndex],
                                 minWidth: 50,
+                                position: frozenColIndices.includes(colIndex)
+                                  ? "sticky"
+                                  : undefined,
+                                left: frozenColIndices.includes(colIndex)
+                                  ? getStickyLeftOffset(colIndex)
+                                  : undefined,
+                                zIndex: frozenColIndices.includes(colIndex)
+                                  ? 9
+                                  : undefined,
+                                
                               }}
                               key={colIndex}
-                              className={`no-print border ${
-                                colIndex === frozenColIndex
-                                  ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md `
-                                  : ""
-                              } ${
+                              className={`no-print border  ${
                                 draggedRowIndex
                                   ? "cursor-grabbing"
                                   : "cursor-grab"
@@ -1232,12 +1295,20 @@ export default function Table({
                             </td>
                           ) : colIndex === 1 ? (
                             <td
-                              className={`border ${
-                                frozenColIndex
-                                  ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md `
-                                  : ""
-                              }`}
-                              style={{ textAlign: "center" }}
+                              className={`border `}
+                              style={{
+                                textAlign: "center",
+                                position: frozenColIndices.includes(colIndex)
+                                  ? "sticky"
+                                  : undefined,
+                                left: frozenColIndices.includes(colIndex)
+                                  ? getStickyLeftOffset(colIndex)
+                                  : undefined,
+                                zIndex: frozenColIndices.includes(colIndex)
+                                  ? 9
+                                  : undefined,
+                               
+                              }}
                             >
                               {rowIndex + 1}
                             </td>
@@ -1307,6 +1378,8 @@ export default function Table({
                                     setSelectionAnchor(null);
                                   }}
                                   onKeyDown={(e) => {
+                                    console.log(e.key)
+                                    
                                     if (
                                       editingCell?.[0] === rowIndex &&
                                       editingCell?.[1] === colIndex
@@ -1316,7 +1389,8 @@ export default function Table({
                                         setEditingCell(null);
                                         return;
                                       }
-                                      if (e.key === "Enter" && !e.shiftKey) {
+                                      if ((e.key === "Enter") && !e.shiftKey) {
+                                        console.log(e.key)
                                         e.preventDefault();
                                         setEditingCell(null);
                                         return;
@@ -1368,14 +1442,22 @@ export default function Table({
                             ) : (
                               <td
                                 style={{
+                                  backgroundColor:
+                                    cellColors?.[rowIndex]?.[colIndex] || "",
                                   width: colWidths[colIndex],
                                   minWidth: 50,
+                                  position: frozenColIndices.includes(colIndex)
+                                    ? "sticky"
+                                    : undefined,
+                                  left: frozenColIndices.includes(colIndex)
+                                    ? getStickyLeftOffset(colIndex)
+                                    : undefined,
+                                  zIndex: frozenColIndices.includes(colIndex)
+                                    ? 9
+                                    : undefined,
+                                  
                                 }}
-                                className={` border-2 border-black p-2 min-h-[80px]${
-                                  frozenColIndex
-                                    ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md `
-                                    : ""
-                                } ${
+                                className={` border-2 border-black p-2 min-h-[80px] ${
                                   selectedCell?.[0] === rowIndex &&
                                   selectedCell?.[1] === colIndex
                                     ? "border-blue-500 ring-2 ring-blue-400"
@@ -1546,8 +1628,19 @@ export default function Table({
                           ) : (
                             <td
                               style={{
+                                backgroundColor:
+                                  cellColors?.[rowIndex]?.[colIndex] || "",
                                 width: colWidths[colIndex],
                                 minWidth: 50,
+                                position: frozenColIndices.includes(colIndex)
+                                  ? "sticky"
+                                  : undefined,
+                                left: frozenColIndices.includes(colIndex)
+                                  ? getStickyLeftOffset(colIndex)
+                                  : undefined,
+                                zIndex: frozenColIndices.includes(colIndex)
+                                  ? 9
+                                  : undefined,
                               }}
                               key={colIndex}
                               onContextMenu={(e) => {
@@ -1560,11 +1653,7 @@ export default function Table({
                                   col: colIndex,
                                 });
                               }}
-                              className={` border ${
-                                colIndex === frozenColIndex
-                                  ? `sticky! left-${colWidths[colIndex]} z-20 bg-white shadow-md `
-                                  : ""
-                              } ${
+                              className={` border} ${
                                 selectedCell?.[0] === rowIndex &&
                                 selectedCell?.[1] === colIndex
                                   ? "border-blue-500 ring-2 ring-blue-400"
@@ -1576,6 +1665,15 @@ export default function Table({
                                       : ""
                                   }`}
                             >
+                              {cellShapes[`${rowIndex}-${colIndex}`] ===
+                                "star" && (
+                                <div
+                                  className="absolute top-1 right-1 text-yellow-500 text-xl pointer-events-none"
+                                  title="Star"
+                                >
+                                  ★
+                                </div>
+                              )}
                               <textarea
                                 value={cell}
                                 readOnly={
@@ -1600,7 +1698,6 @@ export default function Table({
                                 }}
                                 onPaste={(e) => {
                                   handlePaste(e, rowIndex, colIndex);
-                                  console.log(rowIndex, colIndex);
                                   setTimeout(
                                     () =>
                                       autoResizeTextarea(
@@ -1700,6 +1797,111 @@ export default function Table({
                                 } w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words`}
                                 rows={1}
                               />
+                              {/* <div
+                                contentEditable={
+                                  editingCell?.[0] === rowIndex &&
+                                  editingCell?.[1] === colIndex
+                                }
+                                suppressContentEditableWarning={true}
+                                onInput={(e) => {
+                                  const value = (e.target as HTMLDivElement)
+                                    .innerText;
+                                  handleCellChange(rowIndex, colIndex, value);
+                                }}
+                                onDoubleClick={() =>
+                                  setEditingCell([rowIndex, colIndex])
+                                }
+                                onBlur={() => setEditingCell(null)}
+                                onPaste={(e) => {
+                                  handlePaste(e, rowIndex, colIndex);
+                                  setTimeout(() => {
+                                    // Optional: Add height auto-resize logic if needed
+                                  }, 0);
+                                }}
+                                onMouseDown={() => {
+                                  setSelectionAnchor([rowIndex, colIndex]);
+                                  setSelectedCell([rowIndex, colIndex]);
+                                  setSelectedRange({
+                                    start: [rowIndex, colIndex],
+                                    end: [rowIndex, colIndex],
+                                  });
+                                  setIsDragging(true);
+                                }}
+                                onMouseEnter={() => {
+                                  if (isDragging && selectionAnchor) {
+                                    setSelectedCell([rowIndex, colIndex]);
+                                    setSelectedRange({
+                                      start: selectionAnchor,
+                                      end: [rowIndex, colIndex],
+                                    });
+                                  }
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedCell([rowIndex, colIndex]);
+                                  setSelectionAnchor(null);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (
+                                    editingCell?.[0] === rowIndex &&
+                                    editingCell?.[1] === colIndex
+                                  ) {
+                                    if (e.key === "Escape") {
+                                      e.preventDefault();
+                                      setEditingCell(null);
+                                      return;
+                                    }
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                      e.preventDefault();
+                                      setEditingCell(null);
+                                      return;
+                                    }
+                                  }
+                                  if (!selectedCell) return;
+                                  const [row, col] = selectedCell;
+                                  let newRow = row;
+                                  let newCol = col;
+                                  if (e.key === "ArrowUp")
+                                    newRow = Math.max(0, row - 1);
+                                  else if (e.key === "ArrowDown")
+                                    newRow = Math.min(
+                                      tableData.length - 1,
+                                      row + 1
+                                    );
+                                  else if (e.key === "ArrowLeft")
+                                    newCol = Math.max(0, col - 1);
+                                  else if (e.key === "ArrowRight")
+                                    newCol = Math.min(
+                                      tableData[0].length - 1,
+                                      col + 1
+                                    );
+                                  else return;
+                                  e.preventDefault();
+                                  if (e.shiftKey) {
+                                    const anchor =
+                                      selectionAnchor || selectedCell;
+                                    setSelectedRange({
+                                      start: anchor,
+                                      end: [newRow, newCol],
+                                    });
+                                    setSelectedCell([newRow, newCol]);
+                                    if (!selectionAnchor)
+                                      setSelectionAnchor(selectedCell);
+                                  } else {
+                                    setEditingCell([newRow, newCol]);
+                                    setSelectedCell([newRow, newCol]);
+                                    setSelectedRange(null);
+                                    setSelectionAnchor(null);
+                                  }
+                                }}
+                                className={`${
+                                  rowIndex === 0
+                                    ? "uppercase text-black text-[15px]"
+                                    : ""
+                                } w-full h-full m-0 border outline-none whitespace-pre-wrap break-words px-3 py-2 resize-none flex items-center `}
+                              >
+                                {cell}
+                              </div> */}
                             </td>
                           );
                         })}
