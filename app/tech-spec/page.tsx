@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import Table from "@/components/core/TableSpecs";
+import Table from "@/components/core/Table spec";
 import Link from "next/link";
 
 import {

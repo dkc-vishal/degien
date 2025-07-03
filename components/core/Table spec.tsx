@@ -21,6 +21,57 @@ import {
 } from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
+function parseFraction(input: string): number {
+  input = input.trim();
+  if (!input) return 0;
+  // Mixed fraction (e.g., "1 1/4")
+  if (input.includes(" ")) {
+    const [whole, frac] = input.split(" ");
+    const [num, den] = frac.split("/");
+    return parseInt(whole) + parseInt(num) / parseInt(den);
+  }
+  // Simple fraction (e.g., "3/8")
+  if (input.includes("/")) {
+    const [num, den] = input.split("/");
+    return parseInt(num) / parseInt(den);
+  }
+  // Whole number
+  return parseFloat(input);
+}
+
+// Helper to convert decimal to fraction string (up to 1/16 precision)
+function toFractionString(value: number): string {
+  if (isNaN(value)) return "";
+  const whole = Math.floor(value);
+  let frac = value - whole;
+  let closest = "";
+  let minDiff = 1;
+  for (let d = 2; d <= 16; d++) {
+    const n = Math.round(frac * d);
+    const diff = Math.abs(frac - n / d);
+    if (n > 0 && diff < minDiff) {
+      closest = `${n}/${d}`;
+      minDiff = diff;
+    }
+  }
+  if (closest && whole > 0) return `${whole} ${closest}`;
+  if (closest) return closest;
+  return `${whole}`;
+}
+
+type Row = {
+  gradingInput: string;
+  baseSizeInput: string;
+  baseSizeType: "XS" | "S" | "M" | "L" | "XL";
+};
+
+function parseGradingArray(input: string): number[] {
+  // Accepts comma-separated grading values, e.g. "0,0,1,0"
+  return input
+    .split(",")
+    .map((v) => parseFraction(v))
+    .slice(0, 4); // Only take up to 4 values
+}
 export default function Table({
   tablename,
   col,
@@ -262,6 +313,7 @@ export default function Table({
     null
   );
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const selectRef = useRef<HTMLSelectElement>(null);
   const [isFocusedEdit, setIsFocusedEdit] = useState(false);
   const [selectedRange, setSelectedRange] = useState<{
     start: [number, number];
@@ -356,7 +408,9 @@ export default function Table({
       }[]
     >
   >({});
+  const [RealTimeMeasurment, setRealTimemeasuremtn] = useState<string[]>([]);
 
+  const [RealTimeGradingRule, setRealTimeGradingRule] = useState<string[]>([]);
   const handleCellChange = (row: number, col: number, value: string) => {
     pushToHistory(tableData); // ✅ Store before editing
     const oldValue = tableData[row][col] as string;
@@ -364,6 +418,81 @@ export default function Table({
     const key = `${row}-${col}`;
     const updated = [...tableData];
     updated[row][col] = value;
+    setTableData(updated);
+    const topMeasIdx = columnHeaders.indexOf("TOP CHANGED MEASUREMENT");
+    const ppMeasIdx = columnHeaders.indexOf("PP CHANGED MEASUREMENT");
+    const fitMeasIdx = columnHeaders.indexOf("FIT CHANGED MEASUREMENT");
+    const msrMeasIdx = columnHeaders.indexOf("MSR MEASUREMENT");
+    const realTimeMeasIdx = columnHeaders.indexOf("REAL TIME MEASUREMENT");
+    function updateRealTimeMeasurement(row: any) {
+      row[realTimeMeasIdx] =
+        row[topMeasIdx] ||
+        row[ppMeasIdx] ||
+        row[fitMeasIdx] ||
+        row[msrMeasIdx] ||
+        "";
+    }
+    if ([topMeasIdx, ppMeasIdx, fitMeasIdx, msrMeasIdx].includes(col)) {
+      updateRealTimeMeasurement(updated[row]);
+    }
+
+    // Inside handleCellChange, after updating the cell:
+    if ([topMeasIdx, ppMeasIdx, fitMeasIdx, msrMeasIdx].includes(col)) {
+      updateRealTimeMeasurement(updated[row]);
+    }
+    // Grading rule logic
+    const topIdx = columnHeaders.indexOf("TOP CHANGED GRADING RULE");
+    const ppIdx = columnHeaders.indexOf("PP CHANGED GRADING RULE");
+    const fitIdx = columnHeaders.indexOf("FIT GRADING RULE");
+    const msrIdx = columnHeaders.indexOf("MSR GRADING RULE");
+    const realTimeIdx = columnHeaders.indexOf("REAL TIME GRADING RULE");
+
+    function updateRealTimeGradingRule(row: any) {
+      row[realTimeIdx] =
+        row[topIdx] || row[ppIdx] || row[fitIdx] || row[msrIdx] || "";
+    }
+    if ([topIdx, ppIdx, fitIdx, msrIdx].includes(col)) {
+      updateRealTimeGradingRule(updated[row]);
+    }
+
+    // Always recalculate sizes on any cell change
+    const msrMeasurementCol = columnHeaders.findIndex((header) =>
+      header.includes("MSR MEASUREMENT")
+    );
+    const msrGradingRuleCol = columnHeaders.findIndex((header) =>
+      header.includes("REAL TIME GRADING RULE")
+    );
+
+    const msrBaseSizeTypeCol = columnHeaders.findIndex((header) =>
+      header.includes("base size type")
+    );
+
+    const baseSizeInput = updated[row][realTimeMeasIdx] as string;
+    const gradingInput = updated[row][msrGradingRuleCol] as string;
+    // You can use the value from the table if you want:
+    // const baseSizeType = updated[rowIdx][msrBaseSizeTypeCol] as Row["baseSizeType"] || "S";
+    const baseSizeType = "S";
+    console.log(
+      baseSizeType,
+      String(RealTimeMeasurment[realTimeIdx]),
+      gradingInput
+    );
+    const sizes = calculateSizes(baseSizeType, baseSizeInput, gradingInput);
+
+    const xsCol = columnHeaders.findIndex((header) => header === "XS");
+    const sCol = columnHeaders.findIndex((header) => header === "S");
+    const mCol = columnHeaders.findIndex((header) => header === "M");
+    const lCol = columnHeaders.findIndex((header) => header === "L");
+    const xlCol = columnHeaders.findIndex((header) => header === "XL");
+
+    if (xsCol !== -1)
+      updated[row][xsCol] = toFractionString(sizes.xs).toString();
+    if (sCol !== -1) updated[row][sCol] = toFractionString(sizes.s).toString();
+    if (mCol !== -1) updated[row][mCol] = toFractionString(sizes.m).toString();
+    if (lCol !== -1) updated[row][lCol] = toFractionString(sizes.l).toString();
+    if (xlCol !== -1)
+      updated[row][xlCol] = toFractionString(sizes.xl).toString();
+
     setTableData(updated);
     setEditHistoryMap((prev) => ({
       ...prev,
@@ -378,7 +507,78 @@ export default function Table({
       ],
     }));
   };
+  function calculateSizes(
+    baseSizeType: Row["baseSizeType"],
+    baseSizeInput: string,
+    gradingInput: string
+  ) {
+    const gradingArr = parseGradingArray(gradingInput);
+    const isSpecial = gradingArr.length === 4;
+    const grading = isSpecial
+      ? gradingArr
+      : [
+          parseFraction(gradingInput),
+          parseFraction(gradingInput),
+          parseFraction(gradingInput),
+          parseFraction(gradingInput),
+        ];
+    let xs = NaN,
+      s = NaN,
+      m = NaN,
+      l = NaN,
+      xl = NaN;
 
+    // Base size value
+    let base = parseFraction(baseSizeInput);
+
+    // Logic: left of base size is -, right is +
+    switch (baseSizeType) {
+      case "XS":
+        xs = base;
+        s = xs + grading[0];
+        m = s + grading[1];
+        l = m + grading[2];
+        xl = l + grading[3];
+        break;
+      case "S":
+        s = base;
+        xs = s - grading[0];
+        m = s + grading[1];
+        l = m + grading[2];
+        xl = l + grading[3];
+        break;
+      case "M":
+        m = base;
+        s = m - grading[1];
+        xs = s - grading[0];
+        l = m + grading[2];
+        xl = l + grading[3];
+        break;
+      case "L":
+        l = base;
+        m = l - grading[2];
+        s = m - grading[1];
+        xs = s - grading[0];
+        xl = l + grading[3];
+        break;
+      case "XL":
+        xl = base;
+        l = xl - grading[3];
+        m = l - grading[2];
+        s = m - grading[1];
+        xs = s - grading[0];
+        break;
+    }
+    return { xs, s, m, l, xl };
+  }
+  function handlepastecellChange(colIndex: number) {
+    const column = tableData.map((row) => row[colIndex]);
+    for (let i = 0; i < column.length; i++) {
+      let noWhitespaceText = (column[i] as string).split(/\s+/).join(" ");
+      console.log(noWhitespaceText);
+      handleCellChange(i, colIndex, noWhitespaceText);
+    }
+  }
   const autoResizeTextarea = (el: HTMLTextAreaElement) => {
     if (el && el.parentElement) {
       el.parentElement.style.height = "auto"; // Reset height
@@ -762,9 +962,12 @@ export default function Table({
     }
   }, []);
   useEffect(() => {
-    if (inputRef.current) {
+    if (inputRef.current ) {
       inputRef.current.focus();
       // inputRef.current.select(); // Optional: selects all text
+    }
+    else if (selectRef.current) {
+      selectRef.current.focus();
     }
   }, [editingCell]);
   const handleMouseMoveForScroll = (e: {
@@ -1208,9 +1411,9 @@ export default function Table({
                         "{entry.newValue}"
                       </span>
                       <br />
-                      has_shape: 
+                      has_shape:
                       <br />
-                      isHighlighted:                      
+                      isHighlighted:
                     </div>
                   </div>
                 </div>
@@ -1939,6 +2142,480 @@ export default function Table({
                                 </p>
                               </td>
                             )
+                          ) : colIndex === 2 ? (
+                            <td
+                              data-row={rowIndex}
+                              data-col={colIndex}
+                              style={{
+                                width: colWidths[colIndex],
+                                minWidth: 50,
+                                position: frozenColIndices.includes(colIndex)
+                                  ? "sticky"
+                                  : undefined,
+
+                                left: frozenColIndices.includes(colIndex)
+                                  ? getStickyLeftOffset(colIndex)
+                                  : undefined,
+                                zIndex: frozenColIndices.includes(colIndex)
+                                  ? 9
+                                  : undefined,
+                              }}
+                              key={colIndex}
+                              onContextMenu={(e) => {
+                                e.preventDefault();
+                                setContextMenu({
+                                  visible: true,
+                                  x: e.pageX,
+                                  y: e.pageY,
+                                  row: rowIndex,
+                                  col: colIndex,
+                                });
+                              }}
+                              onClick={(e) => {
+                                // e.stopPropagation();
+                                setEditingCell([rowIndex, colIndex]);
+                                setSelectedCell([rowIndex, colIndex]);
+                                setSelectionAnchor(null);
+                                setIsFocusedEdit(false); // It's a single-click edit
+                              }}
+                              onDoubleClick={(e) => {
+                                e.stopPropagation();
+                                setEditingCell([rowIndex, colIndex]);
+                                setIsFocusedEdit(true); // Free edit mode
+                              }}
+                              className={` border  ${
+                                cellColors?.[rowIndex]?.[colIndex]
+                                  ? cellColors?.[rowIndex]?.[colIndex]
+                                  : frozenColIndices.includes(colIndex)
+                                  ? "bg-slate-200"
+                                  : ""
+                              } ${
+                                selectedCell?.[0] === rowIndex &&
+                                selectedCell?.[1] === colIndex
+                                  ? "border-blue-500 ring-2 ring-blue-400 border-3"
+                                  : "border-gray-300"
+                              }
+                                  ${
+                                    isCellInRange(rowIndex, colIndex)
+                                      ? "bg-blue-100"
+                                      : ""
+                                  }
+                                   ${
+                                     isCellInAutofillRange(rowIndex, colIndex)
+                                       ? "bg-green-200 border-2 border-green-400"
+                                       : ""
+                                   }
+                                   
+                                  `}
+                            >
+                              {cellShapes[`${rowIndex}-${colIndex}`] ===
+                                "star" && (
+                                <div
+                                  className="absolute top-1 right-1 text-yellow-500 text-xl pointer-events-none"
+                                  title="Star"
+                                >
+                                  ★
+                                </div>
+                              )}
+                              {selectedCell?.[0] === rowIndex &&
+                                selectedCell?.[1] === colIndex && (
+                                  <div
+                                    className="absolute w-2 h-2 bg-blue-600 bottom-0 right-0 cursor-crosshair z-50"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      setAutofillStart([rowIndex, colIndex]);
+                                    }}
+                                  />
+                                )}
+
+                              {/* <textarea
+                                value={cell}
+                                data-cell={`${rowIndex}-${colIndex}`}
+                                ref={
+                                  editingCell?.[0] === rowIndex &&
+                                  editingCell?.[1] === colIndex
+                                    ? inputRef
+                                    : null
+                                }
+                                onChange={(e) => {
+                                  handleCellChange(
+                                    rowIndex,
+                                    colIndex,
+                                    e.target.value
+                                  );
+                                  // autoResizeTextarea(e.target);
+                                }}
+                                onBlur={() => {
+                                  // pushToHistory(tableData); // Only push once editing is done
+                                  setEditingCell(null);
+                                }}
+                                onPaste={(e) => {
+                                  handlePaste(e, rowIndex, colIndex);
+                                  setTimeout(
+                                    () =>
+                                      autoResizeTextarea(
+                                        e.target as HTMLTextAreaElement
+                                      ),
+                                    0
+                                  );
+                                  handlepastecellChange(colIndex);
+                                }}
+                                onMouseDown={(e) => {
+                                  if (e.detail > 1) {
+                                    e.preventDefault(); // Prevents auto-select on double-click
+                                  }
+                                  setSelectionAnchor([rowIndex, colIndex]);
+                                  setSelectedCell([rowIndex, colIndex]);
+                                  setSelectedRange({
+                                    start: [rowIndex, colIndex],
+                                    end: [rowIndex, colIndex],
+                                  });
+                                  setIsDragging(true);
+                                }}
+                                onMouseEnter={() => {
+                                  if (isDragging && selectionAnchor) {
+                                    setSelectedCell([rowIndex, colIndex]);
+                                    setSelectedRange({
+                                      start: selectionAnchor,
+                                      end: [rowIndex, colIndex],
+                                    });
+                                  }
+                                }}
+                                onInput={(e) =>
+                                  autoResizeTextarea(
+                                    e.target as HTMLTextAreaElement
+                                  )
+                                }
+                                // onKeyDown={(e) => {
+                                //   if (!editingCell) return;
+
+                                //   const [row, col] = editingCell;
+                                //   const maxRow = tableData.length - 1;
+                                //   const maxCol = tableData[0].length - 1;
+
+                                //   if (e.key === "Escape") {
+                                //     e.preventDefault();
+                                //     setEditingCell(null);
+                                //     return;
+                                //   }
+
+                                //   if (e.key === "Enter" && !e.shiftKey) {
+                                //     e.preventDefault();
+                                //     const nextRow = Math.min(row + 1, maxRow);
+                                //     setEditingCell([nextRow, col]);
+                                //     setSelectedCell([nextRow, col]);
+                                //     setSelectionAnchor([nextRow, col]);
+                                //     setSelectedRange({
+                                //       start: [nextRow, col],
+                                //       end: [nextRow, col],
+                                //     });
+                                //     return;
+                                //   }
+
+                                //   if (e.key === "Tab") {
+                                //     e.preventDefault();
+                                //     let nextCol = e.shiftKey
+                                //       ? col - 1
+                                //       : col + 1;
+                                //     let nextRow = row;
+
+                                //     console.log([nextRow, nextCol]);
+
+                                //     setEditingCell([nextRow, nextCol]);
+                                //     setSelectedCell([nextRow, nextCol]);
+                                //     setSelectionAnchor([nextRow, nextCol]);
+                                //     setSelectedRange({
+                                //       start: [nextRow, nextCol],
+                                //       end: [nextRow, nextCol],
+                                //     });
+
+                                //     setTimeout(() => {
+                                //       const el = document.querySelector(
+                                //         `[data-cell="${nextRow}-${nextCol}"]`
+                                //       );
+                                //       (el as HTMLTextAreaElement)?.focus();
+                                //       (el as HTMLTextAreaElement)?.select();
+                                //     }, 0);
+                                //   }
+                                // }}
+                                onKeyDown={(e) => {
+                                  const [row = 0, col = 0] = editingCell ?? [];
+                                  const maxRow = tableData.length - 1;
+                                  const maxCol = tableData[0].length - 1;
+
+                                  // Allow caret movement but block outer handlers in freemode
+                                  if (isFocusedEdit) {
+                                    const arrowKeys = [
+                                      "ArrowUp",
+                                      "ArrowDown",
+                                      "ArrowLeft",
+                                      "ArrowRight",
+                                    ];
+                                    if (arrowKeys.includes(e.key)) {
+                                      e.stopPropagation(); // Let text cursor move, prevent cell nav
+                                    }
+
+                                    // Exit freemode on Enter/Tab
+                                    if (e.key === "Enter" || e.key === "Tab") {
+                                      e.preventDefault();
+                                      setIsFocusedEdit(false); // Exit freemode
+                                      // You may also blur textarea or move focus to next
+                                    }
+
+                                    return;
+                                  }
+
+                                  if (!editingCell) return;
+
+                                  if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    setEditingCell(null);
+                                    return;
+                                  }
+
+                                  if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    const nextRow = Math.min(row + 1, maxRow);
+                                    setEditingCell([nextRow, col] as [
+                                      number,
+                                      number
+                                    ]);
+                                    setSelectedCell([nextRow, col] as [
+                                      number,
+                                      number
+                                    ]);
+                                    setSelectionAnchor([nextRow, col] as [
+                                      number,
+                                      number
+                                    ]);
+                                    setSelectedRange({
+                                      start: [nextRow, col] as [number, number],
+                                      end: [nextRow, col] as [number, number],
+                                    });
+                                    return;
+                                  }
+
+                                  if (e.key === "Tab") {
+                                    e.preventDefault();
+                                    let nextCol = e.shiftKey
+                                      ? col - 1
+                                      : col + 1;
+                                    let nextRow = row;
+
+                                    if (nextCol < 2) {
+                                      nextCol = maxCol;
+                                      nextRow = Math.max(2, row - 1);
+                                    } else if (nextCol > maxCol) {
+                                      nextCol = 0;
+                                      nextRow = Math.min(maxRow, row + 1);
+                                    }
+
+                                    setEditingCell([nextRow, nextCol] as [
+                                      number,
+                                      number
+                                    ]);
+                                    setSelectedCell([nextRow, nextCol] as [
+                                      number,
+                                      number
+                                    ]);
+                                    setSelectionAnchor([nextRow, nextCol] as [
+                                      number,
+                                      number
+                                    ]);
+                                    setSelectedRange({
+                                      start: [nextRow, nextCol] as [
+                                        number,
+                                        number
+                                      ],
+                                      end: [nextRow, nextCol] as [
+                                        number,
+                                        number
+                                      ],
+                                    });
+                                    return;
+                                  }
+
+                                  if (
+                                    [
+                                      "ArrowUp",
+                                      "ArrowDown",
+                                      "ArrowLeft",
+                                      "ArrowRight",
+                                    ].includes(e.key)
+                                  ) {
+                                    e.preventDefault();
+
+                                    let nextRow = row;
+                                    let nextCol = col;
+
+                                    if (e.key === "ArrowUp")
+                                      nextRow = Math.max(0, row - 1);
+                                    if (e.key === "ArrowDown")
+                                      nextRow = Math.min(maxRow, row + 1);
+                                    if (e.key === "ArrowLeft")
+                                      nextCol = Math.max(0, col - 1);
+                                    if (e.key === "ArrowRight")
+                                      nextCol = Math.min(maxCol, col + 1);
+
+                                    setEditingCell([nextRow, nextCol] as [
+                                      number,
+                                      number
+                                    ]);
+                                    setSelectedCell([nextRow, nextCol] as [
+                                      number,
+                                      number
+                                    ]);
+                                    setSelectionAnchor([nextRow, nextCol] as [
+                                      number,
+                                      number
+                                    ]);
+                                    setSelectedRange({
+                                      start: [nextRow, nextCol] as [
+                                        number,
+                                        number
+                                      ],
+                                      end: [nextRow, nextCol] as [
+                                        number,
+                                        number
+                                      ],
+                                    });
+                                  }
+                                }}
+                                className={`${
+                                  rowIndex === 0
+                                    ? "text-black p-3! text-[15px]!"
+                                    : "p-3!"
+                                } className="w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top"
+`}
+                                rows={1}
+                              /> */}
+                              <select
+                                value={cell}
+                                data-cell={`${rowIndex}-${colIndex}`}
+                                ref={
+                                  editingCell?.[0] === rowIndex &&
+                                  editingCell?.[1] === colIndex
+                                    ? selectRef
+                                    : null
+                                }
+                                onChange={(e) => {
+                                  handleCellChange(
+                                    rowIndex,
+                                    colIndex,
+                                    e.target.value
+                                  );
+                                }}
+                                onBlur={() => {
+                                  setEditingCell(null);
+                                }}
+                                onMouseDown={(e) => {
+                                  if (e.detail > 1) {
+                                    e.preventDefault();
+                                  }
+                                  setSelectionAnchor([rowIndex, colIndex]);
+                                  setSelectedCell([rowIndex, colIndex]);
+                                  setSelectedRange({
+                                    start: [rowIndex, colIndex],
+                                    end: [rowIndex, colIndex],
+                                  });
+                                  setIsDragging(true);
+                                }}
+                                onMouseEnter={() => {
+                                  if (isDragging && selectionAnchor) {
+                                    setSelectedCell([rowIndex, colIndex]);
+                                    setSelectedRange({
+                                      start: selectionAnchor,
+                                      end: [rowIndex, colIndex],
+                                    });
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  const [row = 0, col = 0] = editingCell ?? [];
+                                  const maxRow = tableData.length - 1;
+                                  const maxCol = tableData[0].length - 1;
+
+                                  if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    setEditingCell(null);
+                                    return;
+                                  }
+
+                                  if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    const nextRow = Math.min(row + 1, maxRow);
+                                    setEditingCell([nextRow, col]);
+                                    setSelectedCell([nextRow, col]);
+                                    setSelectionAnchor([nextRow, col]);
+                                    setSelectedRange({
+                                      start: [nextRow, col],
+                                      end: [nextRow, col],
+                                    });
+                                    return;
+                                  }
+
+                                  if (e.key === "Tab") {
+                                    e.preventDefault();
+                                    let nextCol = e.shiftKey
+                                      ? col - 1
+                                      : col + 1;
+                                    let nextRow = row;
+
+                                    if (nextCol < 2) {
+                                      nextCol = maxCol;
+                                      nextRow = Math.max(2, row - 1);
+                                    } else if (nextCol > maxCol) {
+                                      nextCol = 0;
+                                      nextRow = Math.min(maxRow, row + 1);
+                                    }
+
+                                    setEditingCell([nextRow, nextCol]);
+                                    setSelectedCell([nextRow, nextCol]);
+                                    setSelectionAnchor([nextRow, nextCol]);
+                                    setSelectedRange({
+                                      start: [nextRow, nextCol],
+                                      end: [nextRow, nextCol],
+                                    });
+                                    return;
+                                  }
+
+                                  if (
+                                    [
+                                      "ArrowUp",
+                                      "ArrowDown",
+                                      "ArrowLeft",
+                                      "ArrowRight",
+                                    ].includes(e.key)
+                                  ) {
+                                    e.preventDefault();
+
+                                    let nextRow = row;
+                                    let nextCol = col;
+
+                                    if (e.key === "ArrowUp")
+                                      nextRow = Math.max(0, row - 1);
+                                    if (e.key === "ArrowDown")
+                                      nextRow = Math.min(maxRow, row + 1);
+                                    if (e.key === "ArrowLeft")
+                                      nextCol = Math.max(0, col - 1);
+                                    if (e.key === "ArrowRight")
+                                      nextCol = Math.min(maxCol, col + 1);
+
+                                    setEditingCell([nextRow, nextCol]);
+                                    setSelectedCell([nextRow, nextCol]);
+                                    setSelectionAnchor([nextRow, nextCol]);
+                                    setSelectedRange({
+                                      start: [nextRow, nextCol],
+                                      end: [nextRow, nextCol],
+                                    });
+                                  }
+                                }}
+                                className="w-full border outline-none text-sm p-2 bg-white"
+                              >
+                                <option value="">Select...</option>
+                                <option value="Yes">Yes</option>
+                                <option value="No">NO</option>
+                              </select>
+                            </td>
                           ) : (
                             <td
                               data-row={rowIndex}
@@ -2055,6 +2732,7 @@ export default function Table({
                                       ),
                                     0
                                   );
+                                  handlepastecellChange(colIndex);
                                 }}
                                 onMouseDown={(e) => {
                                   if (e.detail > 1) {

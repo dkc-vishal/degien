@@ -20,7 +20,7 @@ import {
   FaTools,
 } from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
-
+import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 export default function Table({
   tablename,
   col,
@@ -29,7 +29,8 @@ export default function Table({
   imagecol2,
   columnheaders,
 }: any) {
-  const [frozenColIndices, setFrozenColIndices] = useState<number[]>([]);
+  const [frozenColIndices, setFrozenColIndices] = useState<number[]>([1]);
+const activeTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const [isDragging, setIsDragging] = useState(false);
   type TableRow = (string | string[])[];
@@ -110,6 +111,26 @@ export default function Table({
   const resizeStartX = useRef(0);
   const resizeStartWidth = useRef(0);
 
+  // const handleMouseMove = (e: MouseEvent) => {
+  //   if (resizingColIndex.current === null) return;
+
+  //   const startX = resizeStartX.current;
+  //   const currentX = e.clientX;
+  //   const delta = currentX - startX;
+
+  //   const updated = [...colWidths];
+  //   const newWidth = resizeStartWidth.current + delta;
+
+  //   if (newWidth > 20 && newWidth < 500) {
+  //     updated[resizingColIndex.current] = newWidth;
+  //     setColWidths(updated);
+  //   }
+  //   localStorage.setItem(
+  //     `table_colWidths_${tablename}`,
+  //     JSON.stringify(updated)
+  //   );
+  // };
+
   const handleMouseMove = (e: MouseEvent) => {
     if (resizingColIndex.current === null) return;
 
@@ -120,7 +141,7 @@ export default function Table({
     const updated = [...colWidths];
     const newWidth = resizeStartWidth.current + delta;
 
-    if (newWidth > 20 && newWidth < 500) {
+    if (newWidth > 30 && newWidth < 1000) {
       updated[resizingColIndex.current] = newWidth;
       setColWidths(updated);
     }
@@ -190,6 +211,13 @@ export default function Table({
       )
     )
   );
+  const [autofillStart, setAutofillStart] = useState<[number, number] | null>(
+    null
+  );
+  const [autofillTarget, setAutofillTarget] = useState<[number, number] | null>(
+    null
+  );
+
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
     x: number;
@@ -238,8 +266,7 @@ export default function Table({
     const clipboard = e.clipboardData.getData("text");
 
     const rows = clipboard
-      .trim()
-      .split(/\r?\n/)
+      .split(/\r?\n/) // No trim!
       .map((row) => row.split("\t"));
 
     // Clone current table
@@ -296,13 +323,15 @@ export default function Table({
     return row >= rowMin && row <= rowMax && col >= colMin && col <= colMax;
   };
 
+
+
   const pushToHistory = (data: TableRow[]) => {
     const snapshot = JSON.stringify(data);
-    if (lastSnapshotRef.current === snapshot) return;
+    if (snapshot === lastSnapshotRef.current) return;
 
     lastSnapshotRef.current = snapshot;
     setHistory((prev) => [...prev, JSON.parse(snapshot)]);
-    setRedoStack([]); // Clear redo on new action
+    setRedoStack([]); // clear redo on new action
   };
 
   const handleCellChange = (row: number, col: number, value: string) => {
@@ -382,145 +411,152 @@ export default function Table({
       // inputRef.current.select(); // Optional: selects all text
     }
   }, [editingCell]);
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  //   useEffect(() => {
+  //   console.log("Updated history:", history);
+  // }, [history]);
+  // useEffect(() => {
+  //   if (typeof window === "undefined") return;
 
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "c") {
-        if (!selectedRange && !selectedCell) return;
+  //   const handleKeyDown = (e: KeyboardEvent) => {
+  //     if ((e.ctrlKey || e.metaKey) && e.key === "c") {
+  //       if (!selectedRange && !selectedCell) return;
 
-        let start: [number, number], end: [number, number];
+  //       let start: [number, number], end: [number, number];
 
-        if (selectedRange) {
-          ({ start, end } = selectedRange);
-        } else if (selectedCell) {
-          start = end = selectedCell;
-        } else return;
+  //       if (selectedRange) {
+  //         ({ start, end } = selectedRange);
+  //       } else if (selectedCell) {
+  //         start = end = selectedCell;
+  //       } else return;
 
-        const startRow = Math.min(start[0], end[0]);
-        const endRow = Math.max(start[0], end[0]);
-        const startCol = Math.min(start[1], end[1]);
-        const endCol = Math.max(start[1], end[1]);
+  //       const startRow = Math.min(start[0], end[0]);
+  //       const endRow = Math.max(start[0], end[0]);
+  //       const startCol = Math.min(start[1], end[1]);
+  //       const endCol = Math.max(start[1], end[1]);
 
-        let copiedText = "";
-        for (let row = startRow; row <= endRow; row++) {
-          const rowData = [];
-          for (let col = startCol; col <= endCol; col++) {
-            rowData.push(tableData?.[row]?.[col] ?? "");
-          }
-          copiedText += rowData.join("\t") + "\n";
-        }
+  //       let copiedText = "";
+  //       for (let row = startRow; row <= endRow; row++) {
+  //         const rowData = [];
+  //         for (let col = startCol; col <= endCol; col++) {
+  //           rowData.push(tableData?.[row]?.[col] ?? "");
+  //         }
+  //         copiedText += rowData.join("\t") + "\n";
+  //       }
 
-        e.preventDefault();
+  //       e.preventDefault();
 
-        // ✅ Fallback method using execCommand
-        const textarea = document.createElement("textarea");
-        textarea.value = copiedText;
-        document.body.appendChild(textarea);
-        textarea.select();
-        try {
-          document.execCommand("copy");
-          console.log("Copied to clipboard via fallback");
-        } catch (err) {
-          console.error("Fallback copy failed:", err);
-        }
-        document.body.removeChild(textarea);
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "x") {
-        console.log(!selectedRange && !selectedCell);
-        if (!selectedRange && !selectedCell) return;
+  //       // ✅ Fallback method using execCommand
+  //       const textarea = document.createElement("textarea");
+  //       textarea.value = copiedText;
+  //       document.body.appendChild(textarea);
+  //       textarea.select();
+  //       try {
+  //         document.execCommand("copy");
+  //         console.log("Copied to clipboard via fallback");
+  //       } catch (err) {
+  //         console.error("Fallback copy failed:", err);
+  //       }
+  //       document.body.removeChild(textarea);
+  //     }
+  //     if ((e.ctrlKey || e.metaKey) && e.key === "x") {
+  //       console.log(!selectedRange && !selectedCell);
+  //       if (!selectedRange && !selectedCell) return;
 
-        let start: [number, number], end: [number, number];
-        if (selectedRange) {
-          ({ start, end } = selectedRange);
-        } else if (selectedCell) {
-          start = end = selectedCell;
-        } else return;
+  //       let start: [number, number], end: [number, number];
+  //       if (selectedRange) {
+  //         ({ start, end } = selectedRange);
+  //       } else if (selectedCell) {
+  //         start = end = selectedCell;
+  //       } else return;
 
-        const startRow = Math.min(start[0], end[0]);
-        const endRow = Math.max(start[0], end[0]);
-        const startCol = Math.min(start[1], end[1]);
-        const endCol = Math.max(start[1], end[1]);
+  //       const startRow = Math.min(start[0], end[0]);
+  //       const endRow = Math.max(start[0], end[0]);
+  //       const startCol = Math.min(start[1], end[1]);
+  //       const endCol = Math.max(start[1], end[1]);
 
-        let copiedText = "";
-        const updated = [...tableData];
+  //       let copiedText = "";
+  //       const updated = [...tableData];
 
-        for (let row = startRow; row <= endRow; row++) {
-          const rowData = [];
-          for (let col = startCol; col <= endCol; col++) {
-            rowData.push(updated[row][col]);
-            updated[row][col] = ""; // Clear content
-          }
-          copiedText += rowData.join("\t") + "\n";
-        }
+  //       for (let row = startRow; row <= endRow; row++) {
+  //         const rowData = [];
+  //         for (let col = startCol; col <= endCol; col++) {
+  //           rowData.push(updated[row][col]);
+  //           updated[row][col] = ""; // Clear content
+  //         }
+  //         copiedText += rowData.join("\t") + "\n";
+  //       }
 
-        setTableData(updated);
-        e.preventDefault();
+  //       setTableData(updated);
+  //       e.preventDefault();
 
-        const textarea = document.createElement("textarea");
-        textarea.value = copiedText;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textarea);
-      }
-      // UNDO
-      if ((e.ctrlKey || e.metaKey) && e.key === "z") {
-        e.preventDefault();
-        if (history.length === 0) return;
+  //       const textarea = document.createElement("textarea");
+  //       textarea.value = copiedText;
+  //       document.body.appendChild(textarea);
+  //       textarea.select();
+  //       document.execCommand("copy");
+  //       document.body.removeChild(textarea);
+  //     }
+  //     // UNDO
+  //     if ((e.ctrlKey || e.metaKey) && e.key === "z") {
+  //       e.preventDefault();
 
-        const prev = history[history.length - 1];
-        setRedoStack((r) => [tableData, ...r]);
-        setTableData(prev);
-        setHistory((h) => h.slice(0, -1));
-        lastSnapshotRef.current = JSON.stringify(prev);
-      }
+  //       if (history.length === 0) return;
 
-      if ((e.ctrlKey || e.metaKey) && e.key === "y") {
-        e.preventDefault();
-        if (redoStack.length === 0) return;
+  //       const prev = JSON.parse(JSON.stringify(history[history.length - 1])); // deep clone
 
-        const next = redoStack[0];
-        setHistory((h) => [...h, tableData]);
-        setTableData(next);
-        setRedoStack((r) => r.slice(1));
-        lastSnapshotRef.current = JSON.stringify(next);
-      }
+  //       console.log("Undoing to:", prev);
 
-      if (e.key === "Enter" && selectedCell) {
-        e.preventDefault();
-        setEditingCell(selectedCell);
-        return;
-      }
-      if (e.key === "Tab" && selectedCell) {
-        e.preventDefault();
-        setEditingCell(selectedCell);
-        return;
-      }
+  //       setRedoStack((r) => [tableData, ...r]);
+  //       setTableData(prev); // async
+  //       setHistory((h) => h.slice(0, -1));
+  //       lastSnapshotRef.current = JSON.stringify(prev);
+  //     }
 
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-        e.preventDefault();
-        setEditingCell(selectedCell);
+  //     if ((e.ctrlKey || e.metaKey) && e.key === "y") {
+  //       e.preventDefault();
+  //       if (redoStack.length === 0) return;
 
-        return;
-      }
+  //       const next = redoStack[0];
+  //       setHistory((h) => [...h, tableData]);
+  //       setTableData(next);
+  //       setRedoStack((r) => r.slice(1));
+  //       lastSnapshotRef.current = JSON.stringify(next);
+  //     }
 
-      // Escape to cancel editing
-      if (e.key === "Escape" && editingCell) {
-        e.preventDefault();
+  //     if (e.key === "Enter" && selectedCell) {
+  //       e.preventDefault();
+  //       setEditingCell(selectedCell);
+  //       return;
+  //     }
+  //     if (e.key === "Tab" && selectedCell) {
+  //       e.preventDefault();
+  //       setEditingCell(selectedCell);
+  //       return;
+  //     }
 
-        setEditingCell(null);
-        return;
-      }
-    };
+  //     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+  //       e.preventDefault();
+  //       setEditingCell(selectedCell);
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [
-    selectedRange?.start?.toString(),
-    selectedRange?.end?.toString(),
-    selectedCell?.toString(),
-  ]);
+  //       return;
+  //     }
+
+  //     // Escape to cancel editing
+  //     if (e.key === "Escape" && editingCell) {
+  //       e.preventDefault();
+
+  //       setEditingCell(null);
+  //       return;
+  //     }
+  //   };
+
+  //   window.addEventListener("keydown", handleKeyDown);
+  //   return () => window.removeEventListener("keydown", handleKeyDown);
+  // }, [
+  //   selectedRange?.start?.toString(),
+  //   selectedRange?.end?.toString(),
+  //   selectedCell?.toString(),
+  // ]);
 
   const insertRow = (index: number) => {
     const newRow = new Array(tableData[0].length).fill("");
@@ -753,7 +789,120 @@ export default function Table({
     }
     return undefined;
   };
+  const isCellInAutofillRange = (row: number, col: number): boolean => {
+    if (!autofillStart || !autofillTarget) return false;
 
+    const [startRow, startCol] = autofillStart;
+    const [endRow, endCol] = autofillTarget;
+
+    const minRow = Math.min(startRow, endRow);
+    const maxRow = Math.max(startRow, endRow);
+    const minCol = Math.min(startCol, endCol);
+    const maxCol = Math.max(startCol, endCol);
+
+    return row >= minRow && row <= maxRow && col >= minCol && col <= maxCol;
+  };
+useEffect(() => {
+  if (inputRef.current) {
+    inputRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",   // ensures the row doesn't jump to center
+      inline: "nearest",
+    });
+  }
+}, [editingCell]);
+
+useEffect(() => {
+  if (
+    editingCell &&
+    inputRef.current &&
+    typeof window !== "undefined"
+  ) {
+    inputRef.current.focus();
+    inputRef.current.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }
+}, [editingCell]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (autofillStart) {
+        const target = document.elementFromPoint(e.clientX, e.clientY);
+        const td = target?.closest("td[data-row][data-col]") as HTMLElement;
+        if (td) {
+          const r = parseInt(td.dataset.row!, 10);
+          const c = parseInt(td.dataset.col!, 10);
+          setAutofillTarget([r, c]);
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (autofillStart && autofillTarget) {
+        const [startRow, startCol] = autofillStart;
+        const [endRow, endCol] = autofillTarget;
+        const value = tableData[startRow][startCol];
+
+        const updated = [...tableData];
+        const deltaRow = endRow - startRow;
+        const deltaCol = endCol - startCol;
+
+        const isVertical = Math.abs(deltaRow) >= Math.abs(deltaCol);
+        const fillDirection = isVertical ? "vertical" : "horizontal";
+
+        const sourceValue = updated[startRow][startCol];
+
+        {
+          // Not numeric → fill with same value
+          if (fillDirection === "vertical") {
+            const min = Math.min(startRow, endRow);
+            const max = Math.max(startRow, endRow);
+
+            for (let r = min; r <= max; r++) {
+              updated[r][startCol] = sourceValue;
+            }
+          } else {
+            const min = Math.min(startCol, endCol);
+            const max = Math.max(startCol, endCol);
+
+            for (let c = min; c <= max; c++) {
+              updated[startRow][c] = sourceValue;
+            }
+          }
+        }
+
+        setTableData(updated);
+        // Optionally update history:
+        // pushToHistory(updated);
+      }
+
+      setAutofillStart(null);
+      setAutofillTarget(null);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [autofillStart, autofillTarget, tableData]);
+  useKeyboardShortcuts({
+    tableData,
+    setTableData,
+    selectedCell,
+    setSelectedCell,
+    editingCell,
+    setEditingCell,
+    selectedRange,
+    setSelectedRange,
+    setSelectionAnchor,
+    history,
+    setHistory,
+    redoStack,
+    setRedoStack,
+    lastSnapshotRef,
+  });
   return (
     <>
       {contextMenu1?.visible && (
@@ -954,7 +1103,7 @@ export default function Table({
                   ))}
                 </colgroup>
                 <thead>
-                  <tr className="no-print sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
+                  <tr className=" sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
                     {tableData[0]?.map((_, i) => (
                       <>
                         <th
@@ -1021,17 +1170,9 @@ export default function Table({
                             setDraggedColIndex(null);
                           }}
                           onDragOver={(e) => e.preventDefault()}
-                          className={`border  ${
-                            frozenColIndices.length > 0 &&
-                            !frozenColIndices.includes(i) &&
-                            i < Math.max(...frozenColIndices) &&
-                            i !== 0 &&
-                            i !== 1
-                              ? "hidden"
-                              : ""
-                          }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${
-                            i === 0 ? "no-print" : ""
-                          }`}
+                          className={`border   ${
+                            isDragging ? "cursor-move" : "cursor-pointer"
+                          } ${i === 0 ? "" : ""}`}
                         >
                           {getColumnLetter(i)}
 
@@ -1134,16 +1275,9 @@ export default function Table({
                             setDraggedColIndex(null);
                           }}
                           onDragOver={(e) => e.preventDefault()}
-                          className={`border  ${
-                            frozenColIndices.length > 0 &&
-                            !frozenColIndices.includes(i) &&
-                            i < Math.max(...frozenColIndices) &&
-                            i !== 0 &&
-                            i !== 1
-                              ? "hidden"
-                              : ""
+                          className={`border  
                           }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${
-                            i === 0 ? "no-print" : ""
+                            i === 0 ? "" : ""
                           }`}
                         >
                           {columnHeaders[i]}
@@ -1195,14 +1329,7 @@ export default function Table({
                         className={`bg-white even:bg-gray-50 `}
                       >
                         {row.map((cell, colIndex) => {
-                          if (
-                            frozenColIndices.length > 0 &&
-                            !frozenColIndices.includes(colIndex) &&
-                            colIndex < Math.max(...frozenColIndices) &&
-                            colIndex !== 0 &&
-                            colIndex !== 1
-                          )
-                            return null;
+                          if (false) return null;
 
                           return colIndex === 0 ? (
                             <td
@@ -1222,7 +1349,7 @@ export default function Table({
                                   : undefined,
                               }}
                               key={colIndex}
-                              className={`no-print border  ${
+                              className={` border ${
                                 draggedRowIndex
                                   ? "cursor-grabbing"
                                   : "cursor-grab"
@@ -1250,18 +1377,14 @@ export default function Table({
                             </td>
                           ) : colIndex === 1 ? (
                             <td
-                              className={`border `}
+                              className={`border bg-slate-200`}
                               style={{
                                 textAlign: "center",
-                                position: frozenColIndices.includes(colIndex)
-                                  ? "sticky"
-                                  : undefined,
-                                left: frozenColIndices.includes(colIndex)
+                                position: true ? "sticky" : undefined,
+                                left: true
                                   ? getStickyLeftOffset(colIndex)
                                   : undefined,
-                                zIndex: frozenColIndices.includes(colIndex)
-                                  ? 9
-                                  : undefined,
+                                zIndex: true ? 9 : undefined,
                               }}
                             >
                               {rowIndex + 1}
@@ -1387,7 +1510,13 @@ export default function Table({
                                       setSelectionAnchor(null);
                                     }
                                   }}
-                                  className={`
+                                  className={` ${
+                                    cellColors?.[rowIndex]?.[colIndex]
+                                      ? cellColors?.[rowIndex]?.[colIndex]
+                                      : frozenColIndices.includes(colIndex)
+                                      ? "bg-slate-200"
+                                      : ""
+                                  }
                                      w-full h-auto  m-0 border   outline-none resize-none overflow-hidden whitespace-pre-wrap break-words`}
                                   rows={1}
                                 />
@@ -1412,14 +1541,20 @@ export default function Table({
                                 className={` border-2 border-black p-2 min-h-[80px] ${
                                   selectedCell?.[0] === rowIndex &&
                                   selectedCell?.[1] === colIndex
-                                    ? "border-blue-500 ring-2 ring-blue-400"
+                                    ? "border-blue-500 ring-2 ring-blue-400 border-3"
                                     : "border-gray-300"
                                 }
                                   ${
                                     isCellInRange(rowIndex, colIndex)
                                       ? " bg-blue-100"
                                       : ""
-                                  }`}
+                                  } ${
+                                  cellColors?.[rowIndex]?.[colIndex]
+                                    ? cellColors?.[rowIndex]?.[colIndex]
+                                    : frozenColIndices.includes(colIndex)
+                                    ? "bg-slate-200"
+                                    : ""
+                                }`}
                                 onClick={(e) => {
                                   // e.stopPropagation();
                                   setSelectedCell([rowIndex, colIndex]);
@@ -1450,7 +1585,7 @@ export default function Table({
                                   const items = e.clipboardData?.files;
                                   if (items?.length)
                                     handleImagePasteOrDrop(
-                                      items,
+                                      Array.from(items),
                                       rowIndex,
                                       colIndex
                                     );
@@ -1470,54 +1605,6 @@ export default function Table({
                                     console.log("Image pasted from clipboard");
                                   }
                                 }}
-                                // onDrop={(e) => {
-                                //   e.preventDefault();
-                                //   const files = e.dataTransfer?.files;
-                                //   if (files?.length) handleImagePasteOrDrop(files, rowIndex, colIndex);
-                                // }}
-                                // onDrop={(e) => {
-                                //   e.preventDefault();
-                                //   const files = e.dataTransfer?.files;
-                                //   console.log(files);
-                                //   console.log(draggedImageOrigin);
-                                //   if (
-                                //     draggedImageSource.current &&
-                                //     draggedImageOrigin.current
-                                //   ) {
-                                //     const [fromRow, fromCol] =
-                                //       draggedImageOrigin.current;
-                                //     const updated = [...tableData];
-
-                                //     // Remove from old
-                                //     updated[fromRow][fromCol] = (
-                                //       updated[fromRow][fromCol] as string[]
-                                //     ).filter(
-                                //       (img) =>
-                                //         img !== draggedImageSource.current
-                                //     );
-
-                                //     // Add to new
-                                //     if (
-                                //       !Array.isArray(
-                                //         updated[rowIndex][colIndex]
-                                //       )
-                                //     )
-                                //       updated[rowIndex][colIndex] = [];
-                                //     (
-                                //       updated[rowIndex][colIndex] as string[]
-                                //     ).push(draggedImageSource.current);
-
-                                //     setTableData(updated);
-                                //     draggedImageSource.current = null;
-                                //     draggedImageOrigin.current = null;
-                                //   } else if (files?.length) {
-                                //     handleImagePasteOrDrop(
-                                //       files,
-                                //       rowIndex,
-                                //       colIndex
-                                //     );
-                                //   }
-                                // }}
                                 onDrop={(e) => {
                                   e.preventDefault();
                                   const files = e.dataTransfer?.files;
@@ -1587,75 +1674,6 @@ export default function Table({
                                 {Array.isArray(cell) ? (
                                   <div className="flex flex-wrap  justify-center">
                                     {(cell as string[]).map((src, i) => (
-                                      // <div
-                                      //   key={i}
-                                      //   style={{
-                                      //     width:"100%"
-                                      //   }}
-                                      //   className="relative"
-                                      //   onClick={(e) => e.stopPropagation()} // Prevent deselecting cell
-                                      // >
-                                      //   <img
-                                      //     onDoubleClick={(e) => {
-                                      //       setimageSeleted({
-                                      //         rownumber: rowIndex,
-                                      //         colnumber: colIndex,
-                                      //         imgindex: i,
-                                      //       });
-                                      //       handleOpenImageEditor(src, src);
-                                      //     }}
-                                      //     style={{
-                                      //       width: "100%",
-                                      //       height: "100%",
-                                      //       aspectRatio: "9/16",
-                                      //       objectFit: "contain",
-                                      //     }}
-                                      //     onKeyDown={(e) => {
-                                      //       if (
-                                      //         (e.ctrlKey || e.metaKey) &&
-                                      //         e.key === "c"
-                                      //       ) {
-                                      //         setCopiedImage(src);
-                                      //       }
-                                      //     }}
-                                      //     onContextMenu={(e) => {
-                                      //       e.preventDefault();
-                                      //       setCopiedImage(src);
-                                      //       console.log("Image copied:", src);
-                                      //     }}
-                                      //     draggable
-                                      //     onDragStart={(e) => {
-                                      //       draggedImageSource.current = src;
-                                      //       draggedImageOrigin.current = [
-                                      //         rowIndex,
-                                      //         colIndex,
-                                      //       ];
-                                      //       e.dataTransfer.setData(
-                                      //         "text/plain",
-                                      //         src
-                                      //       );
-                                      //     }}
-                                      //     src={src}
-                                      //     className="w-full h-full object-cover rounded"
-                                      //   />
-
-                                      //   {/* Delete button */}
-                                      //   <button
-                                      //     className="absolute top-0 right-0 bg-white text-red-600 text-sm rounded-full px-1 leading-none hidden group-hover:block z-20 shadow"
-                                      //     onClick={() => {
-                                      //       const updated = [...tableData];
-                                      //       (
-                                      //         updated[rowIndex][
-                                      //           colIndex
-                                      //         ] as string[]
-                                      //       ).splice(i, 1);
-                                      //       setTableData(updated);
-                                      //     }}
-                                      //     title="Delete image"
-                                      //   >
-                                      //     ×
-                                      //   </button>
-                                      // </div>
                                       <div
                                         key={i}
                                         style={{
@@ -1774,14 +1792,15 @@ export default function Table({
                             )
                           ) : (
                             <td
+                              data-row={rowIndex}
+                              data-col={colIndex}
                               style={{
-                                backgroundColor:
-                                  cellColors?.[rowIndex]?.[colIndex] || "",
                                 width: colWidths[colIndex],
                                 minWidth: 50,
                                 position: frozenColIndices.includes(colIndex)
                                   ? "sticky"
                                   : undefined,
+
                                 left: frozenColIndices.includes(colIndex)
                                   ? getStickyLeftOffset(colIndex)
                                   : undefined,
@@ -1812,17 +1831,30 @@ export default function Table({
                                 setEditingCell([rowIndex, colIndex]);
                                 setIsFocusedEdit(true); // Free edit mode
                               }}
-                              className={` border ${
+                              className={` border  ${
+                                cellColors?.[rowIndex]?.[colIndex]
+                                  ? cellColors?.[rowIndex]?.[colIndex]
+                                  : frozenColIndices.includes(colIndex)
+                                  ? "bg-slate-200"
+                                  : ""
+                              } ${
                                 selectedCell?.[0] === rowIndex &&
                                 selectedCell?.[1] === colIndex
-                                  ? "border-blue-500 ring-2 ring-blue-400"
+                                  ? "border-blue-500 ring-2 ring-blue-400 border-3"
                                   : "border-gray-300"
                               }
                                   ${
                                     isCellInRange(rowIndex, colIndex)
                                       ? "bg-blue-100"
                                       : ""
-                                  }`}
+                                  }
+                                   ${
+                                     isCellInAutofillRange(rowIndex, colIndex)
+                                       ? "bg-green-200 border-2 border-green-400"
+                                       : ""
+                                   }
+                                   
+                                  `}
                             >
                               {cellShapes[`${rowIndex}-${colIndex}`] ===
                                 "star" && (
@@ -1833,6 +1865,17 @@ export default function Table({
                                   ★
                                 </div>
                               )}
+                              {selectedCell?.[0] === rowIndex &&
+                                selectedCell?.[1] === colIndex && (
+                                  <div
+                                    className="absolute w-2 h-2 bg-blue-600 bottom-0 right-0 cursor-crosshair z-50"
+                                    onMouseDown={(e) => {
+                                      e.preventDefault();
+                                      setAutofillStart([rowIndex, colIndex]);
+                                    }}
+                                  />
+                                )}
+
                               <textarea
                                 value={cell}
                                 data-cell={`${rowIndex}-${colIndex}`}
@@ -1943,7 +1986,7 @@ export default function Table({
                                 //   }
                                 // }}
                                 onKeyDown={(e) => {
-                                  const [row=0, col=0] = editingCell ?? [];
+                                  const [row = 0, col = 0] = editingCell ?? [];
                                   const maxRow = tableData.length - 1;
                                   const maxCol = tableData[0].length - 1;
 
@@ -2087,9 +2130,10 @@ export default function Table({
                                 }}
                                 className={`${
                                   rowIndex === 0
-                                    ? "uppercase text-black p-3! text-[15px]!"
+                                    ? "text-black p-3! text-[15px]!"
                                     : "p-3!"
-                                } w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words`}
+                                } className="w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top"
+`}
                                 rows={1}
                               />
                             </td>
