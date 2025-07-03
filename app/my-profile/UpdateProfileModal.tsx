@@ -1,6 +1,8 @@
 "use client";
+import { on } from "events";
 import React, { useState } from "react";
 import { RxCross2 } from "react-icons/rx";
+import { toast } from "sonner";
 
 interface Props {
   username: string;
@@ -9,7 +11,24 @@ interface Props {
 }
 
 const UpdateProfileModal: React.FC<Props> = ({ username, onUpdate, onClose }) => {
+
   const [name, setName] = useState(username);
+
+  const handleUpdate = () => {
+    if(!name.trim()){
+      toast.error("Name cannot be empty");
+      return ; 
+    }
+    onUpdate(name) ; 
+    toast.success("Profile updated successfully");
+
+    // close modal after 1.5-2 seconds 
+
+    setTimeout(() => {
+      onClose() ; 
+    }, 1500);
+
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-[rgba(0,0,0,0.6)] flex items-center justify-center px-4">
@@ -45,7 +64,7 @@ const UpdateProfileModal: React.FC<Props> = ({ username, onUpdate, onClose }) =>
             Cancel
           </button>
           <button
-            onClick={() => onUpdate(name)}
+            onClick={() => handleUpdate()}
             className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 cursor-pointer"
           >
             Update

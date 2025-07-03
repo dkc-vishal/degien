@@ -3,8 +3,10 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { FaFolderOpen } from "react-icons/fa";
+import { use } from "react";
 
 // Dummy data
+
 const orders = [
   { name: "NS Blake Thermal", id: "ns-blake-thermal", quantity: 180 },
   { name: "Naval", id: "naval", quantity: 220 },
@@ -12,6 +14,7 @@ const orders = [
 const master = { name: "Master", id: "master", quantity: 400 };
 
 // Convert kebab-case to Title Case
+
 const convertKebabToTitle = (str: string) =>
   str
     .split("-")
@@ -19,8 +22,9 @@ const convertKebabToTitle = (str: string) =>
     .join(" ");
 
 const VendorPage = ({ params }: { params: { style: string } }) => {
+
   const router = useRouter();
-  const { style } = params;
+  const { style } = use(params);
   const styleTitle = convertKebabToTitle(style);
 
   const handleVendorClick = (orderId: string) => {

@@ -1,19 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { LayoutGrid, List, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import CreateStyleModal from "@/components/core/CreateStyleModal";
-
-const styleCards = [
-  { styleName: "Classic Polo Shirt", image: "/images/classic-polo-shirt.jpg", order: 5000, quantity: 2300 },
-  { styleName: "Denim Jacket", image: "/images/denim-jacket.jpg", order: 4200, quantity: 1800 },
-  { styleName: "Summer T-Shirt", image: "", order: 6000, quantity: 3200 },
-  { styleName: "Formal Trousers", image: "/images/formal-trousers.jpg", order: 3500, quantity: 1500 },
-  { styleName: "Winter Hoodie", image: "/images/winter-hoodie.jpg", order: 4800, quantity: 2400 },
-  { styleName: "Kids Romper", image: "/images/kids-romper.jpg", order: 2000, quantity: 800 },
-  { styleName: "Athletic Shorts", image: "/images/athletic-shorts.jpg", order: 3000, quantity: 1000 },
-  { styleName: "Linen Shirt", image: "/images/linen-shirt.jpg", order: 2700, quantity: 1200 },
-];
 
 const StyleCard = ({ styleName, image, order, quantity, onClick }) => (
   <div
@@ -50,17 +39,47 @@ const StyleCard = ({ styleName, image, order, quantity, onClick }) => (
 
 const ProductionStyles = () => {
 
+  const [styles, setStyles] = useState<StyleType[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [viewMode, setViewMode] = useState("card");
   const router = useRouter();
-  
+
   // create new style modal state 
 
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const handleCreateStyle = (newStyleName: string) => {
-    console.log("New Style Created:", newStyleName);
+  useEffect(() => {
+    const fetchStyles = async () => {
+      setLoading(true);
+      const mockData = [
+        { styleName: "Raya Bandana", image: "/images/raya-bandana.webp", order: 4000, quantity: 1800 },
+        { styleName: "Blake Thermal", image: "/images/blake-thermal.jpg", order: 3500, quantity: 1600 },
+        { styleName: "Pixie Cardi", image: "/images/Pixie_Cardi.webp", order: 5200, quantity: 2400 },
+        { styleName: "Brynn Maxi Skirt", image: "/images/Brynn_Maxi_Skirt.webp", order: 3100, quantity: 1400 },
+        { styleName: "Cedar Jacket", image: "/images/Cedar_Jacket.avif", order: 4500, quantity: 2100 },
+        { styleName: "Kaiden Pant", image: "/images/kaiden-pant.webp", order: 3900, quantity: 1700 },
+        { styleName: "Luna Cardi", image: "/images/Luna_Cardi.webp", order: 4800, quantity: 2200 }
+      ];
+      setTimeout(() => {
+        setStyles(mockData);
+        setLoading(false);
+      }, 500);
+    };
+
+    fetchStyles();
+  }, []);
+
+  const handleCreateStyle = (styleName: string) => {
+    const newStyle = {
+      styleName,
+      image: "",
+      order: 0,
+      quantity: 0,
+    };
+    setStyles((prev) => [...prev, newStyle]);
     setShowCreateModal(false);
-  }
+  };
 
   const handleCardClick = (styleName) => {
     const kebab = styleName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -72,7 +91,7 @@ const ProductionStyles = () => {
       <div className="flex justify-between items-center mb-6 border-b pb-4 border-gray-200">
         <h2 className="text-2xl font-bold text-gray-800">Styles</h2>
         <div className="flex items-center gap-8 mr-32">
-          <button 
+          <button
             onClick={() => setShowCreateModal(true)}
             className="inline-flex items-center gap-1 px-4 py-1.5 bg-blue-400 hover:bg-white hover:text-blue-400 text-white text-lg rounded-md transition cursor-pointer border border-transparent shadow-md hover:border-blue-400"
           >
@@ -92,7 +111,7 @@ const ProductionStyles = () => {
 
       {viewMode === "card" ? (
         <div className="flex flex-wrap gap-12 justify-center mt-9">
-          {styleCards.map((style, index) => (
+          {styles.map((style, index) => (
             <StyleCard key={index} {...style} onClick={() => handleCardClick(style.styleName)} />
           ))}
         </div>
@@ -108,20 +127,12 @@ const ProductionStyles = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {styleCards.map((style, index) => (
-                <tr
-                  key={index}
-                  className="hover:bg-blue-50 text-center transition-all cursor-pointer"
-                  onClick={() => handleCardClick(style.styleName)}
-                >
+              {styles.map((style, index) => (
+                <tr key={index} onClick={() => handleCardClick(style.styleName)} className="hover:bg-blue-50 text-center transition-all cursor-pointer">
                   <td className="px-6 py-4 font-medium text-gray-800">{style.styleName}</td>
                   <td className="px-6 py-4">
                     {style.image ? (
-                      <img
-                        src={style.image}
-                        alt={style.styleName}
-                        className="w-14 h-14 object-cover rounded-md mx-auto"
-                      />
+                      <img src={style.image} alt={style.styleName} className="w-14 h-14 object-cover rounded-md mx-auto" />
                     ) : (
                       <span className="text-red-600 font-bold">No Image Uploaded!</span>
                     )}

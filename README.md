@@ -43,7 +43,7 @@ Production:
 
 - vendors (master - production_watchpoints, tech_specs -> file), quantity 
 
-- qa audit analysis (initial-2, mid-8) 
+- qa audit analysis (initial-2, mid-8) ✅
 
 - user management (radio button -> DKC Employee, Vendor). If click DKC, then show department (by default hidden) and if click vendor then direct create account button  ✅
 
@@ -65,7 +65,7 @@ http://localhost:3000/production-styles/classic-polo-shirt
 
 - master -> sampling watchpoint (graded-out to show not editable), tech graded specs, production watchpoint ✅
 
-- Sampling (Sampling watchpoint) ; Master-110 (110) ; Tech Graded Spec (Tech spec view, graded spec, print) ; Fit/PP (Fit 1, fit 2, fit 3, pp1-2, web 1-12) , QA Audit forms (mid1-3, inital, initial follow up, final1-3) ; QA Audit Analysis (callouts, qa audit form, inspection point print)
+- Sampling (Sampling watchpoint) ; Master-110 (110) ; Tech Graded Spec (Tech spec view, graded spec, print) ; Fit/PP (Fit 1, fit 2, fit 3, pp1-2, web 1-12) , QA Audit forms (mid1-3, inital, initial follow up, final1-3) ; QA Audit Analysis (callouts, qa audit form, inspection point print) ✅ 
 
 - Page for vendor will be different (they will be able to see their styles only)
 
@@ -79,4 +79,36 @@ http://localhost:3000/production-styles/classic-polo-shirt
 
 - Sampling styles (all styles same as production styles except order and qty) ✅
 
-- Sampling styles -> Sampling Watchpoint, Master-110, Tech Graded Spec, Fit/PP/Top/Web, QA Audit forms, QA Audit Analysis
+- Sampling styles -> Sampling Watchpoint, Master-110, Tech Graded Spec, Fit/PP/Top/Web, QA Audit forms, QA Audit Analysis ✅ 
+
+- http://localhost:3000/production-styles/denim-jacket/ns-blake-thermal (Empty folder - should be light red) ✅ 
+
+- Production Styles / Classic Polo Shirt / Ns Blake Thermal / Master-110 -> Floor tag  ✅ 
+
+- Production Styles / Classic Polo Shirt / Ns Blake Thermal / QA Audit Forms initial folder ✅ 
+
+Production Styles / Classic Polo Shirt / Ns Blake Thermal / QA Audit Analysis no callouts , qa spec audit form, qa inspection point audit form 
+
+
+
+#### FP One Testing 
+
+- Change Password not working (When a user is created from 'Staff User Management', the user gets an email containing the details, and a 'Change Password' button, the button do redirects to a new page, but the page isn't opening..likely the page wasn't developed)
+
+- On Click of 'Reset Password', the user does't gets any modal/pop-up  
+
+- "Reset Password" button not working (The user gets an email upon clicking 'Reset Password', the button just like 'Change Password' button redirects to another URL, but the URL doesn't has anything to offer to user)
+
+- User has been deleted, but still when we try to create an User account with the same email, it's not getting created and getting message "User with this email already exists, Kindly ask them to Login. Or Reset Password if they forgot.". User has been cleared from frontend, but might be possible not been cleared from database. 
+
+- ADD NEW STYLE -> Click to select an image (only WEBP image showing up, not all ) , duplicate images are also being added 
+
+- Apparel Category Management 
+
+- MSR Season name disappeared after update (MSR Category and Years Management)
+
+- Home -> Category -> Dress (After Enable Drag and Drop, when we place the image somewhere else then on submit, the image goes back to its previous position, doesn't resides at its new position)
+
+- Duplicate images being uploaded (Add New Style)
+
+- Only image with extension 'jpg' is being uploaded (Website Cover Photo)

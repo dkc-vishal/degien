@@ -2,6 +2,7 @@
 "use client";
 import React, { useState } from "react";
 import { RxCross2 } from "react-icons/rx";
+import { toast } from "sonner";
 
 interface ChangePasswordModalProps {
     onClose: () => void;
@@ -9,12 +10,39 @@ interface ChangePasswordModalProps {
 }
 
 const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSubmit }) => {
+
     const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
 
-    const handleSubmit = () => {
-        onSubmit({ oldPassword, newPassword, confirmPassword });
+    const [loading, setLoading] = useState(false);
+
+    const handleSubmit = async () => {
+        if (!oldPassword || !newPassword || !confirmPassword) {
+            toast.error("All fields are required.");
+            return;
+        }
+
+        if (newPassword !== confirmPassword) {
+            toast.error("New passwords do not match.");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            // await actual API call here
+
+            onSubmit({ oldPassword, newPassword, confirmPassword });
+            toast.success("Password changed successfully!");
+
+            setTimeout(() => {
+                onClose();
+                setLoading(false);
+            }, 1500);
+        } catch (err: any) {
+            toast.error(err.message || "Failed to change password.");
+            setLoading(false);
+        }
     };
 
     return (
@@ -73,11 +101,13 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
                         Cancel
                     </button>
                     <button
-                        onClick={handleSubmit}
-                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 cursor-pointer"
+                        disabled={loading}
+                        className={`px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 cursor-pointer ${loading && "opacity-50 cursor-not-allowed"
+                            }`}
                     >
-                        Submit
+                        {loading ? "Updating..." : "Submit"}
                     </button>
+
                 </div>
             </div>
         </div>

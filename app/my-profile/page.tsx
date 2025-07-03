@@ -5,6 +5,7 @@ import { GrPowerReset } from "react-icons/gr";
 import ChangePasswordModal from "./ChangePasswordModal";
 import UpdateProfileModal from "./UpdateProfileModal";
 import { FaRegEdit } from "react-icons/fa";
+import { toast } from "sonner";
 
 const MyProfilePage = () => {
     // State to manage modals

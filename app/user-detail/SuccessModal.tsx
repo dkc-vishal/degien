@@ -2,7 +2,8 @@
 import React from "react";
 import { RxCross2 } from "react-icons/rx";
 import { FaCheckCircle } from "react-icons/fa";
-import { FiCopy } from "react-icons/fi"; // ✅ Added clipboard icon
+import { FiCopy } from "react-icons/fi";
+import { toast } from "sonner";
 
 interface SuccessModalProps {
   user: {
@@ -18,7 +19,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ user, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.7)] px-4">
       <div className="w-full max-w-xl rounded-2xl shadow-2xl p-6 sm:p-8 relative text-center bg-white">
-        
+
         {/* ❌ Close Button with smooth hover & scale */}
         <button
           onClick={onClose}
@@ -40,6 +41,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ user, onClose }) => {
         </h3>
 
         {/* ✅ Structured details using grid layout */}
+
         <div className="grid grid-cols-2 gap-3 text-sm text-gray-700 text-left">
           <div className="font-semibold">Employee Name:</div>
           <div>{user.name}</div>
@@ -47,32 +49,38 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ user, onClose }) => {
           <div className="font-semibold">Email:</div>
           <div>{user.email}</div>
 
-          <div className="font-semibold">Department:</div>
-          <div>{user.department || "—"}</div>
+          {
+            user.department && (
+              <>
+                <div className="font-semibold">Department:</div>
+                <div>{user.department || "—"}</div>
+              </>
+            )
+          }
 
           <div className="font-semibold">System Password:</div>
 
           {/* ✅ Password and copy button side by side */}
           <div className="flex items-center justify-between gap-2">
-            <span className="font-mono text-gray-900">{user.generated_password}</span>
+            <span className="font-mono text-gray-900">{user.generated_password || "N/A"}</span>
             <button
               onClick={() => {
                 navigator.clipboard
-                  .writeText(user.generated_password) // ✅ Only password is copied
-                  .then(() => alert("Password copied!"))
-                  .catch(() => alert("Failed to copy."));
+                  .writeText(user.generated_password)
+                  .then(() => toast.success("Password copied to clipboard!"))
+                  .catch(() => toast.error("Failed to copy password."));
               }}
               className="flex items-center font-bold gap-1 bg-blue-400 text-white hover:text-blue-400 
                          border hover:bg-white border-blue-300 rounded px-2 py-1 text-xs cursor-pointer 
                          transition"
             >
-              <FiCopy className="w-4 h-4"/>
+              <FiCopy className="w-4 h-4" />
               <span>Copy</span>
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 

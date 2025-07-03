@@ -1,38 +1,24 @@
 "use client";
 import React, { useState } from "react";
 import { RxCross2 } from "react-icons/rx";
+import { toast } from "sonner";
 
 interface AddStyleModalProps {
   onClose: () => void;
+  onAddStyle: (newStyle: { styleName: string; image: string }) => void;
 }
 
-const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose }) => {
+
+const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose, onAddStyle }) => {
   const [form, setForm] = useState({
-    styleName: "",
-    // styleNumber: "",
-    // poNumber: "",
-    // buyerNumber: "",
-    // productionMerchant: "",
-    // techName: "",
-    // vendorName: "",
-    // qaName: "",
-    // xDate: "",
+    styleName: ""
   });
 
   const [fieldErrors, setFieldErrors] = useState({
-    styleName: "",
-    // styleNumber: "",
-    // poNumber: "",
-    // buyerNumber: "",
-    // productionMerchant: "",
-    // techName: "",
-    // vendorName: "",
-    // qaName: "",
-    // xDate: "",
+    styleName: ""
   });
 
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
 
   const validate = () => {
     const errors = {
@@ -50,24 +36,33 @@ const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose }) => {
       setFieldErrors({ ...fieldErrors, [e.target.name]: "" });
     }
     setError("");
-    setSuccess("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
+
     e.preventDefault();
     const errors = validate();
     setFieldErrors(errors);
 
     if (Object.values(errors).some(Boolean)) {
-      setError("Please fix the errors below.");
-      setSuccess("");
+      toast.error("Please fix the errors in the form.");
       return;
     }
 
-    // Submit logic here
-    setSuccess("Style added successfully!");
-    setError("");
+    onAddStyle({
+      styleName: form.styleName,
+      image: "",
+    });
+
+    toast.success("Style added successfully!");
+
+    setForm({ styleName: "" });
+
+    setTimeout(() => {
+      onClose();
+    }, 1000);
   };
+
 
   const renderField = (label: string, name: keyof typeof form, type: string = "text") => (
     <div className="flex flex-col">
@@ -81,8 +76,8 @@ const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose }) => {
         value={form[name]}
         onChange={handleChange}
         className={`w-full px-4 py-2 border rounded-md text-sm shadow-sm focus:outline-none focus:ring-2 ${fieldErrors[name]
-            ? "border-red-500 focus:ring-red-300"
-            : "border-gray-300 focus:ring-blue-400"
+          ? "border-red-500 focus:ring-red-300"
+          : "border-gray-300 focus:ring-blue-400"
           }`}
       />
       {fieldErrors[name] && <span className="text-xs text-red-500 mt-1">{fieldErrors[name]}</span>}
@@ -105,7 +100,6 @@ const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose }) => {
           <h2 className="text-2xl font-bold text-center text-black">Add New Style</h2>
 
           {error && <div className="text-red-600 text-sm text-center font-medium">{error}</div>}
-          {success && <div className="text-green-600 text-sm text-center font-medium">{success}</div>}
 
           <div className="rounded-lg p-4 space-y-5">
             <div className="grid grid-cols-1 gap-6">

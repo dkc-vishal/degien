@@ -1,14 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { IoMdPersonAdd } from "react-icons/io";
-
-const departments = ["", "IT", "HR", "Finance", "Marketing", "Sales"];
+import { toast } from "sonner";
+import { RxCross2 } from "react-icons/rx";
+import { API_ENDPOINTS } from "@/lib/api";
 
 const AddUserForm: React.FC<{
   onClose: () => void;
   onSuccess: (user: any) => void;
-}> = ({ onClose, onSuccess }) => {
+  existingUsers: any[];
+}> = ({ onClose, onSuccess, existingUsers }) => {
+
+  const [departments, setDepartments] = useState<{ [key: string]: string }>({});
+
   const [form, setForm] = useState({
     username: "",
     email: "",
@@ -17,6 +22,7 @@ const AddUserForm: React.FC<{
   });
 
   const [error, setError] = useState("");
+
   const [fieldErrors, setFieldErrors] = useState({
     username: "",
     email: "",
@@ -51,29 +57,87 @@ const AddUserForm: React.FC<{
     setError("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const errors = validate();
     setFieldErrors(errors);
+
     if (Object.values(errors).some(Boolean)) {
       setError("Please fix the errors below.");
       return;
     }
 
-    const newUser = {
-      id: Date.now(),
-      username: form.username,
-      email: form.email,
-      generated_password: "password123",
-      department: form.userType === "DKC" ? form.department : "Vendor",
-    };
+    const duplicate = existingUsers.find(u => u.email === form.email);
+    if (duplicate) {
+      toast.error("User with this email already exists.");
+      return;
+    }
 
-    onSuccess(newUser);
-    onClose();
+    const payload = {
+      email: form.email,
+      name: form.username,
+      department: form.userType === "DKC" ? form.department : "",
+      type_of_user: form.userType === "DKC" ? "staff" : "vendor",
+    }
+
+    try {
+      const res = await fetch(`${API_ENDPOINTS.createUser.url}`, {
+        method: API_ENDPOINTS.createUser.method,
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        toast.error(errData?.message || "Failed to create user.");
+        return;
+      }
+
+      const data = await res.json();
+
+      onSuccess({
+        id: data.data.user_id,
+        username: form.username,
+        email: form.email,
+        department: data.data.department,
+        generated_password: data.data.system_generated_password || "-"
+      });
+
+      toast.success("User created successfully!");
+      onClose();
+    } catch (error) {
+      console.error("Network error: ", error);
+      toast.error("Something went wrong. Try again.");
+    }
   };
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const res = await fetch(`${API_ENDPOINTS.departments.url}`);
+        const data = await res.json();
+        setDepartments(data.data);
+      } catch (err) {
+        console.error("Failed to fetch departments", err);
+      }
+    };
+    fetchDepartments();
+  }, []);
 
   return (
     <div>
+
+      <button
+        onClick={onClose}
+        className="absolute top-5 right-6 text-red-400 hover:text-red-500 cursor-pointer text-xl font-bold hover:scale-120 duration-300 ease-in-out transition-transform hover:bg-gray-200 rounded-md"
+        aria-label="Close"
+      >
+        <RxCross2 className="w-6 h-6" />
+      </button>
+
       <h2 className="text-xl font-semibold text-center text-gray-800 mb-4">
         Add New User
       </h2>
@@ -95,9 +159,8 @@ const AddUserForm: React.FC<{
             value={form.username}
             onChange={handleChange}
             placeholder="e.g. John Doe"
-            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-              fieldErrors.username ? "border-red-400" : "border-gray-300"
-            }`}
+            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.username ? "border-red-400" : "border-gray-300"
+              }`}
           />
           {fieldErrors.username && (
             <p className="text-xs text-red-500 mt-1">{fieldErrors.username}</p>
@@ -115,9 +178,8 @@ const AddUserForm: React.FC<{
             value={form.email}
             onChange={handleChange}
             placeholder="e.g. john@example.com"
-            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-              fieldErrors.email ? "border-red-400" : "border-gray-300"
-            }`}
+            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.email ? "border-red-400" : "border-gray-300"
+              }`}
           />
           {fieldErrors.email && (
             <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
@@ -166,16 +228,16 @@ const AddUserForm: React.FC<{
               name="department"
               value={form.department}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                fieldErrors.department ? "border-red-400" : "border-gray-300"
-              }`}
+              className={`...`}
             >
-              {departments.map((dep) => (
-                <option key={dep} value={dep}>
-                  {dep || "Select Department"}
+              <option value="">Select Department</option>
+              {Object.entries(departments).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
                 </option>
               ))}
             </select>
+
             {fieldErrors.department && (
               <p className="text-xs text-red-500 mt-1">
                 {fieldErrors.department}

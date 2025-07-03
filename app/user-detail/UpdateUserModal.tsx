@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { RxCross2 } from "react-icons/rx";
+import { toast } from "sonner";
 
 import { User } from "@/app/user-detail/page"; // adjust path if needed
 
@@ -34,16 +35,16 @@ const UpdateUserModal: React.FC<Props> = ({ user, onCancel, onUpdate }) => {
     const newErrors = { username: "", email: "", department: "" };
 
     if (!username.trim()) newErrors.username = "Name is required.";
-    
+
     if (!email.trim()) newErrors.email = "Email is required.";
-    
+
     else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))
       newErrors.email = "Invalid email format.";
-   
+
     if (!department) newErrors.department = "Please select a department.";
 
-    if(!isVendor && !department){
-      newErrors.department = "Please select a department"; 
+    if (!isVendor && !department) {
+      newErrors.department = "Please select a department";
     }
 
     return newErrors;
@@ -60,7 +61,10 @@ const UpdateUserModal: React.FC<Props> = ({ user, onCancel, onUpdate }) => {
       email,
       department,
     });
+
+    toast.success("User details updated!");
   };
+
 
   const isVendor = user.department === "Vendor";
 

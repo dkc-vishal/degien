@@ -1,7 +1,13 @@
 "use client";
+
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { API_ENDPOINTS } from "@/lib/api";
 
 const page: React.FC = () => {
+
+  const router = useRouter();
+
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -14,6 +20,7 @@ const page: React.FC = () => {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const validate = () => {
     const errors = { email: "", password: "" };
@@ -21,8 +28,8 @@ const page: React.FC = () => {
     else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email))
       errors.email = "Invalid email address.";
     if (!form.password) errors.password = "Password is required.";
-    else if (form.password.length < 6)
-      errors.password = "Password must be at least 6 characters.";
+    else if (form.password.length < 4)
+      errors.password = "Password must be at least 4 characters.";
     return errors;
   };
 
@@ -33,18 +40,82 @@ const page: React.FC = () => {
     setSuccess("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("🔁 Submitting login form");
+
+    console.log("📤 Sending payload:", {
+      email: form.email,
+      password: form.password,
+    });
+
     const errors = validate();
     setFieldErrors(errors);
+
     if (Object.values(errors).some(Boolean)) {
+      console.log("❌ Validation failed:", errors);
       setError("Please fix the errors below.");
       setSuccess("");
       return;
     }
-    setSuccess("Login successful!");
-    setError("");
+
+    try {
+      console.log("📡 Sending request to backend...");
+
+      const res = await fetch(API_ENDPOINTS.login.url, {
+        method: API_ENDPOINTS.login.method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+        }),
+      });
+
+      console.log("📥 Response received:", res);
+
+      const data = await res.json();
+      console.log("✅ Parsed JSON:", data);
+
+      if (!res.ok) {
+        console.error("🛑 Backend returned error:", data?.detail);
+        setError(data?.detail || "Login failed. Please check credentials.");
+        setSuccess("");
+        return;
+      }
+
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("refresh_token", data.refresh_token);
+
+      setSuccess("Login successful!");
+      setError("");
+
+      setLoading(true); // loading before redirecting
+
+      console.log("📦 Token saved to localStorage:", localStorage.getItem("token"));
+
+      console.log("🚀 Redirecting to dashboard in 2 seconds...");
+
+      setTimeout(() => {
+        try {
+          router.push("/dashboard");
+        } catch (err) {
+          console.error("🔁 Router push failed", err);
+        }
+      }, 2000);
+
+
+    } catch (err) {
+      console.error("🧨 Network error:", err);
+      setError("Something went wrong. Please try again.");
+      setSuccess("");
+    }
   };
+
+  const buttonClick = () => {
+    console.log("Button clicked");
+  }
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gray-100 px-4">
@@ -83,9 +154,8 @@ const page: React.FC = () => {
             onChange={handleChange}
             autoComplete="email"
             placeholder="e.g. john@example.com"
-            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-              fieldErrors.email ? "border-red-400" : "border-gray-300"
-            }`}
+            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.email ? "border-red-400" : "border-gray-300"
+              }`}
           />
           {fieldErrors.email && (
             <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
@@ -108,9 +178,8 @@ const page: React.FC = () => {
             onChange={handleChange}
             autoComplete="current-password"
             placeholder="Enter your password"
-            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-              fieldErrors.password ? "border-red-400" : "border-gray-300"
-            }`}
+            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.password ? "border-red-400" : "border-gray-300"
+              }`}
           />
           {fieldErrors.password && (
             <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
@@ -118,22 +187,49 @@ const page: React.FC = () => {
         </div>
 
         {/* Submit */}
+
         <button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 rounded-md transition duration-200"
+          disabled={loading}
+          className={`w-full text-white text-sm font-medium py-2 rounded-md transition duration-200 ${loading
+            ? "bg-blue-300 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700"
+            }`}
+          onClick={() => buttonClick()}
         >
-          Login
+          {loading ? "Logging in..." : "Login"}
         </button>
 
-        <div className="text-center mt-4 text-sm text-gray-600">
-          Don&apos;t have an account?{" "}
-          <a
-            href="/Auth/Add-User"
-            className="text-blue-600 hover:underline font-medium"
-          >
-            Register
-          </a>
-        </div>
+
+        {/* Showing loading spinner */}
+
+        {loading && (
+          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-blue-600">
+            <svg
+              className="animate-spin h-4 w-4 text-blue-600"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8z"
+              ></path>
+            </svg>
+            🚀 Redirecting...
+          </div>
+        )}
+
+
       </form>
     </div>
   );

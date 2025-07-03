@@ -1,12 +1,12 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Pencil, UserPlus } from "lucide-react";
-import { LuShieldOff } from "react-icons/lu";
 import AddUserForm from "./AddUserForm";
-import { RxCross2 } from "react-icons/rx";
 import SuccessModal from "./SuccessModal";
 import ConfirmInactiveModal from "./ConfirmInactiveModal";
 import UpdateUserModal from "./UpdateUserModal";
+import { toast } from "sonner";
+import { FaUserPlus } from "react-icons/fa6";
+import ResetPasswordModal from "./ResetPasswordModal";
 
 interface User {
   id: number;
@@ -47,6 +47,8 @@ const UserDetailsPage: React.FC = () => {
     if (userToDeactivate) {
       setInactiveUsers((prev) => [...prev, userToDeactivate]);
       setUsers((prev) => prev.filter((u) => u.id !== id));
+
+      toast(`User ${userToDeactivate.username} marked as inactive.`);
     }
     setShowConfirmInactiveModal(false);
   };
@@ -59,13 +61,6 @@ const UserDetailsPage: React.FC = () => {
   const handleResetPassword = (user: User) => {
     setSelectedUser(user);
     setShowModal(true);
-  };
-
-  const confirmResetPassword = () => {
-    if (selectedUser) {
-      alert(`Password reset link sent to ${selectedUser.email}`);
-    }
-    setShowModal(false);
   };
 
   const handleUserUpdate = (updatedUser: User) => {
@@ -101,7 +96,7 @@ const UserDetailsPage: React.FC = () => {
             className="inline-flex items-center gap-2 rounded-lg bg-blue-400 px-4 py-2 text-lg font-semibold text-white shadow-sm hover:bg-white hover:text-blue-400 transition-colors duration-200 border border-transparent hover:border-blue-400 cursor-pointer"
             onClick={() => setShowAddUserModal(true)}
           >
-            <UserPlus className="w-5 h-5 transition-colors duration-200" />
+            <FaUserPlus className="w-5 h-5 transition-colors duration-200" />
             <span>Add New User</span>
           </a>
         </div>
@@ -193,56 +188,27 @@ const UserDetailsPage: React.FC = () => {
       {showAddUserModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.7)] px-4">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 sm:p-8 relative">
-            <button
-              onClick={() => setShowAddUserModal(false)}
-              className="absolute top-5 right-7 text-red-400 hover:text-red-500 cursor-pointer text-xl font-bold"
-              aria-label="Close"
-            >
-              <RxCross2 className="w-6 h-6" />
-            </button>
             <AddUserForm
               onClose={() => setShowAddUserModal(false)}
               onSuccess={(user) => {
                 setUsers((prev) => [...prev, user]); // ✅ Adds user to state
                 setCreatedUser({
-                  ...user, 
+                  ...user,
                   name: user.username
                 });
                 setShowSuccessModal(true);
                 setShowAddUserModal(false);
               }}
+              existingUsers={users}
             />
           </div>
         </div>
       )}
 
+      {/* Reset password modal */}
+
       {showModal && selectedUser && (
-        <div className="fixed inset-0 bg-[rgba(0,0,0,0.7)] flex items-center justify-center z-50 px-4">
-          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 sm:p-8 relative">
-            <h3 className="text-xl font-semibold text-center text-gray-800 mb-4">
-              Confirm Password Reset
-            </h3>
-            <p className="text-sm text-gray-600 text-center mb-6">
-              Send a password reset link to:
-              <br />
-              <span className="font-medium text-blue-600">{selectedUser.email}</span>
-            </p>
-            <div className="flex justify-center gap-4">
-              <button
-                onClick={confirmResetPassword}
-                className="bg-green-600 hover:bg-white hover:text-green-600 border border-green-600 text-white font-medium py-2 px-4 rounded-md cursor-pointer"
-              >
-                Confirm
-              </button>
-              <button
-                onClick={() => setShowModal(false)}
-                className="bg-gray-500 hover:bg-white hover:text-gray-700 border border-gray-400 text-white font-medium py-2 px-4 rounded-md cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+        <ResetPasswordModal user={selectedUser} onClose={() => setShowModal(false)} />
       )}
 
       {showSuccessModal && createdUser && (
