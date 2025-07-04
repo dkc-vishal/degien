@@ -1,11 +1,22 @@
 "use client";
 
 import SheetTitle from "@/components/core/SheetTitle";
-import Table from "@/components/core/Table";
-import { useState } from "react";
+import Table from "../../components/core/Table";
+import { useState,useEffect } from "react";
+import axios from "axios";
 import { FaPrint } from "react-icons/fa";
-
+type ColumnMetadata = {
+  data_type: string;        
+  header: string;           
+  is_editable: boolean;
+  is_frozen: boolean;
+  is_hidden: boolean;
+  is_moveable: boolean;
+  width: string;          
+};
 export default function QaIntialReport() {
+    const [columnHeaders, setcolumnHeaders] = useState<ColumnMetadata[]>([]);
+    const [tableData, setTableData] = useState({});
   const [poNumber, setPoNumber] = useState<string[]>([]);
   const [colorValues, setColorValues] = useState<string[][]>([
     Array(6).fill(Array(6).fill("")),
@@ -13,6 +24,19 @@ export default function QaIntialReport() {
   const handlePrint = () => {
     window.print();
   };
+    async function fetchdata() {
+    const res = await axios.get(
+      "http://shivam-mac.local:8000/api/v1.0/spreadsheet/32dbb7af-18b7-493f-ab77-0781e34a7957"
+    );
+    const col_metadata: Record<string, ColumnMetadata> = await res.data.data.column_metadata;
+    console.log(res)
+    setTableData(res.data.data);
+
+    setcolumnHeaders(Object.values(col_metadata));
+  }
+  useEffect(() => {
+    fetchdata();
+  }, []);
   const handlePoNumberChange = (index: number, value: string) => {
     const newPoNumber = [...poNumber];
     newPoNumber[index] = value;
@@ -262,26 +286,16 @@ export default function QaIntialReport() {
           </div>
         </div>
         <div style={{marginTop:"75px"}} className="print-container">
-          <Table
-            col={12}
-            row={20}
-            imagecol={3}
-            tablename="initial-report"
-            columnheaders={[
-              "",
-              "",
-              "ISSUE",
-              "Issue Image",
-              "FT", 
-              "FT",
-              "FT",
-              "FT",
-              "FT",
-              "FT",
-              "MAJOR",
-              "MINOR",
-            ]}
-          />
+               {columnHeaders.length>0 && (
+                 <Table
+                   col={12}
+                   row={20}
+                   imagecol={3}
+                   tablename="mid-final"
+                   columnheaders={columnHeaders}
+                   spreadsheet={tableData}
+                 />
+               )}
         </div>
       </div>
     </>

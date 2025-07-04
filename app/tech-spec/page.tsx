@@ -1,24 +1,37 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Table from "@/components/core/Table spec";
 import Link from "next/link";
-
-import {
-  FaTachometerAlt,
-  FaClipboardList,
-  FaWrench,
-  FaTools,
-  FaPrint,
-} from "react-icons/fa";
+import axios from "axios";
+import { FaPrint } from "react-icons/fa";
 import SheetTitle from "@/components/core/SheetTitle";
 import InputForm from "@/components/core/InputForm";
+type ColumnMetadata = {
+  data_type: string;
+  header: string;
+  is_editable: boolean;
+  is_frozen: boolean;
+  is_hidden: boolean;
+  is_moveable: boolean;
+  width: number;
+};
 export default function TechSpecSheet() {
-  const menuItems = [
-    { icon: <FaTachometerAlt />, label: "Dashboard" },
-    { icon: <FaClipboardList />, label: "Tech Specs" },
-    { icon: <FaTools />, label: "Inspections" },
-    { icon: <FaWrench />, label: "Settings" },
-  ];
+  const [columnHeaders, setcolumnHeaders] = useState<ColumnMetadata[]>([]);
+  const [tableData, setTableData] = useState({});
+  async function fetchdata() {
+    const res = await axios.get(
+      "http://shivam-mac.local:8000/api/v1.0/spreadsheet/580d3753-8487-4d98-909e-c3b52580f21c"
+    );
+    const col_metadata: Record<string, ColumnMetadata> = await res.data.data
+      .column_metadata;
+    // console.log(col_metadata);
+    setTableData(res.data.data);
+    setcolumnHeaders(Object.values(col_metadata));
+  }
+  useEffect(() => {
+    fetchdata();
+  }, []);
+
   return (
     <>
       <div className=" flex-1 flex flex-col p-6">
@@ -46,37 +59,17 @@ export default function TechSpecSheet() {
         </div>
 
         {/* Page Content */}
-        <Table
-          col={23}
-          row={20}
-          tablename="Tech Specs"
-          imagecol={6}
-          columnheaders={[
-            "",
-            "",
-            "SHOULD GO TO QA INSPECTION ?",
-            "HEADER",
-            "MEASUREMENT TYPE",
-            "LOCATION",
-            "MEASUREMENT PICTURE URL",
-            "MSR MEASUREMENT",
-            "MSR GRADING RULE",
-            "FIT CHANGED MEASUREMENT",
-            "FIT GRADING RULE",
-            "PP CHANGED MEASUREMENT",
-            "PP CHANGED GRADING RULE",
-            "TOP CHANGED MEASUREMENT",
-            "TOP CHANGED GRADING RULE",
-            "REAL TIME GRADING RULE",
-            "REAL TIME MEASUREMENT",
-            "XS",
-            "S",
-            "M",
-            "L",
-            "XL",
-            "HELPER COLUMN FOR MEASUREMENT",
-          ]}
-        />
+        {columnHeaders.length > 0 && (
+          <Table
+            col={22}
+            row={20}
+            imagecol={3}
+            tablename="tech spec"
+            columnheaders={columnHeaders}
+            spreadsheet={tableData}
+          />
+        )}
+        {/* Footer */}
       </div>
     </>
   );

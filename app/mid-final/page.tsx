@@ -1,15 +1,43 @@
 "use client";
 
 import SheetTitle from "@/components/core/SheetTitle";
-import Table from "@/components/core/Table";
-import React from "react";
+// import Table from "@/components/core/Table";
+import Table from "../../components/core/Table";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-
+import axios from "axios";
 import { FaPrint } from "react-icons/fa";
+type ColumnMetadata = {
+  data_type: string;        
+  header: string;           
+  is_editable: boolean;
+  is_frozen: boolean;
+  is_hidden: boolean;
+
+  is_moveable: boolean;
+  width: string;          
+};
 const MidReportForm = () => {
   const handlePrint = () => {
     window.print();
   };
+  const [columnHeaders, setcolumnHeaders] = useState<ColumnMetadata[]>([]);
+  const [tableData, setTableData] = useState({});
+  async function fetchdata() {
+    const res = await axios.get(
+      "http://shivam-mac.local:8000/api/v1.0/spreadsheet/32dbb7af-18b7-493f-ab77-0781e34a7957"
+    );
+    const col_metadata: Record<string, ColumnMetadata> = await res.data.data.column_metadata;
+    console.log(res)
+    setTableData(res.data.data);
+
+    setcolumnHeaders(Object.values(col_metadata));
+  }
+  useEffect(() => {
+    fetchdata();
+  }, []);
+
+
   return (
     <>
       <style jsx global>{`
@@ -167,26 +195,16 @@ const MidReportForm = () => {
           <div className="font-semibold text-base m-2 p-1">RESULT</div>
         </div>
         <div className="print-container">
-          <Table
-            col={12}
-            row={20}
-            imagecol={3}
-            tablename="mid-final"
-            columnheaders={[
-              "MOVE",
-              "Sno",
-              "ISSUE",
-              "Issue Image",
-              "FT", // You have multiple "FT" columns; you can make them unique if needed.
-              "FT",
-              "FT",
-              "FT",
-              "FT",
-              "FT",
-              "MAJOR",
-              "MINOR",
-            ]}
-          />
+          {columnHeaders.length>0 && (
+            <Table
+              col={12}
+              row={20}
+              imagecol={3}
+              tablename="mid-final"
+              columnheaders={columnHeaders}
+              spreadsheet={tableData}
+            />
+          )}
         </div>
       </div>
     </>
