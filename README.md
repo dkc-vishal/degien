@@ -112,3 +112,39 @@ Production Styles / Classic Polo Shirt / Ns Blake Thermal / QA Audit Analysis no
 - Duplicate images being uploaded (Add New Style)
 
 - Only image with extension 'jpg' is being uploaded (Website Cover Photo)
+
+
+### Vishal 110 Testing
+
+1. Column header flowing outside of its boundary (when shrinked to smallest) - should be wrapped inward instead 
+
+        - Measurement type 
+        - Measurement Picture 
+        - Fit changed measurement 
+        - PP Changed Measurement 
+        - Top Changed measurement 
+        - Top Changed Grading Rule 
+        - Real time measurement 
+        - Helper Column For Measurement (not being displayed correctly)
+
+2. Inputs are being replicated 
+
+        - Fit Grading Rule, Real Time Grading
+        - Fit Changed Measurement, Real Time measurement
+        - MSR Grading Rule, Real time grading rule 
+        - MSR Measurement, Real time measurement 
+        - PP Changed measurement, Real Time Measurement 
+        - PP Changed Grading Rule, Real Time Grading Rule 
+        - Top Changed Measurement, Real Time Measurement
+
+3. Not being able to input 
+
+        - XS, S, M, L, XL (only 0 is being added, for any keystroke, its adding 0)
+        
+        - If we try to input in a particular column (Say XS), it adds a default value 0 and that too in all the columns (XS, S, M, L, XL)
+
+
+5. Ctrl Z not working (When we use options like Insert Column Left, then on Ctrl Z it should undo, which means remove the newly added column at the left, but it's not doing so) - Ctrl Z only working for data, and not on the structure of table 
+
+6. Print button not working 
+

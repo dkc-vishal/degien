@@ -42,74 +42,71 @@ const page: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("🔁 Submitting login form");
-
-    console.log("📤 Sending payload:", {
-      email: form.email,
-      password: form.password,
-    });
 
     const errors = validate();
     setFieldErrors(errors);
-
     if (Object.values(errors).some(Boolean)) {
-      console.log("❌ Validation failed:", errors);
       setError("Please fix the errors below.");
-      setSuccess("");
       return;
     }
 
     try {
-      console.log("📡 Sending request to backend...");
-
       const res = await fetch(API_ENDPOINTS.login.url, {
         method: API_ENDPOINTS.login.method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-        }),
+        body: JSON.stringify(form),
       });
 
-      console.log("📥 Response received:", res);
-
-      const data = await res.json();
-      console.log("✅ Parsed JSON:", data);
+      const response = await res.json();
+      const { access_token, refresh_token } = response.data;
 
       if (!res.ok) {
-        console.error("🛑 Backend returned error:", data?.detail);
-        setError(data?.detail || "Login failed. Please check credentials.");
-        setSuccess("");
+        setError(response?.detail || "Login failed. Please check credentials.");
         return;
       }
 
-      localStorage.setItem("access_token", data.access_token);
-      localStorage.setItem("refresh_token", data.refresh_token);
+      localStorage.setItem("access_token", access_token);
+      localStorage.setItem("refresh_token", refresh_token);
+
+      await fetchAndStoreUserProfile(response.access_token);
 
       setSuccess("Login successful!");
       setError("");
-
-      setLoading(true); // loading before redirecting
-
-      console.log("📦 Token saved to localStorage:", localStorage.getItem("token"));
-
-      console.log("🚀 Redirecting to dashboard in 2 seconds...");
+      setLoading(true);
 
       setTimeout(() => {
-        try {
-          router.push("/dashboard");
-        } catch (err) {
-          console.error("🔁 Router push failed", err);
-        }
+        router.push("/dashboard");
       }, 2000);
 
-
     } catch (err) {
-      console.error("🧨 Network error:", err);
+      console.error("🧨 Login failed:", err);
       setError("Something went wrong. Please try again.");
-      setSuccess("");
+    }
+  };
+
+  // Fetching logged-in user's profile using token 
+
+  const fetchAndStoreUserProfile = async (accessToken: string) => {
+    try {
+      const profileRes = await fetch(API_ENDPOINTS.userProfile.url, {
+        method: API_ENDPOINTS.userProfile.method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}` 
+        },
+      });
+
+      if (!profileRes.ok) {
+        throw new Error("Failed to fetch user profile");
+      }
+
+      const userProfile = await profileRes.json();
+      localStorage.setItem("loggedInUser", JSON.stringify(userProfile));
+      console.log("👤 Logged-in user saved: ", userProfile);
+    } catch (error) {
+      console.log("❌ Failed to load user profile:", error);
     }
   };
 
@@ -193,7 +190,7 @@ const page: React.FC = () => {
           disabled={loading}
           className={`w-full text-white text-sm font-medium py-2 rounded-md transition duration-200 ${loading
             ? "bg-blue-300 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700"
+            : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
             }`}
           onClick={() => buttonClick()}
         >

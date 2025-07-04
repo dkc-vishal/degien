@@ -17,4 +17,12 @@ export const API_ENDPOINTS = {
         url: `${BASE_URL}/reset-password/admin/`, 
         method: 'POST'
     },
+    resetPasswordSelfChange: {
+        url: `${BASE_URL}/reset-password/self/change`, 
+        method: 'POST'
+    },
+    userProfile: {
+        url: `${BASE_URL}/user-detail/`, 
+        method: 'GET'
+    },
 }

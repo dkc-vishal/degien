@@ -18,6 +18,9 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({ onClose, onSu
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async () => {
+
+        // validate fields 
+
         if (!oldPassword || !newPassword || !confirmPassword) {
             toast.error("All fields are required.");
             return;
