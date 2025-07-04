@@ -116,7 +116,7 @@ Production Styles / Classic Polo Shirt / Ns Blake Thermal / QA Audit Analysis no
 
 ### Vishal 110 Testing
 
-1. Column header flowing outside of its boundary (when shrinked to smallest) - should be wrapped inward instead 
+1. Column header flowing outside of its boundary (when shrinked to smallest) - should be wrapped inward instead (good to have )
 
         - Measurement type 
         - Measurement Picture 
@@ -148,3 +148,12 @@ Production Styles / Classic Polo Shirt / Ns Blake Thermal / QA Audit Analysis no
 
 6. Print button not working 
 
+- cell -> background color from backend 
+
+
+
+- Sonu NM 11, sonu.mahto@dkcexports.co.in , txnVJfzLQx
+
+- Sonu NM, sonumn@gmail.com , JxoD1UDdxc
+
+- Golu Don, golu.don@gmail.com, PzAGcgoDOF

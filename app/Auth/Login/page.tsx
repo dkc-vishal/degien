@@ -2,7 +2,9 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { FiLogIn } from "react-icons/fi";
 import { API_ENDPOINTS } from "@/lib/api";
+import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 
 const page: React.FC = () => {
 
@@ -21,6 +23,8 @@ const page: React.FC = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const [showPassword, setShowPassword] = useState(false) ; 
 
   const validate = () => {
     const errors = { email: "", password: "" };
@@ -45,10 +49,13 @@ const page: React.FC = () => {
 
     const errors = validate();
     setFieldErrors(errors);
+
     if (Object.values(errors).some(Boolean)) {
       setError("Please fix the errors below.");
       return;
     }
+
+    console.log("Sending login request with: ", form);
 
     try {
       const res = await fetch(API_ENDPOINTS.login.url, {
@@ -60,6 +67,14 @@ const page: React.FC = () => {
       });
 
       const response = await res.json();
+
+      if (!response?.data?.access_token) {
+        console.error("❌ No access_token in response!", response);
+      }
+
+      console.log("🟢 Login response received", res.status);
+      console.log("📦 Parsed response:", response);
+
       const { access_token, refresh_token } = response.data;
 
       if (!res.ok) {
@@ -70,7 +85,9 @@ const page: React.FC = () => {
       localStorage.setItem("access_token", access_token);
       localStorage.setItem("refresh_token", refresh_token);
 
-      await fetchAndStoreUserProfile(response.access_token);
+      console.log('access_token from response: ', access_token);
+
+      await fetchAndStoreUserProfile(access_token);
 
       setSuccess("Login successful!");
       setError("");
@@ -89,24 +106,40 @@ const page: React.FC = () => {
   // Fetching logged-in user's profile using token 
 
   const fetchAndStoreUserProfile = async (accessToken: string) => {
+    console.log("🔐 Using access token:", accessToken);
+
+    if (!accessToken) {
+      console.error("🚨 No access token provided!");
+      return;
+    }
+
     try {
       const profileRes = await fetch(API_ENDPOINTS.userProfile.url, {
         method: API_ENDPOINTS.userProfile.method,
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}` 
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
+      console.log("📨 user-detail fetch response:", profileRes.status);
+
       if (!profileRes.ok) {
+        const errorText = await profileRes.text();
+        console.error("❌ Failed to fetch user profile:", errorText);
         throw new Error("Failed to fetch user profile");
       }
 
       const userProfile = await profileRes.json();
-      localStorage.setItem("loggedInUser", JSON.stringify(userProfile));
-      console.log("👤 Logged-in user saved: ", userProfile);
+      console.log("👤 User Profile:", userProfile);
+
+      // Saving the logged-in user info in localStorage 
+
+      localStorage.setItem("loggedInUser", JSON.stringify(userProfile.data));
+
+      console.log("✅ User profile saved");
     } catch (error) {
-      console.log("❌ Failed to load user profile:", error);
+      console.log("❌ fetchAndStoreUserProfile failed:", error);
     }
   };
 
@@ -160,7 +193,8 @@ const page: React.FC = () => {
         </div>
 
         {/* Password */}
-        <div className="mb-4">
+
+        <div className="mb-4 relative">
           <label
             htmlFor="password"
             className="block text-sm font-medium text-gray-700 mb-1"
@@ -168,7 +202,7 @@ const page: React.FC = () => {
             Password <span className="text-red-500">*</span>
           </label>
           <input
-            type="password"
+            type={showPassword ? "text" : "password"}
             id="password"
             name="password"
             value={form.password}
@@ -178,6 +212,22 @@ const page: React.FC = () => {
             className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.password ? "border-red-400" : "border-gray-300"
               }`}
           />
+
+        {/* Toggle icon */}
+
+        <span
+          className="absolute right-3 top-8.5 cursor-pointer text-gray-500"
+          onClick={() => setShowPassword((prev) => !prev)}
+        >
+          {
+            showPassword ? (
+              <AiFillEyeInvisible className="w-5 h-5"/>
+            ) : (
+              <AiFillEye className="w-5 h-5"/>
+            )
+          }
+        </span>
+
           {fieldErrors.password && (
             <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
           )}
@@ -188,15 +238,17 @@ const page: React.FC = () => {
         <button
           type="submit"
           disabled={loading}
-          className={`w-full text-white text-sm font-medium py-2 rounded-md transition duration-200 ${loading
+          className={`w-full text-white text-sm font-medium py-2 mt-5 rounded-md transition duration-200 ${loading
             ? "bg-blue-300 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+            : "bg-blue-500 hover:bg-blue-600 cursor-pointer"
             }`}
           onClick={() => buttonClick()}
         >
-          {loading ? "Logging in..." : "Login"}
+          <span className="flex items-center justify-center gap-3">
+            <FiLogIn className="w-4 h-4"/>
+            {loading ? "Logging in..." : "Login"}
+          </span>
         </button>
-
 
         {/* Showing loading spinner */}
 
@@ -225,6 +277,18 @@ const page: React.FC = () => {
             🚀 Redirecting...
           </div>
         )}
+
+        <div className="mt-3 text-left">
+          <p className="text-sm text-gray-600">
+            First time login? {" "}
+            <span
+              onClick={() => router.push("/Auth/Change-Password")}
+              className="text-blue-600 font-medium hover:underline cursor-pointer"
+            >
+              Change Password
+            </span>
+          </p>
+        </div>
 
 
       </form>

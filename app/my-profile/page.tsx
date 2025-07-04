@@ -14,21 +14,30 @@ const MyProfilePage = () => {
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
 
-    const [user, setUser] = useState<{ username: string; email: string; department: string } | null>(null);
+    const [user, setUser] = useState<{
+        username: string;
+        email: string;
+        department: string;
+        is_vendor?: boolean;
+    } | null>(null);
 
     // Load user on mount 
 
     useEffect(() => {
         const storedUser = localStorage.getItem("loggedInUser");
+
         if (storedUser) {
-            const parsedUser = JSON.parse(storedUser);
+            const parsed = JSON.parse(storedUser);
+
             setUser({
-                username: parsedUser.name || parsedUser.username || "N/A",
-                email: parsedUser.email,
-                department: parsedUser.department || "N/A",
+                username: parsed.name || parsed.username || "N/A",
+                email: parsed.email || "N/A",
+                department: parsed.department || "N/A",
+                is_vendor: parsed.is_vendor || false
             });
         }
     }, []);
+
 
     // Handle password change
 
@@ -50,7 +59,7 @@ const MyProfilePage = () => {
 
             // updating localStorage when user updates profile
 
-            localStorage.setItem("loggedInUser", JSON.stringify(updatedUser)); 
+            localStorage.setItem("loggedInUser", JSON.stringify(updatedUser));
             return updatedUser;
         });
         setShowUpdateModal(false);
@@ -66,7 +75,7 @@ const MyProfilePage = () => {
                     <h2 className="text-2xl font-semibold text-gray-800">My Profile</h2>
                 </div>
 
-                {/* Profile Info */}
+                {/* Profile Info - DKC Staff */}
 
                 {user ? (
                     <>
@@ -88,6 +97,16 @@ const MyProfilePage = () => {
                 ) : (
                     <div className="text-center justify-between text-gray-500 mb-10">No User Info...</div>
                 )}
+
+                {/* Profile Info - Vendor */}
+
+                {user && user.is_vendor && (
+                    <div>
+                        <p className="text-sm text-gray-500 mb-1">Vendor Status</p>
+                        <p className="text-lg font-medium text-gray-800">Yes</p>
+                    </div>
+                )}
+
 
                 {/* Buttons */}
 

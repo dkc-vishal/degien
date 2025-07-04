@@ -8,15 +8,15 @@ import { toast } from "sonner";
 import { FaUserPlus } from "react-icons/fa6";
 import ResetPasswordModal from "./ResetPasswordModal";
 
-interface User {
+export interface User {
   id: number;
   username: string;
   email: string;
   department: string;
+  is_vendor: boolean;
 }
 
 const UserDetailsPage: React.FC = () => {
-
   const [users, setUsers] = useState<User[]>(() => {
     if (typeof window !== "undefined") {
       const storedUsers = localStorage.getItem("users");
@@ -47,7 +47,6 @@ const UserDetailsPage: React.FC = () => {
     if (userToDeactivate) {
       setInactiveUsers((prev) => [...prev, userToDeactivate]);
       setUsers((prev) => prev.filter((u) => u.id !== id));
-
       toast(`User ${userToDeactivate.username} marked as inactive.`);
     }
     setShowConfirmInactiveModal(false);
@@ -68,20 +67,12 @@ const UserDetailsPage: React.FC = () => {
     setShowUpdateModal(false);
   };
 
-  // active users 
-
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("users", JSON.stringify(users));
-    }
+    localStorage.setItem("users", JSON.stringify(users));
   }, [users]);
 
-  // inactive users 
-
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("inactiveUsers", JSON.stringify(inactiveUsers));
-    }
+    localStorage.setItem("inactiveUsers", JSON.stringify(inactiveUsers));
   }, [inactiveUsers]);
 
   const displayedUsers = activeTab === "all" ? users : inactiveUsers;
@@ -89,19 +80,17 @@ const UserDetailsPage: React.FC = () => {
   return (
     <main className="flex-1 p-4 sm:p-6 bg-gray-50 min-h-screen w-full">
       <div className="max-w-7xl mx-auto w-full">
-        {/* Top Bar */}
         <div className="flex items-center justify-between mt-6 mb-4 gap-4 flex-wrap">
           <h2 className="text-2xl font-semibold text-gray-800">User Management</h2>
           <a
             className="inline-flex items-center gap-2 rounded-lg bg-blue-400 px-4 py-2 text-lg font-semibold text-white shadow-sm hover:bg-white hover:text-blue-400 transition-colors duration-200 border border-transparent hover:border-blue-400 cursor-pointer"
             onClick={() => setShowAddUserModal(true)}
           >
-            <FaUserPlus className="w-5 h-5 transition-colors duration-200" />
+            <FaUserPlus className="w-5 h-5" />
             <span>Add New User</span>
           </a>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-4 mb-6">
           <button
             onClick={() => setActiveTab("all")}
@@ -117,7 +106,6 @@ const UserDetailsPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Table */}
         {displayedUsers.length === 0 ? (
           <div className="text-center text-gray-500 py-10">No users found.</div>
         ) : (
@@ -125,7 +113,7 @@ const UserDetailsPage: React.FC = () => {
             <table className="min-w-full bg-white rounded-lg text-center text-sm">
               <thead className="bg-gray-100 text-gray-700 uppercase tracking-wider">
                 <tr>
-                  <th className="w-12 whitespace-nowrap text-center">S. No</th>
+                  <th className="w-12">S. No</th>
                   <th className="px-2 py-3">Employee Name</th>
                   <th className="px-2 py-3">Email</th>
                   <th className="px-2 py-3">Department</th>
@@ -134,46 +122,19 @@ const UserDetailsPage: React.FC = () => {
               </thead>
               <tbody>
                 {displayedUsers.map((user, index) => (
-                  <tr key={user.id} className="hover:bg-gray-50 transition text-gray-700 border-b border-gray-200">
+                  <tr key={user.id} className="hover:bg-gray-50 transition border-b border-gray-200">
                     <td className="px-2 py-2">{index + 1}</td>
                     <td className="px-4 py-2">{user.username}</td>
                     <td className="px-4 py-2">{user.email}</td>
-                    <td className="px-4 py-2">{user.department}</td>
+                    <td className="px-4 py-2">{user.is_vendor ? "-" : user.department}</td>
                     {activeTab === "all" && (
                       <td className="px-4 py-4">
-                        <div className="w-full flex justify-center">
-                          <div className="flex gap-3">
-                            <button
-                              onClick={() => handleUpdate(user)}
-                              className="bg-blue-400 hover:bg-blue-500 text-white px-3 py-1 rounded flex items-center gap-1 cursor-pointer"
-                              title="Update"
-                            >
-                              {/* <Pencil className="w-4 h-4" /> */}
-                              <span>Update</span>
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                setSelectedUser(user);
-                                setShowConfirmInactiveModal(true);
-                              }}
-                              className="bg-red-400 hover:bg-red-500 text-white px-3 py-1 rounded flex items-center gap-1 cursor-pointer"
-                              title="Mark Inactive"
-                            >
-                              {/* <LuShieldOff className="w-4 h-4" strokeWidth={3.1} /> */}
-                              <span>Mark Inactive</span>
-                            </button>
-
-                            <button
-                              onClick={() => handleResetPassword(user)}
-                              className="bg-teal-500 hover:bg-teal-600 text-white px-3 py-1 rounded flex items-center gap-1 cursor-pointer"
-                            >
-                              <span>Reset Password</span>
-                            </button>
-                          </div>
+                        <div className="flex justify-center gap-3">
+                          <button onClick={() => handleUpdate(user)} className="bg-blue-400 hover:bg-blue-500 text-white px-3 py-1 rounded cursor-pointer">Update</button>
+                          <button onClick={() => { setSelectedUser(user); setShowConfirmInactiveModal(true); }} className="bg-red-400 hover:bg-red-500 text-white px-3 py-1 rounded cursor-pointer">Mark Inactive</button>
+                          <button onClick={() => handleResetPassword(user)} className="bg-teal-500 hover:bg-teal-600 text-white px-3 py-1 rounded cursor-pointer">Reset Password</button>
                         </div>
                       </td>
-
                     )}
                   </tr>
                 ))}
@@ -183,18 +144,19 @@ const UserDetailsPage: React.FC = () => {
         )}
       </div>
 
-      {/* Modals */}
-
       {showAddUserModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.7)] px-4">
           <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 sm:p-8 relative">
             <AddUserForm
               onClose={() => setShowAddUserModal(false)}
               onSuccess={(user) => {
-                setUsers((prev) => [...prev, user]); // ✅ Adds user to state
+                setUsers((prev) => [...prev, {
+                  ...user,
+                  is_vendor: user.type_of_user === "vendor"
+                }]);
                 setCreatedUser({
                   ...user,
-                  name: user.username
+                  is_vendor: user.type_of_user === "vendor"
                 });
                 setShowSuccessModal(true);
                 setShowAddUserModal(false);
@@ -204,8 +166,6 @@ const UserDetailsPage: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Reset password modal */}
 
       {showModal && selectedUser && (
         <ResetPasswordModal user={selectedUser} onClose={() => setShowModal(false)} />

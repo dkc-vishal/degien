@@ -13,37 +13,40 @@ interface ResetPasswordModalProps {
 }
 
 const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ user, onClose }) => {
+
     const handleConfirmReset = async () => {
-        try {
-            const res = await fetch(`${API_ENDPOINTS.resetPasswordAdmin.url}`, {
-                method: API_ENDPOINTS.resetPasswordAdmin.method,
+        try{
+            const res = await fetch(`${API_ENDPOINTS.resetPasswordSelfRequest.url}`, {
+                method: API_ENDPOINTS.resetPasswordSelfRequest.method,
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    user_id: user.id
+                    email: user.email
                 })
             })
 
-            if (!res.ok) {
-                const errorData = await res.json();
+            const data = await res.json() ; 
 
-                toast.error(errorData.message || "Failed to reset password.");
-                return;
+            if(!res.ok){
+                toast.error(data.message || "Failed to reset password") ; 
+                return ; 
             }
 
-            const data = await res.json();
+            // logging OTP 
 
-            toast.success("Password reset link sent to your email! Please check your email.");
+            console.log("OTP for user: ", user.email, " is: ", data.data.token )
+
+            toast.success("OTP generated and logged in console.")
 
             setTimeout(() => {
-                onClose() ; // Auto-close modal after 2 seconds
-            }, 2000);
+                onClose() ; 
+            }, 3500);
 
-        } catch (error) {
-            console.log("Reset password modal admin error: ", error);
+        }catch(error){
+            console.log("Reset password modal admin error: ", error) ; 
 
-            toast.error("Something went wrong while resetting password.");
+            toast.error("Something went wrong while resetting password.")
         }
     }
 
