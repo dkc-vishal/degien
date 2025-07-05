@@ -14,40 +14,12 @@ interface ResetPasswordModalProps {
 
 const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({ user, onClose }) => {
 
-    const handleConfirmReset = async () => {
-        try{
-            const res = await fetch(`${API_ENDPOINTS.resetPasswordSelfRequest.url}`, {
-                method: API_ENDPOINTS.resetPasswordSelfRequest.method,
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    email: user.email
-                })
-            })
+    const handleConfirmReset = () => {
+        toast.success("This is just a UI confirmation. Backend call not made.") ; 
 
-            const data = await res.json() ; 
-
-            if(!res.ok){
-                toast.error(data.message || "Failed to reset password") ; 
-                return ; 
-            }
-
-            // logging OTP 
-
-            console.log("OTP for user: ", user.email, " is: ", data.data.token )
-
-            toast.success("OTP generated and logged in console.")
-
-            setTimeout(() => {
-                onClose() ; 
-            }, 3500);
-
-        }catch(error){
-            console.log("Reset password modal admin error: ", error) ; 
-
-            toast.error("Something went wrong while resetting password.")
-        }
+        setTimeout(() => {
+            onClose() ; 
+        }, 2000);
     }
 
     return (

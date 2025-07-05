@@ -157,3 +157,5 @@ Production Styles / Classic Polo Shirt / Ns Blake Thermal / QA Audit Analysis no
 - Sonu NM, sonumn@gmail.com , JxoD1UDdxc
 
 - Golu Don, golu.don@gmail.com, PzAGcgoDOF
+
+- Sonu N Mahto, sonu.mahto+1@dkcexport.co.in , pd5IhkafEx , 1234

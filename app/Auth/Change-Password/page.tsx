@@ -46,8 +46,8 @@ const ChangePasswordPage: React.FC = () => {
       errors.systemPassword = "System generated password is required.";
     if (!form.newPassword)
       errors.newPassword = "New password is required.";
-    else if (form.newPassword.length < 6)
-      errors.newPassword = "New password must be at least 6 characters.";
+    else if (form.newPassword.length < 4)
+      errors.newPassword = "New password must be at least 4 characters.";
     if (!form.confirmNewPassword)
       errors.confirmNewPassword = "Please confirm your new password.";
     else if (form.confirmNewPassword !== form.newPassword)
