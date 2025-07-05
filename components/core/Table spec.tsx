@@ -1,7 +1,7 @@
 "use client";
 import ImageEditorModal from "@/components/image-editor/ImageEditorModal";
 import { toast } from "@/hooks/use-toast";
-import { useEffect, useRef } from "react"; // Make sure useRef is imported
+import { use, useEffect, useRef } from "react"; // Make sure useRef is imported
 import React, { useState } from "react";
 
 export interface Issue {
@@ -21,6 +21,7 @@ import {
 } from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
+import axios from "axios";
 function parseFraction(input: string): number {
   input = input.trim();
   if (!input) return 0;
@@ -79,9 +80,12 @@ export default function Table({
   imagecol,
   imagecol2,
   columnheaders,
-  spreadsheet
+  spreadsheet,
+  postapi,
 }: any) {
-  const [frozenColIndices, setFrozenColIndices] = useState<number[]>(spreadsheet.grid_dimensions.frozen_columns || []); // Default to empty array if not provided
+  const [frozenColIndices, setFrozenColIndices] = useState<number[]>(
+    spreadsheet.grid_dimensions.frozen_columns || []
+  ); // Default to empty array if not provided
   const [selectedHistory, setSelectedHistory] = useState<{
     key: string;
     row: number;
@@ -139,61 +143,22 @@ export default function Table({
   );
   const tableRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const shareddata = localStorage.getItem(`table_data_${tablename}`);
-    if (shareddata) {
-      setTableData(JSON.parse(shareddata));
-    }
-  }, []);
+  // useEffect(() => {
+  //   const shareddata = localStorage.getItem(`table_data_${tablename}`);
+  //   if (shareddata) {
+  //     setTableData(JSON.parse(shareddata));
+  //   }
+  // }, []);
+
   const [colWidths, setColWidths] = useState(
-    Array.from({ length: columnheaders.length }, (_,i) => columnheaders[i] )
+    Array.from({ length: columnheaders.length }, (_, i) => columnheaders[i])
   );
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
   const [copiedImage, setCopiedImage] = useState<string | null>(null);
-  // const handleMouseMove = (e: MouseEvent) => {
-  //   if (resizingColIndex.current === null) return;
-
-  //   const thElements = document.querySelectorAll("th");
-  //   const th = thElements[resizingColIndex.current] as HTMLElement;
-
-  //   if (th) {
-  //     const newWidth = e.clientX - th.getBoundingClientRect().left;
-  //     if (newWidth > 20) {
-  //       th.style.width = `${newWidth}px`;
-  //       const updatedWidths = [...colWidths];
-  //       updatedWidths[resizingColIndex.current] = newWidth;
-  //       setColWidths(updatedWidths);
-  //       localStorage.setItem(
-  //         `table_colWidths_${tablename}`,
-  //         JSON.stringify(updatedWidths)
-  //       );
-  //     }
-  //   }
-  // };
 
   const resizeStartX = useRef(0);
   const resizeStartWidth = useRef(0);
-
-  // const handleMouseMove = (e: MouseEvent) => {
-  //   if (resizingColIndex.current === null) return;
-
-  //   const startX = resizeStartX.current;
-  //   const currentX = e.clientX;
-  //   const delta = currentX - startX;
-
-  //   const updated = [...colWidths];
-  //   const newWidth = resizeStartWidth.current + delta;
-
-  //   if (newWidth > 20 && newWidth < 500) {
-  //     updated[resizingColIndex.current] = newWidth;
-  //     setColWidths(updated);
-  //   }
-  //   localStorage.setItem(
-  //     `table_colWidths_${tablename}`,
-  //     JSON.stringify(updated)
-  //   );
-  // };
 
   const handleMouseMove = (e: MouseEvent) => {
     if (resizingColIndex.current === null) return;
@@ -283,7 +248,24 @@ export default function Table({
   const [autofillTarget, setAutofillTarget] = useState<[number, number] | null>(
     null
   );
-
+  const setCellValue = (targetRow: number, targetCol: number, newValue: any) => {
+  setTableData(prevData => {
+    const newData = [...prevData]; // shallow copy rows
+    const newRow = [...newData[targetRow]]; // shallow copy the specific row
+    console.log(targetCol,targetRow)
+    newRow[targetCol] = newValue; // update the specific cell
+    newData[targetRow] = newRow; // put the updated row back
+    return newData; // update the whole table
+  });
+};
+  useEffect(() => {
+    const sheeetdata = spreadsheet.cells;
+    for (const [key, cell] of Object.entries(sheeetdata)) {
+  
+      const typedCell = cell as { row: number; column: number; value: string };
+      setCellValue(typedCell.row, typedCell.column, typedCell.value);
+    }
+  },[])
   const [contextMenu, setContextMenu] = useState<{
     visible: boolean;
     x: number;
@@ -367,12 +349,7 @@ export default function Table({
   useEffect(() => {
     localStorage.setItem(`table_data_${tablename}`, JSON.stringify(tableData));
   }, [tableData]);
-  const menuItems = [
-    { icon: <FaTachometerAlt />, label: "Dashboard" },
-    { icon: <FaClipboardList />, label: "Tech Specs" },
-    { icon: <FaTools />, label: "Inspections" },
-    { icon: <FaWrench />, label: "Settings" },
-  ];
+
   const [searchTerm, setSearchTerm] = useState("");
 
   // Table: 5 rows x 12 cols, with editable default values
@@ -470,8 +447,6 @@ export default function Table({
 
     const baseSizeInput = updated[row][realTimeMeasIdx] as string;
     const gradingInput = updated[row][msrGradingRuleCol] as string;
-    // You can use the value from the table if you want:
-    // const baseSizeType = updated[rowIdx][msrBaseSizeTypeCol] as Row["baseSizeType"] || "S";
     const baseSizeType = "S";
     console.log(
       baseSizeType,
@@ -649,152 +624,6 @@ export default function Table({
       // inputRef.current.select(); // Optional: selects all text
     }
   }, [editingCell]);
-  //   useEffect(() => {
-  //   console.log("Updated history:", history);
-  // }, [history]);
-  // useEffect(() => {
-  //   if (typeof window === "undefined") return;
-
-  //   const handleKeyDown = (e: KeyboardEvent) => {
-  //     if ((e.ctrlKey || e.metaKey) && e.key === "c") {
-  //       if (!selectedRange && !selectedCell) return;
-
-  //       let start: [number, number], end: [number, number];
-
-  //       if (selectedRange) {
-  //         ({ start, end } = selectedRange);
-  //       } else if (selectedCell) {
-  //         start = end = selectedCell;
-  //       } else return;
-
-  //       const startRow = Math.min(start[0], end[0]);
-  //       const endRow = Math.max(start[0], end[0]);
-  //       const startCol = Math.min(start[1], end[1]);
-  //       const endCol = Math.max(start[1], end[1]);
-
-  //       let copiedText = "";
-  //       for (let row = startRow; row <= endRow; row++) {
-  //         const rowData = [];
-  //         for (let col = startCol; col <= endCol; col++) {
-  //           rowData.push(tableData?.[row]?.[col] ?? "");
-  //         }
-  //         copiedText += rowData.join("\t") + "\n";
-  //       }
-
-  //       e.preventDefault();
-
-  //       // ✅ Fallback method using execCommand
-  //       const textarea = document.createElement("textarea");
-  //       textarea.value = copiedText;
-  //       document.body.appendChild(textarea);
-  //       textarea.select();
-  //       try {
-  //         document.execCommand("copy");
-  //         console.log("Copied to clipboard via fallback");
-  //       } catch (err) {
-  //         console.error("Fallback copy failed:", err);
-  //       }
-  //       document.body.removeChild(textarea);
-  //     }
-  //     if ((e.ctrlKey || e.metaKey) && e.key === "x") {
-  //       console.log(!selectedRange && !selectedCell);
-  //       if (!selectedRange && !selectedCell) return;
-
-  //       let start: [number, number], end: [number, number];
-  //       if (selectedRange) {
-  //         ({ start, end } = selectedRange);
-  //       } else if (selectedCell) {
-  //         start = end = selectedCell;
-  //       } else return;
-
-  //       const startRow = Math.min(start[0], end[0]);
-  //       const endRow = Math.max(start[0], end[0]);
-  //       const startCol = Math.min(start[1], end[1]);
-  //       const endCol = Math.max(start[1], end[1]);
-
-  //       let copiedText = "";
-  //       const updated = [...tableData];
-
-  //       for (let row = startRow; row <= endRow; row++) {
-  //         const rowData = [];
-  //         for (let col = startCol; col <= endCol; col++) {
-  //           rowData.push(updated[row][col]);
-  //           updated[row][col] = ""; // Clear content
-  //         }
-  //         copiedText += rowData.join("\t") + "\n";
-  //       }
-
-  //       setTableData(updated);
-  //       e.preventDefault();
-
-  //       const textarea = document.createElement("textarea");
-  //       textarea.value = copiedText;
-  //       document.body.appendChild(textarea);
-  //       textarea.select();
-  //       document.execCommand("copy");
-  //       document.body.removeChild(textarea);
-  //     }
-  //     // UNDO
-  //     if ((e.ctrlKey || e.metaKey) && e.key === "z") {
-  //       e.preventDefault();
-
-  //       if (history.length === 0) return;
-
-  //       const prev = JSON.parse(JSON.stringify(history[history.length - 1])); // deep clone
-
-  //       console.log("Undoing to:", prev);
-
-  //       setRedoStack((r) => [tableData, ...r]);
-  //       setTableData(prev); // async
-  //       setHistory((h) => h.slice(0, -1));
-  //       lastSnapshotRef.current = JSON.stringify(prev);
-  //     }
-
-  //     if ((e.ctrlKey || e.metaKey) && e.key === "y") {
-  //       e.preventDefault();
-  //       if (redoStack.length === 0) return;
-
-  //       const next = redoStack[0];
-  //       setHistory((h) => [...h, tableData]);
-  //       setTableData(next);
-  //       setRedoStack((r) => r.slice(1));
-  //       lastSnapshotRef.current = JSON.stringify(next);
-  //     }
-
-  //     if (e.key === "Enter" && selectedCell) {
-  //       e.preventDefault();
-  //       setEditingCell(selectedCell);
-  //       return;
-  //     }
-  //     if (e.key === "Tab" && selectedCell) {
-  //       e.preventDefault();
-  //       setEditingCell(selectedCell);
-  //       return;
-  //     }
-
-  //     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-  //       e.preventDefault();
-  //       setEditingCell(selectedCell);
-
-  //       return;
-  //     }
-
-  //     // Escape to cancel editing
-  //     if (e.key === "Escape" && editingCell) {
-  //       e.preventDefault();
-
-  //       setEditingCell(null);
-  //       return;
-  //     }
-  //   };
-
-  //   window.addEventListener("keydown", handleKeyDown);
-  //   return () => window.removeEventListener("keydown", handleKeyDown);
-  // }, [
-  //   selectedRange?.start?.toString(),
-  //   selectedRange?.end?.toString(),
-  //   selectedCell?.toString(),
-  // ]);
 
   const insertRow = (index: number) => {
     const newRow = new Array(tableData[0].length).fill("");
@@ -914,13 +743,13 @@ export default function Table({
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, []);
-  useEffect(() => {
-    const savedColWidths = localStorage.getItem(`table_colWidths_${tablename}`);
-    console.log(savedColWidths);
-    if (savedColWidths) {
-      setColWidths(JSON.parse(savedColWidths));
-    }
-  }, []);
+  // useEffect(() => {
+  //   const savedColWidths = localStorage.getItem(`table_colWidths_${tablename}`);
+  //   console.log(savedColWidths);
+  //   if (savedColWidths) {
+  //     setColWidths(JSON.parse(savedColWidths));
+  //   }
+  // }, []);
 
   useEffect(() => {
     setCellColors((prevColors) =>
@@ -963,11 +792,10 @@ export default function Table({
     }
   }, []);
   useEffect(() => {
-    if (inputRef.current ) {
+    if (inputRef.current) {
       inputRef.current.focus();
       // inputRef.current.select(); // Optional: selects all text
-    }
-    else if (selectRef.current) {
+    } else if (selectRef.current) {
       selectRef.current.focus();
     }
   }, [editingCell]);
@@ -1141,6 +969,11 @@ export default function Table({
     setRedoStack,
     lastSnapshotRef,
   });
+  async function submitbutton() {
+    const res = await axios.post(postapi,{
+
+    })
+  }
   return (
     <>
       {contextMenu1?.visible && (
@@ -1509,7 +1342,8 @@ export default function Table({
                               const [moved] = newRow.splice(draggedColIndex, 1);
                               newRow.splice(i, 0, moved);
                               let temp = colWidths[i].width;
-                              colWidths[i].width = colWidths[draggedColIndex].width;
+                              colWidths[i].width =
+                                colWidths[draggedColIndex].width;
                               colWidths[draggedColIndex].width = temp;
                               localStorage.setItem(
                                 `table_colWidths_${tablename}`,
@@ -1614,7 +1448,8 @@ export default function Table({
                               const [moved] = newRow.splice(draggedColIndex, 1);
                               newRow.splice(i, 0, moved);
                               let temp = colWidths[i].width;
-                              colWidths[i].width = colWidths[draggedColIndex].width;
+                              colWidths[i].width =
+                                colWidths[draggedColIndex].width;
                               colWidths[draggedColIndex].width = temp;
                               localStorage.setItem(
                                 `table_colWidths_${tablename}`,
@@ -1747,10 +1582,10 @@ export default function Table({
                             rowIndex === -1 ? (
                               <td>
                                 <textarea
-                                style={{
-                                  backgroundColor:
-                                  cellColors?.[rowIndex]?.[colIndex] || "",
-                                }}
+                                  style={{
+                                    backgroundColor:
+                                      cellColors?.[rowIndex]?.[colIndex] || "",
+                                  }}
                                   value={columnHeaders[colIndex]}
                                   readOnly={
                                     !(
@@ -2149,7 +1984,6 @@ export default function Table({
                             )
                           ) : colIndex === 2 ? (
                             <td
-                            
                               data-row={rowIndex}
                               data-col={colIndex}
                               style={{
@@ -2236,7 +2070,6 @@ export default function Table({
                                   />
                                 )}
 
-                              
                               <select
                                 value={cell}
                                 data-cell={`${rowIndex}-${colIndex}`}
@@ -2724,6 +2557,9 @@ export default function Table({
           </div>
 
           {/* Buttons */}
+          <button onClick={submitbutton} className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition duration-200">
+            save
+          </button>
         </div>
       </main>
       {isImageEditorOpen && editingImageInfo && (
