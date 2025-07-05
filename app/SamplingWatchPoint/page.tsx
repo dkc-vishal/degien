@@ -1,55 +1,57 @@
 "use client";
 import React, { useState } from "react";
-import Input from "../../components/Input";
 import Table from "@/components/core/Table";
-import DynamicTable from "@/components/core/DynamicTable";
+import SheetTitle from "@/components/core/SheetTitle";
+import InputForm from "@/components/core/InputForm";
+import { FaPrint } from "react-icons/fa";
 
 const page = () => {
   const [sampleName, setSampleName] = useState("");
   const [quantity, setQuantity] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert(`Sample: ${sampleName}, Quantity: ${quantity}`);
+
+  const handlePrint = () => {
+    window.print();
   };
-
   return (
-    <div className="mt-4 mx-4 bg-white p-4 ">
-      <div className="flex flex-row mb-6 justify-between align-center height-16 px-6">
-        <h1 className="text-3xl font-bold mb-6 ml-[42%]">
-          Simpling Watch point
-        </h1>
-
-        <div>
-          <p>Version - 23</p>
-          <p>Last Updated - 2024-01-01</p>
+    
+      <div className=" flex-1 flex flex-col p-6">
+        {/* Form inputs */}
+        <div className="">
+          <SheetTitle title="Sampling Watchpoint" version="v1.4" />
+      
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-1  font-medium px-2 py-1 rounded-xl shadow-md transition duration-200"
+          >
+            <FaPrint />
+          </button>
+        
+          <InputForm
+            label={[
+              ["Style Name","JC Number","Sampling Merchant"],
+            ]}
+          />
         </div>
+
+        {/* Page Content */}
+              <Table
+                col={7}
+                row={20}
+                imagecol={4}
+                imagecol2={6}
+                tablename="spamling-feeding"
+                columnheaders={[
+                  "MOVE",
+                  "Sno",
+                  "Issue Name",
+                  "WatchPoint",
+                  "Issue Picture",
+                  "How to solve",
+                  "corrected  picture"
+                ]}
+              />
       </div>
-      <form onSubmit={handleSubmit} className="mb-6 px-6 flex flex-row gap-4">
-        <Input
-          label="Sample Name"
-          value={sampleName}
-          onChange={(e) => setSampleName(e.target.value)}
-          type="text"
-          required
-        />
-        <Input
-          label="JC Number"
-          value={sampleName}
-          onChange={(e) => setSampleName(e.target.value)}
-          type="text"
-          required
-        />
-        <Input
-          label="Sampling Merchant "
-          value={sampleName}
-          onChange={(e) => setSampleName(e.target.value)}
-          type="text"
-          required
-        />
-      </form>
-      <DynamicTable rowLenght={10} columnLenght={7} />
-    </div>
   );
 };
 

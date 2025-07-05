@@ -16,9 +16,13 @@ export default function ClientLayout({
     <div className="min-h-screen bg-gray-100">{children}</div>
   ) : (
     <div className="flex h-screen font-sans bg-gray-100">
-      <Sidebar />
-      <div className="flex-1 flex flex-col ml-[15%]">
-        <Header />
+      <div className="no-print">
+        <Sidebar />
+      </div>
+      <div className="removesidebarspace flex-1 flex flex-col ml-[15%]" style={{ width: "calc(100vw - 30%)" }}>
+        <div className="no-print">
+          <Header />
+        </div>
         {children}
       </div>
     </div>

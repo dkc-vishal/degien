@@ -96,7 +96,7 @@ export default function Table({
     }
   }, []);
   const [colWidths, setColWidths] = useState(
-    Array.from({ length: columnheaders.length }, (_,i) => columnheaders[i]) // Default width of 100 if not specified
+    Array.from({ length: columnheaders.length }, (_,i) => columnheaders[i].width ) // Default width of 100 if not specified
   );
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
@@ -156,8 +156,7 @@ export default function Table({
     const newWidth = resizeStartWidth.current + delta;
 
     if (newWidth > 30 && newWidth < 1000) {
-      console.log(resizingColIndex.current);
-      updated[resizingColIndex.current].width = newWidth;
+      updated[resizingColIndex.current] = newWidth;
       setColWidths(updated);
     }
     localStorage.setItem(
@@ -861,7 +860,7 @@ export default function Table({
     let left = 0;
     for (const i of frozen) {
       if (i === colIndex) return `${left}px`;
-      left += colWidths[i].width || 100; // fallback to 100px
+      left += colWidths[i] || 100; // fallback to 100px
     }
     return undefined;
   };
@@ -1286,7 +1285,7 @@ export default function Table({
               <table className="table-fixed w-full text-sm border-content border-collapse">
                 <colgroup>
                   {colWidths.map((w, i) => (
-                    <col key={i} style={{ width: w.width }} />
+                    <col key={i} style={{ width: w }} />
                   ))}
                 </colgroup>
                 <thead>
@@ -1298,7 +1297,7 @@ export default function Table({
                           draggable
                           style={{
                             // position: "relative",
-                            width: colWidths[i].width, // Set default width
+                            width: colWidths[i], // Set default width
                             minWidth: "50px",
                             maxWidth: "100px",
                             position: frozenColIndices.includes(i)
@@ -1342,9 +1341,9 @@ export default function Table({
                               const newRow = [...row];
                               const [moved] = newRow.splice(draggedColIndex, 1);
                               newRow.splice(i, 0, moved);
-                              let temp = colWidths[i].width;
-                              colWidths[i].width = colWidths[draggedColIndex].width;
-                              colWidths[draggedColIndex].width = temp;
+                              let temp = colWidths[i];
+                              colWidths[i] = colWidths[draggedColIndex];
+                              colWidths[draggedColIndex] = temp;
                               localStorage.setItem(
                                 `table_colWidths_${tablename}`,
                                 JSON.stringify(colWidths)
@@ -1369,7 +1368,7 @@ export default function Table({
                               isResizing.current = true;
                               resizingColIndex.current = i;
                               resizeStartX.current = e.clientX;
-                              resizeStartWidth.current = colWidths[i].width;
+                              resizeStartWidth.current = colWidths[i];
                               console.log(colWidths, i);
                               document.addEventListener(
                                 "mousemove",
@@ -1403,7 +1402,7 @@ export default function Table({
                           draggable
                           style={{
                             // position: "relative",
-                            width: colWidths[i].width, // Set default width
+                            width: colWidths[i], // Set default width
                             minWidth: "50px",
                             maxWidth: "500px",
                             position: frozenColIndices.includes(i)
@@ -1447,9 +1446,9 @@ export default function Table({
                               const newRow = [...row];
                               const [moved] = newRow.splice(draggedColIndex, 1);
                               newRow.splice(i, 0, moved);
-                              let temp = colWidths[i].width;
-                              colWidths[i].width = colWidths[draggedColIndex].width;
-                              colWidths[draggedColIndex].width = temp;
+                              let temp = colWidths[i];
+                              colWidths[i] = colWidths[draggedColIndex];
+                              colWidths[draggedColIndex] = temp;
                               localStorage.setItem(
                                 `table_colWidths_${tablename}`,
                                 JSON.stringify(colWidths)
@@ -1523,7 +1522,7 @@ export default function Table({
                               style={{
                                 backgroundColor:
                                   cellColors?.[rowIndex]?.[colIndex] || "bg-slate-200",
-                                width: colWidths[colIndex].width,
+                                width: colWidths[colIndex],
                                 minWidth: 50,
                                 textAlign: "center",
                                 position: true ? "sticky" : undefined,
@@ -1711,7 +1710,7 @@ export default function Table({
                                 style={{
                                   backgroundColor:
                                     cellColors?.[rowIndex]?.[colIndex] || "",
-                                  width: colWidths[colIndex].width,
+                                  width: colWidths[colIndex],
                                   minWidth: 50,
                                   position: frozenColIndices.includes(colIndex)
                                     ? "sticky"
@@ -2127,7 +2126,7 @@ export default function Table({
                               style={{
                                 backgroundColor:
                                   cellColors?.[rowIndex]?.[colIndex] || "",
-                                width: colWidths[colIndex].width,
+                                width: colWidths[colIndex],
                                 minWidth: 50,
                                 position: frozenColIndices.includes(colIndex)
                                   ? "sticky"

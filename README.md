@@ -1,79 +1,100 @@
-- All new users can only be created by Admin ✅
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-- First original and 1 Repeat is displayed on the webpage. When user hit "Create Repeat", then a backend call executes and create a empty cells for rows and columns which will be returned back with websocket. In frontend we statically display original & repeat labels by giving a static columns space. 
+## Getting Started
 
-- Print view (Merchant, Feeding Sampling)
+First, run the development server:
 
-- import style from sampling  
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-- create new style ✅ 
+https://chatgpt.com/c/684f064c-2f78-8010-b455-e5f20c1a0958
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-- Users List -> All users -> Add new User  Name. ✅ 
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-- Mark user as inactive. Trash icon ✅  
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-- Sampling -> Protected Route only DKC people will see it. , Production -> Sabko in DKC
+## Learn More
 
-- Sampling mai folder jaisa dikhega jisme style ka naam aayega. On the top there will be a button called Create new style.  ✅ 
+To learn more about Next.js, take a look at the following resources:
 
-- Inside style. Sampling Watchpoints ki sheet hogi. 
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-- Order received. 
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Deploy on Vercel
 
-Production: 
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-- Style -> Master -> Order -> Create New order / 110 -> each order will then have all the folders.  ✅
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-- Pending of ()
+add qa in input
 
-- sidebar (sampling styles, production styles, user management, dashboard, shipped styles) ✅
+110 -> as it is here -> original extract using filter -> create sheet mid1 -> filtered for mid 1 only -> format copied mid 1
 
-- dashboard (no of running orders -> card: number ; no of running styles ; pendings -> according to shipment x-date; shipped style )
+add border in 110 feeding window
 
-- text wrapping in style name 
+add the funcnality to fogzee mutiple column
 
-- order qty large ✅
+action
 
-- 5 layout cards ✅
+every one can upload image
+tech spec must be filled by the tech team
+watch must be added by the merchant
+fit pp top web report must be added by the tech team
+intial file data red data must be cumpolsy to add
+merchant can only create order
+shipment complted will done by tech team
+vendor can only view the spec and alll sheet
+tech graded must be added by tech team
+no one can edit the view file
 
-- order qty in tabular structure ✅
+ctrl b , ctrl i, ctrl u not working for formatting not needed
 
-- information easy to view - large ✅
+even after dropping image, placeholder text showing 'drop or paste image' (needed this kind of feature, it's not bug it's feature)
 
-- vendors (master - production_watchpoints, tech_specs -> file), quantity 
+resize row (good to have)
+multiple line edit ( good to have)
 
-- qa audit analysis (initial-2, mid-8) ✅
+ctrl shift down arrow + ctrl d not working (good to have)
 
-- user management (radio button -> DKC Employee, Vendor). If click DKC, then show department (by default hidden) and if click vendor then direct create account button  ✅
+after dropping image, image not getting removed on backspace button click (image delete feature, required) ( 45min) (done)
 
-- classic polo shirt / ${name}  ✅ 
+auto fill not working (1 -> 1, 1, 1 || 1, 2 -> 3, 4, 5 || formula adjusting) (not needed) ( need merchant confirmation) (done)
 
-http://localhost:3000/production-styles/classic-polo-shirt/master
+shift > button (right, bottom, top) to multi select horizontal cells (same as line 78) (1hr) (remove)
 
-- master , orders and then ns blake thermal, naval ✅ 
+ctrl z ctrl y not working (2hr) (done)
 
-- Master (production watchpoint, tech spec, sampling watchpoint ) - total styles quantity ✅
+insert row above, insert row below modal/pop-up/dialog not coming in any cell of measurement picture (30min) (done)
 
-- Orders (NS Black thermal, Naval) - order quantity ✅
+insert row above dialog not disappearingn (bug, needs fix) (20min) (done)
 
-- API Docs 
+column is value is copy paste at the time of drag not working (84) (done)
 
-- a page where user can request for changing the password, the page should ask for user email, new password, confirm new password, and then on clicking submit user gets an otp on his/her email .. also will get email-token from the backend  ✅
+if freeze a column that other some column is hide (1.5hr) (done)
 
-http://localhost:3000/production-styles/classic-polo-shirt
+_! HUGE ISSUE IN COPY PASTE, NOT SMOOTH_! very imp (2hr) (done)
 
-- master -> sampling watchpoint (graded-out to show not editable), tech graded specs, production watchpoint ✅
+scrolling feature is not run properly (good to have) (45min)
 
-- Sampling (Sampling watchpoint) ; Master-110 (110) ; Tech Graded Spec (Tech spec view, graded spec, print) ; Fit/PP (Fit 1, fit 2, fit 3, pp1-2, web 1-12) , QA Audit forms (mid1-3, inital, initial follow up, final1-3) ; QA Audit Analysis (callouts, qa audit form, inspection point print) ✅ 
+column width is not in resize correct colimn j (good to have) (30min) (done)
 
-- Page for vendor will be different (they will be able to see their styles only)
+first column may write karte time if scroll hai that time text sahi nhi dikhta hai (crucial) (45min)
 
-- sampling (list , styles -> watchpoints)
+drag and iscon is not write choice (99)
 
-- user management (update, delete button working, working), also admin can change the department of user ✅
+reduce the image height of the column on image delete (done)
 
-- reset password ✅ 
+chat gpt
 
 - Individual page for user as well with dynamic routing (should be able to update his name only) ✅ 
 
@@ -159,3 +180,4 @@ Production Styles / Classic Polo Shirt / Ns Blake Thermal / QA Audit Analysis no
 - Golu Don, golu.don@gmail.com, PzAGcgoDOF
 
 - Sonu N Mahto, sonu.mahto+1@dkcexport.co.in , pd5IhkafEx , 1234
+https://chatgpt.com/share/68628966-8cb0-8011-8514-b70acdf8f0c1
