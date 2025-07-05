@@ -1,6 +1,5 @@
-// app/page.tsx
-import LoginForm from "@/app/Auth/LoginForm";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-  return <LoginForm />;
+export default function Home(){
+    redirect('/Auth/Login')
 }

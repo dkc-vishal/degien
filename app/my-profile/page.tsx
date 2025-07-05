@@ -1,24 +1,46 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { CgProfile } from "react-icons/cg";
 import { GrPowerReset } from "react-icons/gr";
 import ChangePasswordModal from "./ChangePasswordModal";
 import UpdateProfileModal from "./UpdateProfileModal";
 import { FaRegEdit } from "react-icons/fa";
+import { toast } from "sonner";
 
 const MyProfilePage = () => {
+
     // State to manage modals
+
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [showUpdateModal, setShowUpdateModal] = useState(false);
 
-    // User state
-    const [user, setUser] = useState({
-        username: "Sonu N. Mahto",
-        email: "sonu.mahto@dkcexport.co.in",
-        department: "AI",
-    });
+    const [user, setUser] = useState<{
+        username: string;
+        email: string;
+        department: string;
+        is_vendor?: boolean;
+    } | null>(null);
+
+    // Load user on mount 
+
+    useEffect(() => {
+        const storedUser = localStorage.getItem("loggedInUser");
+
+        if (storedUser) {
+            const parsed = JSON.parse(storedUser);
+
+            setUser({
+                username: parsed.name || parsed.username || "N/A",
+                email: parsed.email || "N/A",
+                department: parsed.department || "N/A",
+                is_vendor: parsed.is_vendor || false
+            });
+        }
+    }, []);
+
 
     // Handle password change
+
     const handlePasswordChange = (data: {
         oldPassword: string;
         newPassword: string;
@@ -30,10 +52,19 @@ const MyProfilePage = () => {
     };
 
     // Handle profile update (name only)
+
     const handleProfileUpdate = (updatedName: string) => {
-        setUser((prev) => ({ ...prev, username: updatedName }));
+        setUser((prev) => {
+            const updatedUser = { ...prev!, username: updatedName };
+
+            // updating localStorage when user updates profile
+
+            localStorage.setItem("loggedInUser", JSON.stringify(updatedUser));
+            return updatedUser;
+        });
         setShowUpdateModal(false);
     };
+
 
     return (
         <main className="flex items-start justify-center min-h-screen bg-gray-50 py-20 px-4 sm:px-6">
@@ -44,23 +75,41 @@ const MyProfilePage = () => {
                     <h2 className="text-2xl font-semibold text-gray-800">My Profile</h2>
                 </div>
 
-                {/* Profile Info */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
+                {/* Profile Info - DKC Staff */}
+
+                {user ? (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
+                            <div>
+                                <p className="text-sm text-gray-500 mb-1">Employee Name</p>
+                                <p className="text-lg font-medium text-gray-800">{user.username}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500 mb-1">Email</p>
+                                <p className="text-lg font-medium text-gray-800">{user.email}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm text-gray-500 mb-1">Department</p>
+                                <p className="text-lg font-medium text-gray-800">{user.department}</p>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <div className="text-center justify-between text-gray-500 mb-10">No User Info...</div>
+                )}
+
+                {/* Profile Info - Vendor */}
+
+                {user && user.is_vendor && (
                     <div>
-                        <p className="text-sm text-gray-500 mb-1">Employee Name</p>
-                        <p className="text-lg font-medium text-gray-800">{user.username}</p>
+                        <p className="text-sm text-gray-500 mb-1">Vendor Status</p>
+                        <p className="text-lg font-medium text-gray-800">Yes</p>
                     </div>
-                    <div>
-                        <p className="text-sm text-gray-500 mb-1">Email</p>
-                        <p className="text-lg font-medium text-gray-800">{user.email}</p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-gray-500 mb-1">Department</p>
-                        <p className="text-lg font-medium text-gray-800">{user.department}</p>
-                    </div>
-                </div>
+                )}
+
 
                 {/* Buttons */}
+
                 <div className="flex flex-col sm:flex-row gap-4 ">
 
                     <button
@@ -86,6 +135,7 @@ const MyProfilePage = () => {
             </div>
 
             {/* Modals */}
+
             {showPasswordModal && (
                 <ChangePasswordModal
                     onClose={() => setShowPasswordModal(false)}
@@ -93,7 +143,7 @@ const MyProfilePage = () => {
                 />
             )}
 
-            {showUpdateModal && (
+            {showUpdateModal && user && (
                 <UpdateProfileModal
                     username={user.username}
                     onClose={() => setShowUpdateModal(false)}

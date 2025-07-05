@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import ClientLayout from "@/components/core/ClientLayout"; // NEW wrapper
-import Sidebar from "@/components/core/Sidebar";
-import Header from "@/components/core/Header";
+import ClientLayout from "@/components/core/ClientLayout"; 
+import {Toaster} from "sonner"
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -29,22 +29,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* <div className="flex h-screen font-sans bg-gray-100">
-          <div className="no-print">
-            <Sidebar />
-          </div>
-          <div
-            className="removesidebarspace flex-1 flex flex-col ml-[15%]"
-            style={{ width: "calc(100vw - 30%)" }}
-          >
-            <div className="no-print">
-              <Header />
-            </div>
-
-            {children}
-          </div>
-        </div> */}
-        <ClientLayout>{children}</ClientLayout>
+        <ClientLayout>
+          {children}
+        </ClientLayout>
+        <Toaster richColors position="top-right"/>
       </body>
     </html>
   );

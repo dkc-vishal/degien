@@ -1,22 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import AddStyleModal from "@/components/core/AddStyleModal";
 import { useRouter } from "next/navigation";
+import PageHeader from "@/components/core/PageHeader";
 
-
-// Sample styles (same as before or fetched)
-const styleCards = [
-  { styleName: "Classic Polo Shirt", image: "/images/classic-polo-shirt.jpg" },
-  { styleName: "Denim Jacket", image: "/images/denim-jacket.jpg" },
-  { styleName: "Summer T-Shirt", image: "" },
-  { styleName: "Formal Trousers", image: "/images/formal-trousers.jpg" },
-  { styleName: "Winter Hoodie", image: "/images/winter-hoodie.jpg" },
-  { styleName: "Kids Romper", image: "/images/kids-romper.jpg" },
-  { styleName: "Athletic Shorts", image: "/images/athletic-shorts.jpg" },
-  { styleName: "Linen Shirt", image: "/images/linen-shirt.jpg" },
-];
+type StyleType = {
+  styleName: string;
+  image: string;
+};
 
 const StyleCard = ({ styleName, image, onClick }) => (
   <div
@@ -40,6 +33,8 @@ const StyleCard = ({ styleName, image, onClick }) => (
 const SamplingStyles: React.FC = () => {
 
   const [showModal, setShowModal] = useState(false);
+  const [styles, setStyles] = useState<StyleType[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const router = useRouter();
 
@@ -48,11 +43,38 @@ const SamplingStyles: React.FC = () => {
     router.push(`/sampling-styles/${kebab}`);
   };
 
+  useEffect(() => {
+
+    // simulate API call
+
+    const fetchStyles = async () => {
+      setLoading(true);
+      const mockData = [
+        { styleName: "Raya Bandana", image: "/images/raya-bandana.webp" },
+        { styleName: "Blake Thermal", image: "/images/blake-thermal.jpg" },
+        { styleName: "Pixie Cardi", image: "/images/Pixie_Cardi.webp" },
+        { styleName: "Brynn Maxi Skirt", image: "/images/Brynn_Maxi_Skirt.webp" },
+        { styleName: "Cedar Jacket", image: "/images/Cedar_Jacket.avif" },
+        { styleName: "Kaiden Pant", image: "/images/kaiden-pant.webp" },
+        { styleName: "Luna Cardi", image: "/images/Luna_Cardi.webp" }
+      ];
+      setTimeout(() => {
+        setStyles(mockData);
+        setLoading(false);
+      }, 500);
+    };
+
+
+    fetchStyles();
+  }, []);
+
+
   return (
     <div className="w-full px-6 py-8">
       {/* Header */}
       <div className="flex justify-between items-center mb-6 border-b pb-4 border-gray-200">
-        <h2 className="text-2xl font-bold text-gray-800">Sampling Styles</h2>
+        
+        <PageHeader breadcrumb="Sampling Styles" />
 
         <div className="flex items-center gap-4 mr-30">
           <button
@@ -65,20 +87,40 @@ const SamplingStyles: React.FC = () => {
         </div>
       </div>
 
-      {/* Grid of Style Cards */}
-      <div className="flex flex-wrap gap-12 justify-center mt-9">
-        {styleCards.map((style, index) => (
-          <StyleCard
-            key={index} 
-            {...style}
-            onclick={() => handleCardClick(style.styleName)}
-            className="cursor-pointer hover:scale-105 transition-transform duration-200"
-          />
-        ))}
-      </div>
+      {!loading && styles.length === 0 && (
+        <p className="text-center text-red-500 mt-10">No styles available. Make sure API is working.</p>
+      )}
 
-      {/* Modal */}
-      {showModal && <AddStyleModal onClose={() => setShowModal(false)} />}
+      {/* Grid of Style Cards */}
+
+      {loading ? (
+        <div className="flex flex-col items-center justify-center h-[70vh] w-full">
+          <div className="w-10 h-10 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-600 text-lg font-medium">Loading</p>
+        </div>
+
+      ) : (
+        <div className="flex flex-wrap gap-12 justify-center mt-9">
+          {styles.map((style, index) => (
+            <StyleCard
+              key={index}
+              {...style}
+              onClick={() => handleCardClick(style.styleName)}
+            />
+          ))}
+        </div>
+      )}
+
+
+      {/* Modal to add new style */}
+
+      {showModal && (
+        <AddStyleModal
+          onClose={() => setShowModal(false)}
+          onAddStyle={(newStyle) => setStyles((prev) => [...prev, newStyle])}
+        />
+      )}
+
     </div>
   );
 };
