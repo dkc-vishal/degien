@@ -1,25 +1,12 @@
 
 "use client";
 
+import type { IssueImage } from "@/types";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { X, Edit3 } from "lucide-react"; // Added Edit3 icon
 import React from "react";
-export interface IssueImage {
-  id: string;
-  url: string;
-  file: File;
-  name: string;
-}
 
-export interface Issue {
-  id: string;
-  description: string;
-  images: IssueImage[];
-  status?: string;
-  priority?: string;
-  createdDate?: string;
-}
 interface ImagePreviewProps {
   image: IssueImage;
   onRemove: (imageId: string) => void;
@@ -37,7 +24,7 @@ export default function ImagePreview({ image, onRemove, onOpenImageEditor }: Ima
         className="object-cover w-full h-full"
         data-ai-hint="issue image"
       />
-      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col gap-1">
+      <div className="absolute top-1 right-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200 flex flex-col gap-1">
         <Button
             variant="destructive"
             size="icon"

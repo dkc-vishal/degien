@@ -4,7 +4,6 @@ import { toast } from "@/hooks/use-toast";
 import { useEffect, useRef } from "react"; // Make sure useRef is imported
 import React, { useState } from "react";
 
-
 export interface Issue {
   id: string;
   // description: string;
@@ -374,7 +373,7 @@ export default function Table({
       header.includes("base size type")
     );
 
-   const baseSizeInput = updated[rowIdx][realTimeMeasIdx] as string;
+    const baseSizeInput = updated[rowIdx][realTimeMeasIdx] as string;
     const gradingInput = updated[rowIdx][msrGradingRuleCol] as string;
     // You can use the value from the table if you want:
     // const baseSizeType = updated[rowIdx][msrBaseSizeTypeCol] as Row["baseSizeType"] || "S";
@@ -1264,7 +1263,6 @@ export default function Table({
                                 zIndex: frozenColIndices.includes(colIndex)
                                   ? 9
                                   : undefined,
-                                
                               }}
                               key={colIndex}
                               className={`no-print border  ${
@@ -1307,7 +1305,6 @@ export default function Table({
                                 zIndex: frozenColIndices.includes(colIndex)
                                   ? 9
                                   : undefined,
-                               
                               }}
                             >
                               {rowIndex + 1}
@@ -1378,8 +1375,8 @@ export default function Table({
                                     setSelectionAnchor(null);
                                   }}
                                   onKeyDown={(e) => {
-                                    console.log(e.key)
-                                    
+                                    console.log(e.key);
+
                                     if (
                                       editingCell?.[0] === rowIndex &&
                                       editingCell?.[1] === colIndex
@@ -1389,8 +1386,8 @@ export default function Table({
                                         setEditingCell(null);
                                         return;
                                       }
-                                      if ((e.key === "Enter") && !e.shiftKey) {
-                                        console.log(e.key)
+                                      if (e.key === "Enter" && !e.shiftKey) {
+                                        console.log(e.key);
                                         e.preventDefault();
                                         setEditingCell(null);
                                         return;
@@ -1455,7 +1452,6 @@ export default function Table({
                                   zIndex: frozenColIndices.includes(colIndex)
                                     ? 9
                                     : undefined,
-                                  
                                 }}
                                 className={` border-2 border-black p-2 min-h-[80px] ${
                                   selectedCell?.[0] === rowIndex &&
@@ -1915,14 +1911,14 @@ export default function Table({
           {/* Buttons */}
         </div>
       </main>
-      {isImageEditorOpen && editingImageInfo && (
+      {/* {isImageEditorOpen && editingImageInfo && (
         <ImageEditorModal
           isOpen={isImageEditorOpen}
           onClose={handleCloseImageEditor}
           image={editingImageInfo.image}
           onSave={(newImageDataUrl) => handleSaveEditedImage(newImageDataUrl)}
         />
-      )}
+      )} */}
     </>
   );
 }

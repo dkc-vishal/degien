@@ -19,7 +19,10 @@ export default function ClientLayout({
       <div className="no-print">
         <Sidebar />
       </div>
-      <div className="removesidebarspace flex-1 flex flex-col ml-[15%]" style={{ width: "calc(100vw - 30%)" }}>
+      <div
+        className="removesidebarspace flex-1 flex flex-col ml-[15%]"
+        style={{ width: "calc(100vw - 30%)" }}
+      >
         <div className="no-print">
           <Header />
         </div>

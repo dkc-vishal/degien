@@ -6,7 +6,7 @@ import { MdDashboard, MdLocalShipping } from "react-icons/md";
 import { GiSewingMachine } from "react-icons/gi";
 import { CgProfile } from "react-icons/cg";
 import { TbLogout } from "react-icons/tb";
-import { toast } from "sonner";
+// import { toast } from "sonner";
 
 export default function Sidebar({ side }: any) {
   const Sidebar: any = side;
@@ -15,10 +15,31 @@ export default function Sidebar({ side }: any) {
 
   const menuItems = [
     { icon: <MdDashboard size={22} />, label: "Dashboard", path: "/dashboard" },
-    { icon: <FaUserFriends size={22} />, label: "User Management", path: "/user-detail" },
-    { icon: <GiSewingMachine size={22} />, label: "Sampling Styles", path: "/sampling-styles" },
-    { icon: <FaTshirt size={22} />, label: "Production Styles", path: "/production-styles" },
-    { icon: <MdLocalShipping size={22} />, label: "Shipped Styles", path: "/shipped-styles" },
+    {
+      icon: <FaUserFriends size={22} />,
+      label: "User Management",
+      path: "/user-detail",
+    },
+    {
+      icon: <GiSewingMachine size={22} />,
+      label: "Sampling Styles",
+      path: "/sampling-styles",
+    },
+    {
+      icon: <FaTshirt size={22} />,
+      label: "Production Styles",
+      path: "/production-styles",
+    },
+    {
+      icon: <FaTshirt size={22} />,
+      label: "Issue Tracker",
+      path: "/issue-tracker",
+    },
+    {
+      icon: <MdLocalShipping size={22} />,
+      label: "Shipped Styles",
+      path: "/shipped-styles",
+    },
   ];
 
   const profileItems = [
@@ -28,34 +49,37 @@ export default function Sidebar({ side }: any) {
   const handleLogout = async () => {
     const refreshToken = localStorage.getItem("refresh_token");
 
-    if (!refreshToken) {
-      toast.error("No refresh token found.");
-      return;
-    }
+    // if (!refreshToken) {
+    //   toast.error("No refresh token found.");
+    //   return;
+    // }
 
     try {
-      const res = await fetch("http://shivam-mac.local:8000/api/v1.0/auth/logout/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ refresh: refreshToken }),
-      });
+      const res = await fetch(
+        "http://shivam-mac.local:8000/api/v1.0/auth/logout/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ refresh: refreshToken }),
+        }
+      );
 
       if (!res.ok) {
         const err = await res.json();
         console.error("Logout failed:", err);
-        toast.error("Logout failed.");
+        // toast.error("Logout failed.");
         return;
       }
 
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
-      toast.success("Logged out successfully.");
+      // toast.success("Logged out successfully.");
       router.push("/Auth/Login");
     } catch (error) {
       console.error("Logout error:", error);
-      toast.error("Something went wrong during logout.");
+      // toast.error("Something went wrong during logout.");
     }
   };
 
@@ -78,10 +102,18 @@ export default function Sidebar({ side }: any) {
               key={idx}
               onClick={() => router.push(item.path)}
               className={`flex items-center px-4 py-3 rounded-lg text-left transition-all cursor-pointer w-full
-              ${isActive ? "bg-gray-700 text-white font-semibold" : "hover:bg-gray-800 text-gray-300"}`}
+              ${
+                isActive
+                  ? "bg-gray-700 text-white font-semibold"
+                  : "hover:bg-gray-800 text-gray-300"
+              }`}
             >
               <span className="text-[22px]">{item.icon}</span>
-              {!Sidebar && <span className="ml-4 text-[15px] font-medium">{item.label}</span>}
+              {!Sidebar && (
+                <span className="ml-4 text-[15px] font-medium">
+                  {item.label}
+                </span>
+              )}
             </button>
           );
         })}
@@ -96,10 +128,18 @@ export default function Sidebar({ side }: any) {
               key={idx}
               onClick={() => router.push(item.path)}
               className={`flex items-center px-4 py-3 rounded-lg text-left transition-all cursor-pointer w-full
-              ${isActive ? "bg-gray-700 text-white font-semibold" : "hover:bg-gray-800 text-gray-300"}`}
+              ${
+                isActive
+                  ? "bg-gray-700 text-white font-semibold"
+                  : "hover:bg-gray-800 text-gray-300"
+              }`}
             >
               <span className="text-[22px]">{item.icon}</span>
-              {!Sidebar && <span className="ml-4 text-[15px] font-medium">{item.label}</span>}
+              {!Sidebar && (
+                <span className="ml-4 text-[15px] font-medium">
+                  {item.label}
+                </span>
+              )}
             </button>
           );
         })}
@@ -111,7 +151,9 @@ export default function Sidebar({ side }: any) {
           className="flex items-center px-4 py-3 rounded-lg text-left transition-all cursor-pointer w-full hover:bg-gray-800 text-gray-300 mb-14"
         >
           <TbLogout size={22} />
-          {!Sidebar && <span className="ml-4 text-[15px] font-medium">Logout</span>}
+          {!Sidebar && (
+            <span className="ml-4 text-[15px] font-medium">Logout</span>
+          )}
         </button>
       </div>
     </aside>

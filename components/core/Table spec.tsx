@@ -1,17 +1,34 @@
 "use client";
-import ImageEditorModal from "@/components/image-editor/ImageEditorModal";
+// import ImageEditorModal from "@/components/image-editor/ImageEditorModal";
+import ImageEditorModal from "../image-editor/ImageEditorModal";
 import { toast } from "@/hooks/use-toast";
 import { useEffect, useRef } from "react"; // Make sure useRef is imported
 import React, { useState } from "react";
 
+export interface IssueImage {
+  id: string;
+  url: string;
+  file: File;
+  name: string;
+}
 export interface Issue {
   id: string;
-  // description: string;
-  images: string[];
+  description: string;
+  images: IssueImage[];
   status?: string;
   priority?: string;
   createdDate?: string;
 }
+
+export interface Issue {
+  id: string;
+  description: string;
+  images: IssueImage[];
+  status?: string;
+  priority?: string;
+  createdDate?: string;
+}
+
 import {
   FaBars,
   FaTachometerAlt,
@@ -79,9 +96,11 @@ export default function Table({
   imagecol,
   imagecol2,
   columnheaders,
-  spreadsheet
+  spreadsheet,
 }: any) {
-  const [frozenColIndices, setFrozenColIndices] = useState<number[]>(spreadsheet.grid_dimensions.frozen_columns || []); // Default to empty array if not provided
+  const [frozenColIndices, setFrozenColIndices] = useState<number[]>(
+    spreadsheet.grid_dimensions.frozen_columns || []
+  ); // Default to empty array if not provided
   const [selectedHistory, setSelectedHistory] = useState<{
     key: string;
     row: number;
@@ -105,10 +124,13 @@ export default function Table({
   const draggedImageSource = useRef<string | null>(null);
   const draggedImageOrigin = useRef<[number, number] | null>(null);
   // State for Image Editor Modal
+
+  // State for Image Editor Modal
   const [editingImageInfo, setEditingImageInfo] = useState<{
     issueId: string;
-    image: string;
+    image: IssueImage;
   } | null>(null);
+
   const [imageSeleted, setimageSeleted] = useState({
     rownumber: 0,
     colnumber: 0,
@@ -146,7 +168,7 @@ export default function Table({
     }
   }, []);
   const [colWidths, setColWidths] = useState(
-    Array.from({ length: columnheaders.length }, (_,i) => columnheaders[i] )
+    Array.from({ length: columnheaders.length }, (_, i) => columnheaders[i])
   );
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
@@ -223,28 +245,66 @@ export default function Table({
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
   };
-  const handleOpenImageEditor = (issueId: string, image: string) => {
-    setEditingImageInfo({ issueId, image });
+  const handleOpenImageEditor = (
+    rowIndex: number,
+    colIndex: number,
+    imageIndex: number,
+    imageSrc: string
+  ) => {
+    console.log("Opening image editor with:", {
+      rowIndex,
+      colIndex,
+      imageIndex,
+      imageSrc: imageSrc.substring(0, 50) + "...",
+    });
+
+    // Create an IssueImage object from the table data
+    const issueImage: IssueImage = {
+      id: `${rowIndex}-${colIndex}-${imageIndex}`, // Create a unique ID
+      url: imageSrc,
+      name: `image-${rowIndex}-${colIndex}-${imageIndex}.png`,
+      file: new File([], `image-${rowIndex}-${colIndex}-${imageIndex}.png`, {
+        type: imageSrc.match(/data:(image\/\w+);/)?.[1] || "image/png",
+      }),
+    };
+
+    console.log("Created IssueImage object:", issueImage);
+
+    setEditingImageInfo({
+      issueId: `${rowIndex}-${colIndex}-${imageIndex}`, // Use coordinates as issueId
+      image: issueImage,
+    });
     setIsImageEditorOpen(true);
   };
+
   const handleCloseImageEditor = () => {
     setIsImageEditorOpen(false);
     setEditingImageInfo(null);
   };
 
-  const handleSaveEditedImage = (newImageDataUrl: string) => {
-    const { rownumber, colnumber, imgindex } = imageSeleted;
+  const handleSaveEditedImage = (
+    issueId: string,
+    imageId: string,
+    newImageDataUrl: string
+  ) => {
+    // Parse the issueId to get coordinates: "rowIndex-colIndex-imageIndex"
+    const [rowIndex, colIndex, imageIndex] = issueId.split("-").map(Number);
+
     setTableData((prevData) => {
       const newData = [...prevData];
-      const row = [...newData[rownumber]];
-      const images = [...(row[colnumber] as string[])];
+      const row = [...newData[rowIndex]];
+      const images = [...(row[colIndex] as string[])];
 
-      images[imgindex] = newImageDataUrl; // Replace image at index
-      row[colnumber] = images;
-      newData[rownumber] = row;
+      images[imageIndex] = newImageDataUrl; // Replace image at index
+      row[colIndex] = images;
+      newData[rowIndex] = row;
+
+      // Save to localStorage with the updated data
+      localStorage.setItem(`table_data_${tablename}`, JSON.stringify(newData));
 
       return newData;
     });
+
     toast({
       title: "Image updated",
       description: "Your changes have been saved.",
@@ -411,7 +471,6 @@ export default function Table({
   >({});
   const [RealTimeMeasurment, setRealTimemeasuremtn] = useState<string[]>([]);
 
-  const [RealTimeGradingRule, setRealTimeGradingRule] = useState<string[]>([]);
   const handleCellChange = (row: number, col: number, value: string) => {
     pushToHistory(tableData); // ✅ Store before editing
     const oldValue = tableData[row][col] as string;
@@ -963,11 +1022,10 @@ export default function Table({
     }
   }, []);
   useEffect(() => {
-    if (inputRef.current ) {
+    if (inputRef.current) {
       inputRef.current.focus();
       // inputRef.current.select(); // Optional: selects all text
-    }
-    else if (selectRef.current) {
+    } else if (selectRef.current) {
       selectRef.current.focus();
     }
   }, [editingCell]);
@@ -1141,6 +1199,10 @@ export default function Table({
     setRedoStack,
     lastSnapshotRef,
   });
+
+  // image model
+  const [issues, setIssues] = useState<Issue[]>([]);
+
   return (
     <>
       {contextMenu1?.visible && (
@@ -1509,7 +1571,8 @@ export default function Table({
                               const [moved] = newRow.splice(draggedColIndex, 1);
                               newRow.splice(i, 0, moved);
                               let temp = colWidths[i].width;
-                              colWidths[i].width = colWidths[draggedColIndex].width;
+                              colWidths[i].width =
+                                colWidths[draggedColIndex].width;
                               colWidths[draggedColIndex].width = temp;
                               localStorage.setItem(
                                 `table_colWidths_${tablename}`,
@@ -1614,7 +1677,8 @@ export default function Table({
                               const [moved] = newRow.splice(draggedColIndex, 1);
                               newRow.splice(i, 0, moved);
                               let temp = colWidths[i].width;
-                              colWidths[i].width = colWidths[draggedColIndex].width;
+                              colWidths[i].width =
+                                colWidths[draggedColIndex].width;
                               colWidths[draggedColIndex].width = temp;
                               localStorage.setItem(
                                 `table_colWidths_${tablename}`,
@@ -1747,10 +1811,10 @@ export default function Table({
                             rowIndex === -1 ? (
                               <td>
                                 <textarea
-                                style={{
-                                  backgroundColor:
-                                  cellColors?.[rowIndex]?.[colIndex] || "",
-                                }}
+                                  style={{
+                                    backgroundColor:
+                                      cellColors?.[rowIndex]?.[colIndex] || "",
+                                  }}
                                   value={columnHeaders[colIndex]}
                                   readOnly={
                                     !(
@@ -2057,7 +2121,12 @@ export default function Table({
                                             });
                                           }}
                                           onDoubleClick={(e) => {
-                                            handleOpenImageEditor(src, src);
+                                            handleOpenImageEditor(
+                                              rowIndex,
+                                              colIndex,
+                                              i,
+                                              src
+                                            );
                                           }}
                                           style={{
                                             width: "100%",
@@ -2149,7 +2218,6 @@ export default function Table({
                             )
                           ) : colIndex === 2 ? (
                             <td
-                            
                               data-row={rowIndex}
                               data-col={colIndex}
                               style={{
@@ -2236,7 +2304,6 @@ export default function Table({
                                   />
                                 )}
 
-                              
                               <select
                                 value={cell}
                                 data-cell={`${rowIndex}-${colIndex}`}
@@ -2731,7 +2798,13 @@ export default function Table({
           isOpen={isImageEditorOpen}
           onClose={handleCloseImageEditor}
           image={editingImageInfo.image}
-          onSave={(newImageDataUrl) => handleSaveEditedImage(newImageDataUrl)}
+          onSave={(newImageDataUrl) =>
+            handleSaveEditedImage(
+              editingImageInfo.issueId,
+              editingImageInfo.image.id,
+              newImageDataUrl
+            )
+          }
         />
       )}
     </>
