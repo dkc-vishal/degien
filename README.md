@@ -202,3 +202,7 @@ Production Styles / Classic Polo Shirt / Ns Blake Thermal / QA Audit Analysis no
 - notification modal that will pop-up on some events (create, update) ✅ 
 
 - designed figma for spreadsheet ✅ (QA Audit Form, Inspection Point Print, Fit Audit)
+
+- wrote frontend code for fit audit ✅
+
+- size (xs, s, m, l, xl) , insepction type gray out 
