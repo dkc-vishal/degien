@@ -38,6 +38,8 @@ import {
 } from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
+import { Button } from "../ui/button";
+import { X } from "lucide-react";
 function parseFraction(input: string): number {
   input = input.trim();
   if (!input) return 0;
@@ -155,7 +157,7 @@ export default function Table({
   const [columnHeaders, setColumnHeaders] = useState(
     Array.from({ length: col }, (_, colIndex) =>
       colIndex === imagecol || colIndex === imagecol2
-        ? "Measurement Picture"
+        ? "MEASUREMENT PICTURE URL"
         : columnheaders[colIndex].header
     )
   );
@@ -333,7 +335,7 @@ export default function Table({
   const [tableData, setTableData] = useState<TableRow[]>(
     Array.from({ length: row }, () =>
       Array.from({ length: col }, (_, colIndex) =>
-        columnHeaders[colIndex] === "Measurement Picture" ? [] : ""
+        columnHeaders[colIndex] === "MEASUREMENT PICTURE URL" ? [] : ""
       )
     )
   );
@@ -988,6 +990,7 @@ export default function Table({
       )
     );
   }, [tableData]);
+
   useEffect(() => {
     if (!isDragging) return;
 
@@ -1010,17 +1013,20 @@ export default function Table({
       stopAutoScroll();
     };
   }, [isDragging]);
+
   useEffect(() => {
     const handleClick = () => setContextMenu1(null);
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, []);
+
   useEffect(() => {
     const savedWidths = localStorage.getItem(`table_colWidths_${tablename}`);
     if (savedWidths) {
       setColWidths(JSON.parse(savedWidths));
     }
   }, []);
+
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
@@ -1029,6 +1035,7 @@ export default function Table({
       selectRef.current.focus();
     }
   }, [editingCell]);
+
   const handleMouseMoveForScroll = (e: {
     clientX: number;
     clientY: number;
@@ -1073,6 +1080,7 @@ export default function Table({
       return updated;
     });
   };
+
   const unhighlightRow = (rowIndex: number) => {
     setCellColors((prev) => {
       const updated = [...prev];
@@ -1624,7 +1632,7 @@ export default function Table({
                       </>
                     ))}
                   </tr>
-                  <tr className="sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
+                  <tr className="sticky top-0 z-30 bg-white border border-gray-300 border-b-2 p-2 text-sm font-semibold">
                     {columnHeaders?.map((_, i) => (
                       <>
                         <th
@@ -1692,8 +1700,7 @@ export default function Table({
                             setDraggedColIndex(null);
                           }}
                           onDragOver={(e) => e.preventDefault()}
-                          className={`border  
-                          }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${
+                          className={`border ${isDragging ? "cursor-move" : "cursor-pointer"} ${
                             i === 0 ? "" : ""
                           }`}
                         >
@@ -1807,7 +1814,7 @@ export default function Table({
                               {rowIndex + 1}
                             </td>
                           ) : columnHeaders[colIndex] ===
-                            "Measurement Picture" ? (
+                            "MEASUREMENT PICTURE URL" ? (
                             rowIndex === -1 ? (
                               <td>
                                 <textarea
@@ -2097,9 +2104,7 @@ export default function Table({
                                     {(cell as string[]).map((src, i) => (
                                       <div
                                         key={i}
-                                        style={{
-                                          position: "relative",
-                                        }}
+                                        className="relative group"
                                         onClick={(e) => e.stopPropagation()}
                                         onMouseEnter={() =>
                                           setHoveredImage({
@@ -2168,43 +2173,34 @@ export default function Table({
                                         />
 
                                         {/* Delete button visible only on hover */}
-                                        {hoveredImage &&
+                                        {/* {hoveredImage &&
                                           hoveredImage.row === rowIndex &&
                                           hoveredImage.col === colIndex &&
                                           hoveredImage.index === i && (
-                                            <button
-                                              onClick={(e) => {
-                                                const updated = [...tableData];
-                                                (
-                                                  updated[rowIndex][
-                                                    colIndex
-                                                  ] as string[]
-                                                ).splice(i, 1);
-                                                setTableData(updated);
-                                                setTimeout(() => {
-                                                  autoResizeAllTextareas(e);
-                                                }, 0);
-                                              }}
-                                              style={{
-                                                position: "absolute",
-                                                top: 5,
-                                                right: 0,
-                                                background: "white",
-                                                color: "red",
-                                                border: "none",
-                                                borderRadius: "50%",
-                                                width: "18px",
-                                                height: "18px",
-                                                fontSize: "16px",
-                                                cursor: "pointer",
-                                                boxShadow:
-                                                  "0 0 3px rgba(0,0,0,0.3)",
-                                              }}
-                                              title="Delete image"
-                                            >
-                                              ×
-                                            </button>
-                                          )}
+                                            */}
+                                        <div className="absolute top-1 right-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200 flex flex-col gap-1">
+                                          <Button
+                                            onClick={(e) => {
+                                              const updated = [...tableData];
+                                              (
+                                                updated[rowIndex][
+                                                  colIndex
+                                                ] as string[]
+                                              ).splice(i, 1);
+                                              setTableData(updated);
+                                              setTimeout(() => {
+                                                autoResizeAllTextareas(e);
+                                              }, 0);
+                                            }}
+                                            variant="destructive"
+                                            size="icon"
+                                            className="h-6 w-6"
+                                            aria-label="Delete image"
+                                          >
+                                            <X size={16} />
+                                          </Button>
+                                        </div>
+                                        {/* )} */}
                                       </div>
                                     ))}
                                   </div>
@@ -2776,8 +2772,7 @@ export default function Table({
                                   rowIndex === 0
                                     ? "text-black p-3! text-[15px]!"
                                     : "p-3!"
-                                } className="w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top"
-`}
+                                } w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top`}
                                 rows={1}
                               />
                             </td>
@@ -2792,21 +2787,21 @@ export default function Table({
 
           {/* Buttons */}
         </div>
+        {isImageEditorOpen && editingImageInfo && (
+          <ImageEditorModal
+            isOpen={isImageEditorOpen}
+            onClose={handleCloseImageEditor}
+            image={editingImageInfo.image}
+            onSave={(newImageDataUrl) =>
+              handleSaveEditedImage(
+                editingImageInfo.issueId,
+                editingImageInfo.image.id,
+                newImageDataUrl
+              )
+            }
+          />
+        )}
       </main>
-      {isImageEditorOpen && editingImageInfo && (
-        <ImageEditorModal
-          isOpen={isImageEditorOpen}
-          onClose={handleCloseImageEditor}
-          image={editingImageInfo.image}
-          onSave={(newImageDataUrl) =>
-            handleSaveEditedImage(
-              editingImageInfo.issueId,
-              editingImageInfo.image.id,
-              newImageDataUrl
-            )
-          }
-        />
-      )}
     </>
   );
 }

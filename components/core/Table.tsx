@@ -21,6 +21,9 @@ import {
 } from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
+import { IssueImage } from "@/types";
+import { Button } from "../ui/button";
+import { X } from "lucide-react";
 export default function Table({
   tablename,
   col,
@@ -56,7 +59,7 @@ export default function Table({
   // State for Image Editor Modal
   const [editingImageInfo, setEditingImageInfo] = useState<{
     issueId: string;
-    image: string;
+    image: IssueImage;
   } | null>(null);
   const [imageSeleted, setimageSeleted] = useState({
     rownumber: 0,
@@ -174,7 +177,7 @@ export default function Table({
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
   };
-  const handleOpenImageEditor = (issueId: string, image: string) => {
+  const handleOpenImageEditor = (issueId: string, image: IssueImage) => {
     setEditingImageInfo({ issueId, image });
     setIsImageEditorOpen(true);
   };
@@ -1668,7 +1671,7 @@ export default function Table({
                                         row + 1
                                       );
                                     else if (e.key === "ArrowLeft")
-                                      newCol = Math.max(0, col - 1);
+                                      newCol = Math.max(2, col - 1);
                                     else if (e.key === "ArrowRight")
                                       newCol = Math.min(
                                         tableData[0].length - 1,
@@ -1962,8 +1965,10 @@ export default function Table({
                                       nextRow = Math.max(0, row - 1);
                                     if (e.key === "ArrowDown")
                                       nextRow = Math.min(maxRow, row + 1);
-                                    if (e.key === "ArrowLeft")
-                                      nextCol = Math.max(0, col - 1);
+                                    if (e.key === "ArrowLeft") {
+                                      console.log(col);
+                                        nextCol = Math.max(2, col - 1);
+                                    }
                                     if (e.key === "ArrowRight")
                                       nextCol = Math.min(maxCol, col + 1);
 
@@ -2030,7 +2035,15 @@ export default function Table({
                                             });
                                           }}
                                           onDoubleClick={(e) => {
-                                            handleOpenImageEditor(src, src);
+                                            const tempImage = {
+                                              id: `temp-${Date.now()}`,
+                                              url: src,
+                                              file: new File([], `image-${rowIndex}-${colIndex}-${i}.png`, {
+                                                type: src.match(/data:(image\/\w+);/)?.[1] || "image/*",
+                                              }),
+                                              name: `image-${rowIndex}-${colIndex}-${i}.png`,
+                                            };
+                                            handleOpenImageEditor(src, tempImage);
                                           }}
                                           style={{
                                             width: "100%",
@@ -2072,11 +2085,45 @@ export default function Table({
                                         />
 
                                         {/* Delete button visible only on hover */}
-                                        {hoveredImage &&
+                                        {/* {hoveredImage &&
                                           hoveredImage.row === rowIndex &&
                                           hoveredImage.col === colIndex &&
                                           hoveredImage.index === i && (
-                                            <button
+                                            // <button
+                                            //   onClick={(e) => {
+                                            //     const updated = [...tableData];
+                                            //     (
+                                            //       updated[rowIndex][
+                                            //         colIndex
+                                            //       ] as string[]
+                                            //     ).splice(i, 1);
+                                            //     setTableData(updated);
+                                            //     setTimeout(() => {
+                                            //       autoResizeAllTextareas(e);
+                                            //     }, 0);
+                                            //   }}
+                                            //   style={{
+                                            //     position: "absolute",
+                                            //     top: 5,
+                                            //     right: 0,
+                                            //     background: "white",
+                                            //     color: "red",
+                                            //     border: "none",
+                                            //     borderRadius: "50%",
+                                            //     width: "18px",
+                                            //     height: "18px",
+                                            //     fontSize: "16px",
+                                            //     cursor: "pointer",
+                                            //     boxShadow:
+                                            //       "0 0 3px rgba(0,0,0,0.3)",
+                                            //   }}
+                                            //   title="Delete image"
+                                            // >
+                                            //   ×
+                                            // </button> */}
+                                            <div className="absolute top-5 right-1 opacity-100  transition-opacity duration-200 flex flex-col gap-1 z-10">
+
+                                            <Button 
                                               onClick={(e) => {
                                                 const updated = [...tableData];
                                                 (
@@ -2089,26 +2136,15 @@ export default function Table({
                                                   autoResizeAllTextareas(e);
                                                 }, 0);
                                               }}
-                                              style={{
-                                                position: "absolute",
-                                                top: 5,
-                                                right: 0,
-                                                background: "white",
-                                                color: "red",
-                                                border: "none",
-                                                borderRadius: "50%",
-                                                width: "18px",
-                                                height: "18px",
-                                                fontSize: "16px",
-                                                cursor: "pointer",
-                                                boxShadow:
-                                                  "0 0 3px rgba(0,0,0,0.3)",
-                                              }}
-                                              title="Delete image"
-                                            >
-                                              ×
-                                            </button>
-                                          )}
+                                              variant="destructive"
+                                              size="icon"
+                                              className="h-6 w-6"
+                                              aria-label="Delete image"
+                                              >
+                                              <X size={16} />
+                                            </Button>
+                                            </div>
+                                          {/* )} */}
                                       </div>
                                     ))}
                                   </div>

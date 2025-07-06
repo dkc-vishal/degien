@@ -15,13 +15,13 @@ export default function ClientLayout({
   return isAuthRoute ? (
     <div className="min-h-screen bg-gray-100">{children}</div>
   ) : (
-    <div className="flex h-screen font-sans bg-gray-100">
+    <div className="flex font-sans bg-gray-100">
       <div className="no-print">
         <Sidebar />
       </div>
       <div
-        className="removesidebarspace flex-1 flex flex-col ml-[15%]"
-        style={{ width: "calc(100vw - 30%)" }}
+        className="removesidebarspace flex-1 flex flex-col ml-[15%] w-[calc(100vw-30%)]"
+        // style={{ width: "calc(100vw - 30%)" }}
       >
         <div className="no-print">
           <Header />
