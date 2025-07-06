@@ -7,7 +7,6 @@ import { API_ENDPOINTS } from "@/lib/api";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 
 const page: React.FC = () => {
-
   const router = useRouter();
 
   const [form, setForm] = useState({
@@ -24,7 +23,7 @@ const page: React.FC = () => {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [showPassword, setShowPassword] = useState(false) ; 
+  const [showPassword, setShowPassword] = useState(false);
 
   const validate = () => {
     const errors = { email: "", password: "" };
@@ -85,7 +84,7 @@ const page: React.FC = () => {
       localStorage.setItem("access_token", access_token);
       localStorage.setItem("refresh_token", refresh_token);
 
-      console.log('access_token from response: ', access_token);
+      console.log("access_token from response: ", access_token);
 
       await fetchAndStoreUserProfile(access_token);
 
@@ -94,16 +93,15 @@ const page: React.FC = () => {
       setLoading(true);
 
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/Dashboard");
       }, 2000);
-
     } catch (err) {
       console.error("🧨 Login failed:", err);
       setError("Something went wrong. Please try again.");
     }
   };
 
-  // Fetching logged-in user's profile using token 
+  // Fetching logged-in user's profile using token
 
   const fetchAndStoreUserProfile = async (accessToken: string) => {
     console.log("🔐 Using access token:", accessToken);
@@ -133,7 +131,7 @@ const page: React.FC = () => {
       const userProfile = await profileRes.json();
       console.log("👤 User Profile:", userProfile);
 
-      // Saving the logged-in user info in localStorage 
+      // Saving the logged-in user info in localStorage
 
       localStorage.setItem("loggedInUser", JSON.stringify(userProfile.data));
 
@@ -145,7 +143,7 @@ const page: React.FC = () => {
 
   const buttonClick = () => {
     console.log("Button clicked");
-  }
+  };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gray-100 px-4">
@@ -184,8 +182,9 @@ const page: React.FC = () => {
             onChange={handleChange}
             autoComplete="email"
             placeholder="e.g. john@example.com"
-            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.email ? "border-red-400" : "border-gray-300"
-              }`}
+            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+              fieldErrors.email ? "border-red-400" : "border-gray-300"
+            }`}
           />
           {fieldErrors.email && (
             <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
@@ -209,24 +208,23 @@ const page: React.FC = () => {
             onChange={handleChange}
             autoComplete="current-password"
             placeholder="Enter your password"
-            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.password ? "border-red-400" : "border-gray-300"
-              }`}
+            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+              fieldErrors.password ? "border-red-400" : "border-gray-300"
+            }`}
           />
 
-        {/* Toggle icon */}
+          {/* Toggle icon */}
 
-        <span
-          className="absolute right-3 top-8.5 cursor-pointer text-gray-500"
-          onClick={() => setShowPassword((prev) => !prev)}
-        >
-          {
-            showPassword ? (
-              <AiFillEyeInvisible className="w-5 h-5"/>
+          <span
+            className="absolute right-3 top-8.5 cursor-pointer text-gray-500"
+            onClick={() => setShowPassword((prev) => !prev)}
+          >
+            {showPassword ? (
+              <AiFillEyeInvisible className="w-5 h-5" />
             ) : (
-              <AiFillEye className="w-5 h-5"/>
-            )
-          }
-        </span>
+              <AiFillEye className="w-5 h-5" />
+            )}
+          </span>
 
           {fieldErrors.password && (
             <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
@@ -238,14 +236,15 @@ const page: React.FC = () => {
         <button
           type="submit"
           disabled={loading}
-          className={`w-full text-white text-sm font-medium py-2 mt-5 rounded-md transition duration-200 ${loading
-            ? "bg-blue-300 cursor-not-allowed"
-            : "bg-blue-500 hover:bg-blue-600 cursor-pointer"
-            }`}
+          className={`w-full text-white text-sm font-medium py-2 mt-5 rounded-md transition duration-200 ${
+            loading
+              ? "bg-blue-300 cursor-not-allowed"
+              : "bg-blue-500 hover:bg-blue-600 cursor-pointer"
+          }`}
           onClick={() => buttonClick()}
         >
           <span className="flex items-center justify-center gap-3">
-            <FiLogIn className="w-4 h-4"/>
+            <FiLogIn className="w-4 h-4" />
             {loading ? "Logging in..." : "Login"}
           </span>
         </button>
@@ -280,7 +279,7 @@ const page: React.FC = () => {
 
         <div className="mt-3 text-left">
           <p className="text-sm text-gray-600">
-            First time login? {" "}
+            First time login?{" "}
             <span
               onClick={() => router.push("/Auth/Change-Password")}
               className="text-blue-600 font-medium hover:underline cursor-pointer"
@@ -289,8 +288,6 @@ const page: React.FC = () => {
             </span>
           </p>
         </div>
-
-
       </form>
     </div>
   );
