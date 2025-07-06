@@ -1,14 +1,24 @@
-import { User } from "lucide-react";
-
-export const BASE_URL = "http://shivam-mac.local:8000/api/v1.0/auth";
+export const BASE_URL = "http://shivam-mac.local:8001/api/v1.0/auth";
 
 export const API_ENDPOINTS = {
     login: {
         url: `${BASE_URL}/login/`, 
         method: 'POST'
     },
+    logout: {
+        url: `${BASE_URL}/logout/`, 
+        method: 'POST'
+    },
     departments: {
         url: `${BASE_URL}/departments/`, 
+        method: 'GET'
+    },
+    activeUsers: {
+        url: `${BASE_URL}/list-users/active`, 
+        method: 'GET'
+    },
+    inActiveUsers: {
+        url: `${BASE_URL}/list-users/inactive`, 
         method: 'GET'
     },
     createUser: {

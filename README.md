@@ -171,13 +171,34 @@ Production Styles / Classic Polo Shirt / Ns Blake Thermal / QA Audit Analysis no
 
 - cell -> background color from backend 
 
+- Sonu N Mahto , sonu.mahto+2@dkcexport.co.in , bN2ENOzFvN
 
+- Vendor, vendor@dkcexport.co.in , qgOuRPic73
 
-- Sonu NM 11, sonu.mahto@dkcexports.co.in , txnVJfzLQx
+- Inactive user , inactiveuser@gmail.com , 1WSSqutasg
 
-- Sonu NM, sonumn@gmail.com , JxoD1UDdxc
+### 110 (5th July) 
 
-- Golu Don, golu.don@gmail.com, PzAGcgoDOF
+- employee name not coming in account created success modal 
 
-- Sonu N Mahto, sonu.mahto+1@dkcexport.co.in , pd5IhkafEx , 1234
-https://chatgpt.com/share/68628966-8cb0-8011-8514-b70acdf8f0c1
+- production styles -> styles -> larger size of styles and no bg:scale, only outer line when hover ✅
+
+- similar style for sampling styles ✅ 
+
+- no toggle view in production styles ✅
+
+- http://localhost:3000/production-styles/raya-bandana (on right also show graded out, blue, yellow means) ✅
+
+- Master -> 3 files with name ✅
+ 
+- Master -> Sampling watchpoint, Tech Graded Specs, Production watchpoint (should look like file) ✅
+
+- Master -> Orders -> Folders -> show the 6 files with names in grid structure ✅
+
+- Master -> Orders -> NS Blake Thermal, Naval Blake Thermal -> In the 6 folders, the order quantity too should be visible in the right bottom corner similar to that of their parent ✅
+
+- notification page (read, unread). Redirected to the specific style when clicked. ✅
+
+- notification modal that will pop-up on some events (create, update) ✅ 
+
+- designed figma for spreadsheet ✅ (QA Audit Form, Inspection Point Print, Fit Audit)

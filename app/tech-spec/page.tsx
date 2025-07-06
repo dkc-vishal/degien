@@ -20,7 +20,7 @@ export default function TechSpecSheet() {
   const [tableData, setTableData] = useState({});
   async function fetchdata() {
     const res = await axios.get(
-      "http://shivam-mac.local:8000/api/v1.0/spreadsheet/580d3753-8487-4d98-909e-c3b52580f21c"
+      "http://shivam-mac.local:8001/api/v1.0/spreadsheet/580d3753-8487-4d98-909e-c3b52580f21c"
     );
     const col_metadata: Record<string, ColumnMetadata> = await res.data.data
       .column_metadata;

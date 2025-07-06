@@ -125,7 +125,7 @@ const ChangePasswordPage: React.FC = () => {
         className="w-full max-w-md bg-white p-8 rounded-lg shadow-sm border border-gray-200"
       >
         <h2 className="text-xl font-semibold text-center text-gray-800 mb-5">
-          Change Password
+          Reset Password
         </h2>
 
         {/* Email Field */}
@@ -250,7 +250,7 @@ const ChangePasswordPage: React.FC = () => {
           className="w-full bg-blue-400 hover:bg-blue-500 text-white cursor-pointer text-sm font-medium py-2 rounded-md transition duration-200 flex items-center justify-center gap-2"
         >
           <RiLockPasswordLine className="w-4 h-4" />
-          Change Password
+          Reset Password
         </button>
 
         {/* Login Redirect */}

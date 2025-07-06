@@ -237,12 +237,12 @@ const page: React.FC = () => {
 
         <div className="mt-6 text-left text-sm text-gray-600 space-y-4">
           <p>
-            First time login?{" "}
+            Having System Password?{" "}
             <span
               onClick={() => router.push("/Auth/Change-Password")}
               className="text-blue-600 font-medium hover:underline cursor-pointer"
             >
-              Change Password
+              Update
             </span>
           </p>
           <p>
