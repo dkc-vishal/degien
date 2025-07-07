@@ -323,26 +323,32 @@ export default function Table({
     });
   };
 
-  const handleSaveEditedImage = (
-    issueId: string,
-    imageId: string,
-    newImageDataUrl: string
-  ) => {
-    // Parse the issueId to get coordinates: "rowIndex-colIndex-imageIndex"
-    const [rowIndex, colIndex, imageIndex] = issueId.split("-").map(Number);
+const handleSaveEditedImage = (
+  issueId: string,
+  imageId: string,
+  newImageDataUrl: string
+) => {
+  const [rowIndex, colIndex, imageIndex] = issueId.split("-").map(Number);
 
-    setTableData((prevData) => {
-      const newData = [...prevData];
-      const row = [...newData[rowIndex]];
-      const images = [...(row[colIndex] as string[])];
+  setTableData((prevData) => {
+    const newData = [...prevData];
+    const cell = newData[rowIndex][colIndex];
 
-      images[imageIndex] = newImageDataUrl; // Replace image at index
-      row[colIndex] = images;
-      newData[rowIndex] = row;
+    const isSingleImage =
+      cell.data_type === "single_image" ||
+      (Array.isArray(cell.data_type) && cell.data_type.includes("single_image"));
 
-      // Save to localStorage with the updated data
-      localStorage.setItem(`table_data_${tablename}`, JSON.stringify(newData));
+    if (isSingleImage && Array.isArray(cell.value)) {
+      const updatedImages = [...cell.value];
+      updatedImages[imageIndex] = newImageDataUrl;
 
+      newData[rowIndex][colIndex] = {
+        ...cell,
+        value: updatedImages,
+      };
+    }
+
+    localStorage.setItem(`table_data_${tablename}`, JSON.stringify(newData));
     return newData;
   });
 
@@ -353,6 +359,7 @@ export default function Table({
 
   handleCloseImageEditor();
 };
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -684,24 +691,23 @@ export default function Table({
     setTableData(updated);
 
     // Update edit history
-    setEditHistoryMap((prev) => ({
-      ...prev,
-      [key]: [
-        ...(prev[key] || []),
-        {
-          oldValue: oldValue,
-          newValue: value,
-          editedBy: "vishal",
-          editedAt: new Date().toLocaleString(),
-        },
-      ],
-    }));
   };
 
   const handleCellBlur = (row: number, col: number) => {
     setEditingCell(null);
 
-    // Get column indices
+    const updated = [...tableData];
+
+    const getValue = (r: number, c: number) => {
+      const val = updated[r][c]?.value;
+      return Array.isArray(val) ? val.join(" ") : val || "";
+    };
+
+    const setValue = (r: number, c: number, value: string) => {
+      updated[r][c] = { ...updated[r][c], value };
+    };
+
+    // Column indices
     const topMeasIdx = columnHeaders.indexOf("TOP CHANGED MEASUREMENT");
     const ppMeasIdx = columnHeaders.indexOf("PP CHANGED MEASUREMENT");
     const fitMeasIdx = columnHeaders.indexOf("FIT CHANGED MEASUREMENT");
@@ -713,7 +719,6 @@ export default function Table({
     const msrIdx = columnHeaders.indexOf("MSR GRADING RULE");
     const realTimeIdx = columnHeaders.indexOf("REAL TIME GRADING RULE");
 
-    // ✅ Check if we're leaving a column that affects Real Time values OR Real Time columns directly
     const affectsRealTimeMeasurement = [
       topMeasIdx,
       ppMeasIdx,
@@ -729,312 +734,120 @@ export default function Table({
       realTimeIdx,
     ].includes(col);
 
-    // Only calculate sizes if we're leaving a relevant column
-    if (!affectsRealTimeMeasurement && !affectsRealTimeGradingRule) {
-      return; // Not a relevant column, don't calculate
-    }
+    if (!affectsRealTimeMeasurement && !affectsRealTimeGradingRule) return;
 
-    // ✅ Use setTimeout to ensure we get the updated tableData after handleCellChange
     setTimeout(() => {
-      // ✅ FORCE UPDATE Real Time values with current tableData before calculation
-      const updated = [...tableData];
+      // Force Real Time Measurement update
+      setValue(
+        row,
+        realTimeMeasIdx,
+        getValue(row, topMeasIdx) ||
+          getValue(row, ppMeasIdx) ||
+          getValue(row, fitMeasIdx) ||
+          getValue(row, msrMeasIdx) ||
+          ""
+      );
 
-      // Force update Real Time Measurement with priority: TOP > PP > FIT > MSR
-      const currentTopMeas = updated[row][topMeasIdx] as string;
-      const currentPpMeas = updated[row][ppMeasIdx] as string;
-      const currentFitMeas = updated[row][fitMeasIdx] as string;
-      const currentMsrMeas = updated[row][msrMeasIdx] as string;
+      // Force Real Time Grading Rule update
+      setValue(
+        row,
+        realTimeIdx,
+        getValue(row, topIdx) ||
+          getValue(row, ppIdx) ||
+          getValue(row, fitIdx) ||
+          getValue(row, msrIdx) ||
+          ""
+      );
 
-      updated[row][realTimeMeasIdx] =
-        currentTopMeas ||
-        currentPpMeas ||
-        currentFitMeas ||
-        currentMsrMeas ||
-        "";
+      const currentMsrMeasurement = getValue(row, msrMeasIdx);
+      const currentRealTimeMeasurement = getValue(row, realTimeMeasIdx);
+      const currentMsrGradingRule = getValue(row, msrIdx);
+      const currentRealTimeGradingRule = getValue(row, realTimeIdx);
 
-      // Force update Real Time Grading Rule with priority: TOP > PP > FIT > MSR
-      const currentTopGrade = updated[row][topIdx] as string;
-      const currentPpGrade = updated[row][ppIdx] as string;
-      const currentFitGrade = updated[row][fitIdx] as string;
-      const currentMsrGrade = updated[row][msrIdx] as string;
-
-      updated[row][realTimeIdx] =
-        currentTopGrade ||
-        currentPpGrade ||
-        currentFitGrade ||
-        currentMsrGrade ||
-        "";
-
-      // ✅ Now get the UPDATED Real Time values for calculation
-      const currentMsrMeasurement = updated[row][msrMeasIdx] as string;
-      const currentRealTimeMeasurement = updated[row][
-        realTimeMeasIdx
-      ] as string;
-      const currentMsrGradingRule = updated[row][msrIdx] as string;
-      const currentRealTimeGradingRule = updated[row][realTimeIdx] as string;
-
-      console.log("Real Time values after FORCED update:", {
-        currentMsrMeasurement,
-        currentRealTimeMeasurement,
-        currentMsrGradingRule,
-        currentRealTimeGradingRule,
-        blurredColumn:
-          col === msrMeasIdx
-            ? "MSR Measurement"
-            : col === msrIdx
-            ? "MSR Grading Rule"
-            : col === realTimeMeasIdx
-            ? "Real Time Measurement"
-            : col === realTimeIdx
-            ? "Real Time Grading Rule"
-            : col === topMeasIdx
-            ? "Top Changed Measurement"
-            : col === ppMeasIdx
-            ? "PP Changed Measurement"
-            : col === fitMeasIdx
-            ? "Fit Changed Measurement"
-            : col === topIdx
-            ? "Top Changed Grading Rule"
-            : col === ppIdx
-            ? "PP Changed Grading Rule"
-            : col === fitIdx
-            ? "Fit Grading Rule"
-            : "Other",
-      });
-
-      // ✅ Determine when to calculate sizes based on UPDATED Real Time values
       const shouldCalculateSizes =
-        // Case 1: Both MSR Measurement and MSR Grading Rule are filled
         (currentMsrMeasurement && currentMsrGradingRule) ||
-        // Case 2: Only MSR Grading Rule is filled (regardless of MSR Measurement)
         (currentMsrGradingRule && !currentMsrMeasurement) ||
-        // Case 3: Real Time values are used when MSR values are not available
         (currentRealTimeMeasurement && currentRealTimeGradingRule) ||
         (currentRealTimeGradingRule && !currentRealTimeMeasurement);
 
-      console.log(
-        "Should calculate sizes (after FORCED update):",
-        shouldCalculateSizes
-      );
-
       if (shouldCalculateSizes) {
-        // Determine which measurement and grading rule to use
         const baseSizeInput = currentRealTimeMeasurement || "";
         const gradingInput = currentRealTimeGradingRule || "";
+        const baseSizeType = "S";
 
-        // Only proceed if we have a grading rule (measurement is optional in some cases)
         if (gradingInput) {
-          const baseSizeType = "S"; // Default base size type
-
-          console.log("Calculating sizes with CORRECT values:", {
-            baseSizeType,
-            baseSizeInput,
-            gradingInput,
-            trigger:
-              col === msrMeasIdx
-                ? "MSR Measurement"
-                : col === msrIdx
-                ? "MSR Grading Rule"
-                : col === realTimeMeasIdx
-                ? "Real Time Measurement"
-                : col === realTimeIdx
-                ? "Real Time Grading Rule"
-                : col === topMeasIdx
-                ? "Top Changed Measurement"
-                : col === ppMeasIdx
-                ? "PP Changed Measurement"
-                : col === fitMeasIdx
-                ? "Fit Changed Measurement"
-                : col === topIdx
-                ? "Top Changed Grading Rule"
-                : col === ppIdx
-                ? "PP Changed Grading Rule"
-                : col === fitIdx
-                ? "Fit Grading Rule"
-                : "Other",
-          });
-
           const sizes = calculateSizes(
             baseSizeType,
             baseSizeInput,
             gradingInput
           );
+          const hasNegativeSize = Object.values(sizes).some((v) => v < 0);
 
-          const hasNegativeSize =
-            sizes.xs < 0 ||
-            sizes.s < 0 ||
-            sizes.m < 0 ||
-            sizes.l < 0 ||
-            sizes.xl < 0;
-
-          // Get size column indices
-          const xsCol = columnHeaders.findIndex((header) => header === "XS");
-          const sCol = columnHeaders.findIndex((header) => header === "S");
-          const mCol = columnHeaders.findIndex((header) => header === "M");
-          const lCol = columnHeaders.findIndex((header) => header === "L");
-          const xlCol = columnHeaders.findIndex((header) => header === "XL");
-
-          // Size calculation logic
-          const msrMeasurementCol = columnHeaders.findIndex((header) =>
-            header.includes("MSR MEASUREMENT")
-          );
-          const msrGradingRuleCol = columnHeaders.findIndex((header) =>
-            header.includes("MSR GRADING RULE")
-          );
+          const xsCol = columnHeaders.indexOf("XS");
+          const sCol = columnHeaders.indexOf("S");
+          const mCol = columnHeaders.indexOf("M");
+          const lCol = columnHeaders.indexOf("L");
+          const xlCol = columnHeaders.indexOf("XL");
 
           if (hasNegativeSize) {
-            // ✅ Show alert for negative sizes
             alert(
-              "Invalid Size Calculation: The grading rule resulted in negative sizes. All size values and inputs will be cleared."
+              "Invalid Size Calculation: Negative size detected. Clearing values."
             );
 
-            console.log(
-              "Negative size detected, clearing all size values:",
-              sizes
+            [xsCol, sCol, mCol, lCol, xlCol].forEach(
+              (c) => c !== -1 && setValue(row, c, "")
             );
-
-            // Clear all size columns
-            if (xsCol !== -1) updated[row][xsCol] = "";
-            if (sCol !== -1) updated[row][sCol] = "";
-            if (mCol !== -1) updated[row][mCol] = "";
-            if (lCol !== -1) updated[row][lCol] = "";
-            if (xlCol !== -1) updated[row][xlCol] = "";
-
-            // ✅ Clear MSR measurement and grading rule inputs
-            if (msrMeasurementCol !== -1) updated[row][msrMeasurementCol] = "";
-            if (msrGradingRuleCol !== -1) updated[row][msrGradingRuleCol] = "";
-            if (fitMeasIdx !== -1) updated[row][fitMeasIdx] = "";
-            if (fitIdx !== -1) updated[row][fitIdx] = "";
-            if (ppMeasIdx !== -1) updated[row][ppMeasIdx] = "";
-            if (ppIdx !== -1) updated[row][ppIdx] = "";
-            if (topMeasIdx !== -1) updated[row][topMeasIdx] = "";
-            if (topIdx !== -1) updated[row][topIdx] = "";
-
-            // Also clear Real Time values since they caused the negative calculation
-            if (realTimeMeasIdx !== -1) updated[row][realTimeMeasIdx] = "";
-            if (realTimeIdx !== -1) updated[row][realTimeIdx] = "";
+            [
+              msrMeasIdx,
+              msrIdx,
+              fitMeasIdx,
+              fitIdx,
+              ppMeasIdx,
+              ppIdx,
+              topMeasIdx,
+              topIdx,
+              realTimeMeasIdx,
+              realTimeIdx,
+            ].forEach((c) => c !== -1 && setValue(row, c, ""));
           } else {
-            // ✅ All sizes are valid (>= 0), update normally
-            console.log("All sizes are valid, updating size columns:", sizes);
-    // Always recalculate sizes
-    const msrMeasurementCol = columnHeaders.findIndex((header) =>
-      header.includes("MSR MEASUREMENT")
-    );
-    const msrGradingRuleCol = columnHeaders.findIndex((header) =>
-      header.includes("REAL TIME GRADING RULE")
-    );
-    const msrBaseSizeTypeCol = columnHeaders.findIndex((header) =>
-      header.includes("base size type")
-    );
-
-    const baseSizeInputValue = updated[row][realTimeMeasIdx]?.value || "";
-    const baseSizeInput = Array.isArray(baseSizeInputValue)
-      ? baseSizeInputValue.join(" ")
-      : baseSizeInputValue;
-    const gradingInputValue = updated[row][msrGradingRuleCol]?.value || "";
-    const gradingInput = Array.isArray(gradingInputValue)
-      ? gradingInputValue.join(" ")
-      : gradingInputValue;
-    const baseSizeType = "S"; // Or fetch dynamically if needed
-
-    const sizes = calculateSizes(baseSizeType, baseSizeInput, gradingInput);
-
-    const xsCol = columnHeaders.indexOf("XS");
-    const sCol = columnHeaders.indexOf("S");
-    const mCol = columnHeaders.indexOf("M");
-    const lCol = columnHeaders.indexOf("L");
-    const xlCol = columnHeaders.indexOf("XL");
-
-    if (xsCol !== -1) {
-      updated[row][xsCol] = {
-        ...updated[row][xsCol],
-        value: toFractionString(sizes.xs).toString(),
-      };
-    }
-    if (sCol !== -1)
-      updated[row][sCol] = {
-        ...updated[row][sCol],
-        value: toFractionString(sizes.s).toString(),
-      };
-    if (mCol !== -1)
-      updated[row][mCol] = {
-        ...updated[row][mCol],
-        value: toFractionString(sizes.m).toString(),
-      };
-    if (lCol !== -1)
-      updated[row][lCol] = {
-        ...updated[row][lCol],
-        value: toFractionString(sizes.l).toString(),
-      };
-    if (xlCol !== -1)
-      updated[row][xlCol] = {
-        ...updated[row][xlCol],
-        value: toFractionString(sizes.xl).toString(),
-      };
-
-            // ✅ Clear non-selected MSR inputs based on what was actually used
-            if (currentMsrMeasurement && currentMsrGradingRule) {
-              // Both MSR values used - don't clear anything
-              console.log("Using MSR values - keeping both inputs");
-            }
+            if (xsCol !== -1)
+              setValue(row, xsCol, toFractionString(sizes.xs).toString());
+            if (sCol !== -1)
+              setValue(row, sCol, toFractionString(sizes.s).toString());
+            if (mCol !== -1)
+              setValue(row, mCol, toFractionString(sizes.m).toString());
+            if (lCol !== -1)
+              setValue(row, lCol, toFractionString(sizes.l).toString());
+            if (xlCol !== -1)
+              setValue(row, xlCol, toFractionString(sizes.xl).toString());
           }
 
-          // ✅ Apply all updates at once
           setTableData(updated);
         }
       } else {
-        // ✅ Handle cases where only measurement is filled (no grading rule)
-
-        // Case: Only measurement is filled (any type)
+        // Only measurement filled — fill S column, clear others
         if (
           (currentMsrMeasurement || currentRealTimeMeasurement) &&
           !currentMsrGradingRule &&
           !currentRealTimeGradingRule &&
           [msrMeasIdx, topMeasIdx, ppMeasIdx, fitMeasIdx].includes(col)
         ) {
-          const sCol = columnHeaders.findIndex((header) => header === "S");
+          const sCol = columnHeaders.indexOf("S");
+          const baseSize = currentRealTimeMeasurement || currentMsrMeasurement;
 
-          // ✅ Use Real Time Measurement value (which now has the correct updated value)
-          const baseSizeValue =
-            currentRealTimeMeasurement || currentMsrMeasurement;
+          if (sCol !== -1) setValue(row, sCol, baseSize);
 
-          if (sCol !== -1) {
-            updated[row][sCol] = baseSizeValue;
-          }
-
-          // Clear other size columns since we don't have grading rule
-          const xsCol = columnHeaders.findIndex((header) => header === "XS");
-          const mCol = columnHeaders.findIndex((header) => header === "M");
-          const lCol = columnHeaders.findIndex((header) => header === "L");
-          const xlCol = columnHeaders.findIndex((header) => header === "XL");
-
-          if (xsCol !== -1) updated[row][xsCol] = "";
-          if (mCol !== -1) updated[row][mCol] = "";
-          if (lCol !== -1) updated[row][lCol] = "";
-          if (xlCol !== -1) updated[row][xlCol] = "";
-
-          // ✅ Apply updates
-          setTableData(updated);
-          console.log(
-            "Only measurement filled, setting base size (S) to:",
-            baseSizeValue,
-            "from",
-            col === topMeasIdx
-              ? "TOP"
-              : col === ppMeasIdx
-              ? "PP"
-              : col === fitMeasIdx
-              ? "FIT"
-              : col === msrMeasIdx
-              ? "MSR"
-              : "Real Time"
-          );
-        } else {
-          // ✅ Still apply the Real Time updates even if no size calculation
-          setTableData(updated);
+          [
+            columnHeaders.indexOf("XS"),
+            columnHeaders.indexOf("M"),
+            columnHeaders.indexOf("L"),
+            columnHeaders.indexOf("XL"),
+          ].forEach((c) => c !== -1 && setValue(row, c, ""));
         }
+
+        setTableData(updated);
       }
-    }, 0); // ✅ Delay to ensure Real Time updates are applied first
+    }, 0);
   };
 
   function calculateSizes(
@@ -1658,7 +1471,6 @@ export default function Table({
   // image model
   const [issues, setIssues] = useState<Issue[]>([]);
 
-
   const getCellHistory = async (
     cellid: string,
     contextMenu: { row: number; col: number; x: number; y: number }
@@ -1882,7 +1694,7 @@ export default function Table({
           </div>
         </div>
       )}
-      {selectedHistory &&  Object.keys(selectedHistory.history).length > 0 &&(
+      {selectedHistory && Object.keys(selectedHistory.history).length > 0 && (
         <div
           className="absolute bg-white border border-gray-300 rounded-lg shadow-lg w-80 z-50"
           style={{
@@ -2665,44 +2477,42 @@ export default function Table({
                                           src={src}
                                         />
 
-                                        
                                         <div className="absolute top-1 right-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200 flex flex-col gap-1">
                                           <Button
                                             onClick={(e) => {
-                                                setTableData((prev) => {
-                                                  const updated = [...prev];
-                                                  const cell =
-                                                    updated[rowIndex][colIndex];
+                                              setTableData((prev) => {
+                                                const updated = [...prev];
+                                                const cell =
+                                                  updated[rowIndex][colIndex];
 
-                                                  const isSingleImage =
-                                                    cell.data_type ===
-                                                      "single_image" ||
-                                                    (Array.isArray(
-                                                      cell.data_type
-                                                    ) &&
-                                                      cell.data_type.includes(
-                                                        "single_image"
-                                                      ));
+                                                const isSingleImage =
+                                                  cell.data_type ===
+                                                    "single_image" ||
+                                                  (Array.isArray(
+                                                    cell.data_type
+                                                  ) &&
+                                                    cell.data_type.includes(
+                                                      "single_image"
+                                                    ));
 
-                                                  if (
-                                                    isSingleImage &&
-                                                    Array.isArray(cell.value)
-                                                  ) {
-                                                    const newImages = [
-                                                      ...cell.value,
-                                                    ];
-                                                    newImages.splice(i, 1);
+                                                if (
+                                                  isSingleImage &&
+                                                  Array.isArray(cell.value)
+                                                ) {
+                                                  const newImages = [
+                                                    ...cell.value,
+                                                  ];
+                                                  newImages.splice(i, 1);
 
-                                                    updated[rowIndex][
-                                                      colIndex
-                                                    ] = {
+                                                  updated[rowIndex][colIndex] =
+                                                    {
                                                       ...cell,
                                                       value: newImages,
                                                     };
-                                                  }
+                                                }
 
-                                                  return updated;
-                                                });
+                                                return updated;
+                                              });
                                               setTimeout(() => {
                                                 autoResizeAllTextareas(e);
                                               }, 0);

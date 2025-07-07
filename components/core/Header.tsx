@@ -65,7 +65,7 @@ export default function Header({ sidebartoggle }: any) {
         {/* <div className="flex justify-between items-center"> */}
         {/* Left: Menu + Search + Mic */}
         <div className="flex items-center justify-between gap-4">
-            <button onClick={toggleSidebar} className="text-black text-lg">
+            <button onClick={toggleSidebar} className="text-black text-lg cursor-pointer">
               <FaBars />
             </button>
             <div className="w-82">

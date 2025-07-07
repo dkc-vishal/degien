@@ -100,7 +100,7 @@ export default function Sidebar({ isSidebarOpen }: any) {
 
       {/* Main Navigation */}
       <nav className="flex flex-col px-2 pt-4 space-y-2 flex-grow">
-        {menuItems.map((item, idx) => {
+        {menuItems.map((item:any, idx) => {
           const isActive = pathname.startsWith(item.path);
           return (
             <button
@@ -115,13 +115,13 @@ export default function Sidebar({ isSidebarOpen }: any) {
             >
               <div className="flex items-center">
                 <span className="text-[22px]">{item.icon}</span>
-                {!Sidebar && (
+                {isOpen && (
                   <span className="ml-4 text-[15px] font-medium">{item.label}</span>
                 )}
               </div>
 
               {/* Notification badge */}
-              {!Sidebar && item.label === "Notifications" && item.unread > 0 && (
+              {isOpen && item.label === "Notifications" && item.unread > 0 && (
                 <span className="text-xs bg-red-500 text-white px-2 py-[1px] rounded-full font-bold">
                   {item.unread}
                 </span>
