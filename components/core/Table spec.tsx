@@ -12,17 +12,10 @@ export interface Issue {
   priority?: string;
   createdDate?: string;
 }
-import {
-  FaBars,
-  FaTachometerAlt,
-  FaClipboardList,
-  FaWrench,
-  FaTools,
-} from "react-icons/fa";
+
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import axios from "axios";
-import { get } from "http";
 function parseFraction(input: string): number {
   input = input.trim();
   if (!input) return 0;
@@ -87,6 +80,21 @@ type CellData = {
   has_shape: boolean;
 };
 
+type CellHistory = {
+  cell_history_id: string;
+
+  created_at: string; // ISO 8601 date string
+
+  edited_by: string;
+
+  has_shape: boolean;
+
+  is_highlighted: boolean;
+
+  new_value: string;
+
+  old_value: string;
+};
 export default function Table({
   tablename,
   col,
@@ -106,12 +114,7 @@ export default function Table({
     col: number;
     x: number;
     y: number;
-    history: {
-      oldValue: string;
-      newValue: string;
-      editedBy: string;
-      editedAt: string;
-    }[];
+    history: CellHistory[];
   } | null>(null);
 
   const [isDragging, setIsDragging] = useState(false);
@@ -234,25 +237,55 @@ export default function Table({
     });
   };
 
-  const handleSaveEditedImage = (newImageDataUrl: string) => {
-    const { rownumber, colnumber, imgindex } = imageSeleted;
-    setTableData((prevData) => {
-      const newData = [...prevData];
-      const row = [...newData[rownumber]];
-      const images = [...(row[colnumber] as string[])];
+  // const handleSaveEditedImage = (newImageDataUrl: string) => {
+  //   const { rownumber, colnumber, imgindex } = imageSeleted;
+  //   setTableData((prevData) => {
+  //     const newData = [...prevData];
+  //     const row = [...newData[rownumber]];
+  //     const images = [...(row[colnumber] as string[])];
 
-      images[imgindex] = newImageDataUrl; // Replace image at index
-      row[colnumber] = images;
-      newData[rownumber] = row;
+  //     images[imgindex] = newImageDataUrl; // Replace image at index
+  //     row[colnumber] = images;
+  //     newData[rownumber] = row;
 
-      return newData;
-    });
-    toast({
-      title: "Image updated",
-      description: "Your changes have been saved.",
-    });
-    handleCloseImageEditor();
-  };
+  //     return newData;
+  //   });
+  //   toast({
+  //     title: "Image updated",
+  //     description: "Your changes have been saved.",
+  //   });
+  //   handleCloseImageEditor();
+  // };
+const handleSaveEditedImage = (newImageDataUrl: string) => {
+  const { rownumber, colnumber, imgindex } = imageSeleted;
+
+  setTableData((prevData) => {
+    const newData = [...prevData];
+    const cell = newData[rownumber][colnumber];
+
+    const isSingleImage =
+      cell.data_type === "single_image";
+
+    if (isSingleImage && Array.isArray(cell.value)) {
+      const updatedImages = [...cell.value];
+      updatedImages[imgindex] = newImageDataUrl;
+
+      newData[rownumber][colnumber] = {
+        ...cell,
+        value: updatedImages,
+      };
+    }
+
+    return newData;
+  });
+
+  toast({
+    title: "Image updated",
+    description: "Your changes have been saved.",
+  });
+
+  handleCloseImageEditor();
+};
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -323,7 +356,19 @@ export default function Table({
     col: number;
     isHeader?: boolean;
   } | null>(null);
+  useEffect(() => {
+    if (contextMenu?.visible) {
+      // Do something after contextMenu is set and visible
 
+      console.log("Context menu updated:", contextMenu);
+    }
+  }, [contextMenu]);
+
+  useEffect(() => {
+    // Do something after contextMenu is set and visible
+
+    console.log("Context menu updated:", selectedHistory);
+  }, [selectedHistory]);
   const [selectionAnchor, setSelectionAnchor] = useState<
     [number, number] | null
   >(null);
@@ -404,7 +449,7 @@ export default function Table({
       const newRow: CellData[] = Array.from(
         { length: updated[0].length },
         (_, colIndex) => ({
-           cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+          cell_id: self.crypto?.randomUUID?.() || generateUUID(),
           row: newRowIndex,
           column: colIndex,
           value: "",
@@ -424,7 +469,7 @@ export default function Table({
         const extraCells = Array.from(
           { length: neededCols - row.length },
           (_, colOffset) => ({
-             cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+            cell_id: self.crypto?.randomUUID?.() || generateUUID(),
             row: rowIndex,
             column: row.length + colOffset,
             value: "",
@@ -483,114 +528,13 @@ export default function Table({
     setHistory((prev) => [...prev, JSON.parse(snapshot)]);
     setRedoStack([]); // clear redo on new action
   };
-  const [editHistoryMap, setEditHistoryMap] = useState<
-    Record<
-      string,
-      {
-        oldValue: string;
-        newValue: string;
-        editedBy: string;
-        editedAt: string;
-      }[]
-    >
-  >({});
+
+  const [editHistoryMap, setEditHistoryMap] = useState<CellHistory[]>([]);
+
   const [RealTimeMeasurment, setRealTimemeasuremtn] = useState<string[]>([]);
 
   const [RealTimeGradingRule, setRealTimeGradingRule] = useState<string[]>([]);
-  // const handleCellChange1 = (row: number, col: number, value: string) => {
-  //   pushToHistory(tableData); // ✅ Store before editing
-  //   const oldValue = tableData[row][col] as string;
 
-  //   const key = `${row}-${col}`;
-  //   const updated = [...tableData];
-  //   updated[row][col] = value;
-  //   setTableData(updated);
-  //   const topMeasIdx = columnHeaders.indexOf("TOP CHANGED MEASUREMENT");
-  //   const ppMeasIdx = columnHeaders.indexOf("PP CHANGED MEASUREMENT");
-  //   const fitMeasIdx = columnHeaders.indexOf("FIT CHANGED MEASUREMENT");
-  //   const msrMeasIdx = columnHeaders.indexOf("MSR MEASUREMENT");
-  //   const realTimeMeasIdx = columnHeaders.indexOf("REAL TIME MEASUREMENT");
-  //   function updateRealTimeMeasurement(row: any) {
-  //     row[realTimeMeasIdx] =
-  //       row[topMeasIdx] ||
-  //       row[ppMeasIdx] ||
-  //       row[fitMeasIdx] ||
-  //       row[msrMeasIdx] ||
-  //       "";
-  //   }
-  //   if ([topMeasIdx, ppMeasIdx, fitMeasIdx, msrMeasIdx].includes(col)) {
-  //     updateRealTimeMeasurement(updated[row]);
-  //   }
-
-  //   // Inside handleCellChange, after updating the cell:
-  //   if ([topMeasIdx, ppMeasIdx, fitMeasIdx, msrMeasIdx].includes(col)) {
-  //     updateRealTimeMeasurement(updated[row]);
-  //   }
-  //   // Grading rule logic
-  //   const topIdx = columnHeaders.indexOf("TOP CHANGED GRADING RULE");
-  //   const ppIdx = columnHeaders.indexOf("PP CHANGED GRADING RULE");
-  //   const fitIdx = columnHeaders.indexOf("FIT GRADING RULE");
-  //   const msrIdx = columnHeaders.indexOf("MSR GRADING RULE");
-  //   const realTimeIdx = columnHeaders.indexOf("REAL TIME GRADING RULE");
-
-  //   function updateRealTimeGradingRule(row: any) {
-  //     row[realTimeIdx] =
-  //       row[topIdx] || row[ppIdx] || row[fitIdx] || row[msrIdx] || "";
-  //   }
-  //   if ([topIdx, ppIdx, fitIdx, msrIdx].includes(col)) {
-  //     updateRealTimeGradingRule(updated[row]);
-  //   }
-
-  //   // Always recalculate sizes on any cell change
-  //   const msrMeasurementCol = columnHeaders.findIndex((header) =>
-  //     header.includes("MSR MEASUREMENT")
-  //   );
-  //   const msrGradingRuleCol = columnHeaders.findIndex((header) =>
-  //     header.includes("REAL TIME GRADING RULE")
-  //   );
-
-  //   const msrBaseSizeTypeCol = columnHeaders.findIndex((header) =>
-  //     header.includes("base size type")
-  //   );
-
-  //   const baseSizeInput = updated[row][realTimeMeasIdx] as string;
-  //   const gradingInput = updated[row][msrGradingRuleCol] as string;
-  //   const baseSizeType = "S";
-  //   console.log(
-  //     baseSizeType,
-  //     String(RealTimeMeasurment[realTimeIdx]),
-  //     gradingInput
-  //   );
-  //   const sizes = calculateSizes(baseSizeType, baseSizeInput, gradingInput);
-
-  //   const xsCol = columnHeaders.findIndex((header) => header === "XS");
-  //   const sCol = columnHeaders.findIndex((header) => header === "S");
-  //   const mCol = columnHeaders.findIndex((header) => header === "M");
-  //   const lCol = columnHeaders.findIndex((header) => header === "L");
-  //   const xlCol = columnHeaders.findIndex((header) => header === "XL");
-
-  //   if (xsCol !== -1)
-  //     updated[row][xsCol] = toFractionString(sizes.xs).toString();
-  //   if (sCol !== -1) updated[row][sCol] = toFractionString(sizes.s).toString();
-  //   if (mCol !== -1) updated[row][mCol] = toFractionString(sizes.m).toString();
-  //   if (lCol !== -1) updated[row][lCol] = toFractionString(sizes.l).toString();
-  //   if (xlCol !== -1)
-  //     updated[row][xlCol] = toFractionString(sizes.xl).toString();
-
-  //   setTableData(updated);
-  //   setEditHistoryMap((prev) => ({
-  //     ...prev,
-  //     [key]: [
-  //       ...(prev[key] || []),
-  //       {
-  //         oldValue: oldValue,
-  //         newValue: value,
-  //         editedBy: "vishal",
-  //         editedAt: new Date().toLocaleString(),
-  //       },
-  //     ],
-  //   }));
-  // };
   const handleCellChange = (row: number, col: number, value: string) => {
     pushToHistory(tableData);
 
@@ -678,7 +622,7 @@ export default function Table({
     const lCol = columnHeaders.indexOf("L");
     const xlCol = columnHeaders.indexOf("XL");
 
-    if (xsCol !== -1){
+    if (xsCol !== -1) {
       updated[row][xsCol] = {
         ...updated[row][xsCol],
         value: toFractionString(sizes.xs).toString(),
@@ -845,7 +789,7 @@ export default function Table({
     const newRow: CellData[] = Array.from(
       { length: colCount },
       (_, colIndex) => ({
-         cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+        cell_id: self.crypto?.randomUUID?.() || generateUUID(),
         row: index,
         column: colIndex,
         value: "",
@@ -867,7 +811,7 @@ export default function Table({
         }))
       ),
     ];
-    console.log(newRow)
+    console.log(newRow);
     setTableData(updated);
   };
 
@@ -882,7 +826,7 @@ export default function Table({
       const newRow = [...row];
 
       const newCell: CellData = {
-         cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+        cell_id: self.crypto?.randomUUID?.() || generateUUID(),
         row: rowIndex,
         column: index,
         value: "",
@@ -1060,7 +1004,7 @@ export default function Table({
         col++
       ) {
         newData[row][col] = {
-           cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+          cell_id: self.crypto?.randomUUID?.() || generateUUID(),
           row: row,
           column: col,
           value: "",
@@ -1316,10 +1260,35 @@ export default function Table({
     setRedoStack,
     lastSnapshotRef,
   });
-  const getCellHistory = (cellid:string) => {
-    const res = axios.get(API_ENDPOINTS.cellHistory(cellid).url);
-    console.log(res)
-  }
+
+  const getCellHistory = async (
+    cellid: string,
+    contextMenu: { row: number; col: number; x: number; y: number }
+  ) => {
+    const res = await axios.get(API_ENDPOINTS.cellHistory(cellid).url);
+
+    const updatedMap = { ...editHistoryMap, ...res.data.data };
+
+    const key = `${contextMenu.row}-${contextMenu.col}`;
+
+    setSelectedHistory((s) => ({
+      ...s,
+
+      key,
+
+      row: contextMenu.row,
+
+      col: contextMenu.col,
+
+      x: contextMenu.x,
+
+      y: contextMenu.y,
+
+      history: updatedMap,
+    }));
+
+    setSelectedHistoryIndex(Object.keys(updatedMap).length - 1);
+  };
   async function submitbutton() {
     const res = await axios.post(postapi, {});
   }
@@ -1462,23 +1431,14 @@ export default function Table({
             >
               Delete Column
             </li>
+
             <li
               onClick={() => {
-                if(contextMenu.cellid)
-                  getCellHistory(contextMenu.cellid)
+                if (contextMenu.cellid) {
+                  getCellHistory(contextMenu.cellid, contextMenu);
+                }
 
-                // const key = `${contextMenu.row}-${contextMenu.col}`;
-
-                // const history = editHistoryMap[key] || [];
-                // setSelectedHistory({
-                //   key,
-                //   row: contextMenu.row,
-                //   col: contextMenu.col,
-                //   x: contextMenu.x,
-                //   y: contextMenu.y,
-                //   history,
-                // });
-                // setSelectedHistoryIndex(history.length - 1);
+                setContextMenu(null);
               }}
               className="hover:bg-gray-100 px-4 py-2 cursor-pointer text-blue-600"
             >
@@ -1524,18 +1484,21 @@ export default function Table({
           </div>
         </div>
       )}
-      {selectedHistory && selectedHistory.history.length > 0 && (
+      {selectedHistory &&  Object.keys(selectedHistory.history).length > 0 &&(
         <div
           className="absolute bg-white border border-gray-300 rounded-lg shadow-lg w-80 z-50"
           style={{
             top: selectedHistory.row + selectedHistory.y,
+
             left: selectedHistory.col + selectedHistory.x,
           }}
         >
           <div className="border-b px-4 py-2 font-semibold text-gray-800 flex justify-between items-center">
             <span>Edit history</span>
+
             <div className="flex items-center space-x-2">
               {/* Previous Button */}
+
               <button
                 disabled={selectedHistoryIndex <= 0}
                 onClick={() =>
@@ -1551,17 +1514,23 @@ export default function Table({
               </button>
 
               {/* Next Button */}
+
               <button
                 disabled={
-                  selectedHistoryIndex >= selectedHistory.history.length - 1
+                  selectedHistoryIndex >=
+                  Object.keys(selectedHistory.history).length - 1
                 }
                 onClick={() =>
                   setSelectedHistoryIndex((i) =>
-                    Math.min(i + 1, selectedHistory.history.length - 1)
+                    Math.min(
+                      i + 1,
+                      Object.keys(selectedHistory.history).length - 1
+                    )
                   )
                 }
                 className={`text-lg px-1 transition ${
-                  selectedHistoryIndex >= selectedHistory.history.length - 1
+                  selectedHistoryIndex >=
+                  Object.keys(selectedHistory.history).length - 1
                     ? "text-gray-300"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
@@ -1574,27 +1543,31 @@ export default function Table({
           <div className="p-4">
             {(() => {
               const entry = selectedHistory.history[selectedHistoryIndex];
+
               return (
                 <div className="flex gap-3 items-start">
                   <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white font-semibold">
-                    {entry.editedBy.charAt(0).toUpperCase()}
+                    {entry.edited_by.charAt(0).toUpperCase()}
                   </div>
+
                   <div className="flex-1">
                     <div className="font-medium text-sm text-gray-800">
-                      {entry.editedBy}
+                      {entry.edited_by}
                     </div>
+
                     <div className="text-xs text-gray-500">
-                      {entry.editedAt}
+                      {entry.created_at}
                     </div>
+
                     <div className="mt-1 text-sm text-gray-700">
                       Previous_value:{" "}
                       <span className="italic text-red-500">
-                        "{entry.oldValue}"
+                        "{entry.old_value}"
                       </span>{" "}
                       <br />
                       New_Value:
                       <span className="italic text-green-600">
-                        "{entry.newValue}"
+                        "{entry.new_value}"
                       </span>
                       <br />
                       has_shape:
@@ -1611,6 +1584,7 @@ export default function Table({
             <button
               onClick={() => {
                 setSelectedHistory(null);
+
                 setSelectedHistoryIndex(0);
               }}
               className="text-sm text-blue-500 hover:underline"

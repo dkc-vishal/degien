@@ -227,25 +227,37 @@ export default function Table({
       };
     });
   };
-  const handleSaveEditedImage = (newImageDataUrl: string) => {
-    const { rownumber, colnumber, imgindex } = imageSeleted;
-    setTableData((prevData) => {
-      const newData = [...prevData];
-      const row = [...newData[rownumber]];
-      const images = [...(row[colnumber] as string[])];
+const handleSaveEditedImage = (newImageDataUrl: string) => {
+  const { rownumber, colnumber, imgindex } = imageSeleted;
 
-      images[imgindex] = newImageDataUrl; // Replace image at index
-      row[colnumber] = images;
-      newData[rownumber] = row;
+  setTableData((prevData) => {
+    const newData = [...prevData];
+    const cell = newData[rownumber][colnumber];
 
-      return newData;
-    });
-    toast({
-      title: "Image updated",
-      description: "Your changes have been saved.",
-    });
-    handleCloseImageEditor();
-  };
+    const isSingleImage =
+      cell.data_type === "single_image" ;
+
+    if (isSingleImage && Array.isArray(cell.value)) {
+      const updatedImages = [...cell.value];
+      updatedImages[imgindex] = newImageDataUrl;
+
+      newData[rownumber][colnumber] = {
+        ...cell,
+        value: updatedImages,
+      };
+    }
+
+    return newData;
+  });
+
+  toast({
+    title: "Image updated",
+    description: "Your changes have been saved.",
+  });
+
+  handleCloseImageEditor();
+};
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
