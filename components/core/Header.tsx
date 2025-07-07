@@ -76,7 +76,7 @@ export default function Header({ sidebartoggle }: any) {
               />
             </div>
         </div>
-        <button
+        <button 
           onClick={handleMicClick}
           className={`w-[800px] rounded-full flex items-center justify-center  font-bold text-[30px] border-2 ${
             isRecording
