@@ -1,20 +1,46 @@
 "use client";
-import ImageEditorModal from "@/components/image-editor/ImageEditorModal";
+// import ImageEditorModal from "@/components/image-editor/ImageEditorModal";
+import ImageEditorModal from "../image-editor/ImageEditorModal";
 import { toast } from "@/hooks/use-toast";
 import { use, useEffect, useRef } from "react"; // Make sure useRef is imported
 import React, { useState } from "react";
 import { API_ENDPOINTS } from "@/lib/api";
+export interface IssueImage {
+  id: string;
+  url: string;
+  file: File;
+  name: string;
+}
 export interface Issue {
   id: string;
-  // description: string;
-  images: string[];
+  description: string;
+  images: IssueImage[];
   status?: string;
   priority?: string;
   createdDate?: string;
 }
 
+export interface Issue {
+  id: string;
+  description: string;
+  images: IssueImage[];
+  status?: string;
+  priority?: string;
+  createdDate?: string;
+}
+
+import {
+  FaBars,
+  FaTachometerAlt,
+  FaClipboardList,
+  FaWrench,
+  FaTools,
+} from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
+import { Button } from "../ui/button";
+import { X } from "lucide-react";
+import { BaseNextResponse } from "next/dist/server/base-http";
 import axios from "axios";
 function parseFraction(input: string): number {
   input = input.trim();
@@ -35,12 +61,36 @@ function parseFraction(input: string): number {
 }
 
 // Helper to convert decimal to fraction string (up to 1/16 precision)
+// function toFractionString(value: number): string {
+//   if (isNaN(value)) return "";
+//   const whole = Math.floor(value);
+//   let frac = value - whole;
+//   let closest = "";
+//   let minDiff = 1;
+//   for (let d = 2; d <= 16; d++) {
+//     const n = Math.round(frac * d);
+//     const diff = Math.abs(frac - n / d);
+//     if (n > 0 && diff < minDiff) {
+//       closest = `${n}/${d}`;
+//       minDiff = diff;
+//     }
+//   }
+//   if (closest && whole > 0) return `${whole} ${closest}`;
+//   if (closest) return closest;
+//   return `${whole}`;
+// }
+
 function toFractionString(value: number): string {
   if (isNaN(value)) return "";
-  const whole = Math.floor(value);
-  let frac = value - whole;
+
+  // Handle zero case
+  if (value === 0) return "0";
+
+  const whole = Math.floor(Math.abs(value));
+  let frac = Math.abs(value) - whole;
   let closest = "";
   let minDiff = 1;
+
   for (let d = 2; d <= 16; d++) {
     const n = Math.round(frac * d);
     const diff = Math.abs(frac - n / d);
@@ -49,9 +99,14 @@ function toFractionString(value: number): string {
       minDiff = diff;
     }
   }
-  if (closest && whole > 0) return `${whole} ${closest}`;
-  if (closest) return closest;
-  return `${whole}`;
+
+  let result = "";
+  if (closest && whole > 0) result = `${whole} ${closest}`;
+  else if (closest) result = closest;
+  else result = `${whole}`;
+
+  // Add negative sign if original value was negative
+  return value < 0 ? `-${result}` : result;
 }
 
 type Row = {
@@ -126,10 +181,13 @@ export default function Table({
   const draggedImageSource = useRef<string | null>(null);
   const draggedImageOrigin = useRef<[number, number] | null>(null);
   // State for Image Editor Modal
+
+  // State for Image Editor Modal
   const [editingImageInfo, setEditingImageInfo] = useState<{
     issueId: string;
-    image: string;
+    image: IssueImage;
   } | null>(null);
+
   const [imageSeleted, setimageSeleted] = useState({
     rownumber: 0,
     colnumber: 0,
@@ -154,7 +212,7 @@ export default function Table({
   const [columnHeaders, setColumnHeaders] = useState(
     Array.from({ length: col }, (_, colIndex) =>
       colIndex === imagecol || colIndex === imagecol2
-        ? "Measurement Picture"
+        ? "MEASUREMENT PICTURE URL"
         : columnheaders[colIndex].header
     )
   );
@@ -205,10 +263,38 @@ export default function Table({
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
   };
-  const handleOpenImageEditor = (issueId: string, image: string) => {
-    setEditingImageInfo({ issueId, image });
+  const handleOpenImageEditor = (
+    rowIndex: number,
+    colIndex: number,
+    imageIndex: number,
+    imageSrc: string
+  ) => {
+    console.log("Opening image editor with:", {
+      rowIndex,
+      colIndex,
+      imageIndex,
+      imageSrc: imageSrc.substring(0, 50) + "...",
+    });
+
+    // Create an IssueImage object from the table data
+    const issueImage: IssueImage = {
+      id: `${rowIndex}-${colIndex}-${imageIndex}`, // Create a unique ID
+      url: imageSrc,
+      name: `image-${rowIndex}-${colIndex}-${imageIndex}.png`,
+      file: new File([], `image-${rowIndex}-${colIndex}-${imageIndex}.png`, {
+        type: imageSrc.match(/data:(image\/\w+);/)?.[1] || "image/png",
+      }),
+    };
+
+    console.log("Created IssueImage object:", issueImage);
+
+    setEditingImageInfo({
+      issueId: `${rowIndex}-${colIndex}-${imageIndex}`, // Use coordinates as issueId
+      image: issueImage,
+    });
     setIsImageEditorOpen(true);
   };
+
   const handleCloseImageEditor = () => {
     setIsImageEditorOpen(false);
     setEditingImageInfo(null);
@@ -237,44 +323,25 @@ export default function Table({
     });
   };
 
-  // const handleSaveEditedImage = (newImageDataUrl: string) => {
-  //   const { rownumber, colnumber, imgindex } = imageSeleted;
-  //   setTableData((prevData) => {
-  //     const newData = [...prevData];
-  //     const row = [...newData[rownumber]];
-  //     const images = [...(row[colnumber] as string[])];
+  const handleSaveEditedImage = (
+    issueId: string,
+    imageId: string,
+    newImageDataUrl: string
+  ) => {
+    // Parse the issueId to get coordinates: "rowIndex-colIndex-imageIndex"
+    const [rowIndex, colIndex, imageIndex] = issueId.split("-").map(Number);
 
-  //     images[imgindex] = newImageDataUrl; // Replace image at index
-  //     row[colnumber] = images;
-  //     newData[rownumber] = row;
+    setTableData((prevData) => {
+      const newData = [...prevData];
+      const row = [...newData[rowIndex]];
+      const images = [...(row[colIndex] as string[])];
 
-  //     return newData;
-  //   });
-  //   toast({
-  //     title: "Image updated",
-  //     description: "Your changes have been saved.",
-  //   });
-  //   handleCloseImageEditor();
-  // };
-const handleSaveEditedImage = (newImageDataUrl: string) => {
-  const { rownumber, colnumber, imgindex } = imageSeleted;
+      images[imageIndex] = newImageDataUrl; // Replace image at index
+      row[colIndex] = images;
+      newData[rowIndex] = row;
 
-  setTableData((prevData) => {
-    const newData = [...prevData];
-    const cell = newData[rownumber][colnumber];
-
-    const isSingleImage =
-      cell.data_type === "single_image";
-
-    if (isSingleImage && Array.isArray(cell.value)) {
-      const updatedImages = [...cell.value];
-      updatedImages[imgindex] = newImageDataUrl;
-
-      newData[rownumber][colnumber] = {
-        ...cell,
-        value: updatedImages,
-      };
-    }
+      // Save to localStorage with the updated data
+      localStorage.setItem(`table_data_${tablename}`, JSON.stringify(newData));
 
     return newData;
   });
@@ -531,9 +598,30 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
 
   const [editHistoryMap, setEditHistoryMap] = useState<CellHistory[]>([]);
 
-  const [RealTimeMeasurment, setRealTimemeasuremtn] = useState<string[]>([]);
+  const isCellEditable = (rowIndex: number, colIndex: number) => {
+    // Find the index of "Real Time Grading Rule" column
+    const realTimeGradingRuleIndex = columnHeaders.findIndex(
+      (header) => header === "REAL TIME GRADING RULE"
+    );
 
-  const [RealTimeGradingRule, setRealTimeGradingRule] = useState<string[]>([]);
+    // If "Real Time Grading Rule" column is found and current column is after it, make it read-only
+    if (
+      realTimeGradingRuleIndex !== -1 &&
+      colIndex >= realTimeGradingRuleIndex
+    ) {
+      return false;
+    }
+
+    // Columns 0 and 1 are always non-editable (drag handle and row number)
+    if (colIndex <= 1) {
+      return false;
+    }
+
+    // All other columns are editable
+    return true;
+  };
+
+  const [RealTimeMeasurment, setRealTimemeasuremtn] = useState<string[]>([]);
 
   const handleCellChange = (row: number, col: number, value: string) => {
     pushToHistory(tableData);
@@ -593,6 +681,241 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
       updateRealTimeGradingRule(updated[row]);
     }
 
+    setTableData(updated);
+
+    // Update edit history
+    setEditHistoryMap((prev) => ({
+      ...prev,
+      [key]: [
+        ...(prev[key] || []),
+        {
+          oldValue: oldValue,
+          newValue: value,
+          editedBy: "vishal",
+          editedAt: new Date().toLocaleString(),
+        },
+      ],
+    }));
+  };
+
+  const handleCellBlur = (row: number, col: number) => {
+    setEditingCell(null);
+
+    // Get column indices
+    const topMeasIdx = columnHeaders.indexOf("TOP CHANGED MEASUREMENT");
+    const ppMeasIdx = columnHeaders.indexOf("PP CHANGED MEASUREMENT");
+    const fitMeasIdx = columnHeaders.indexOf("FIT CHANGED MEASUREMENT");
+    const msrMeasIdx = columnHeaders.indexOf("MSR MEASUREMENT");
+    const realTimeMeasIdx = columnHeaders.indexOf("REAL TIME MEASUREMENT");
+    const topIdx = columnHeaders.indexOf("TOP CHANGED GRADING RULE");
+    const ppIdx = columnHeaders.indexOf("PP CHANGED GRADING RULE");
+    const fitIdx = columnHeaders.indexOf("FIT GRADING RULE");
+    const msrIdx = columnHeaders.indexOf("MSR GRADING RULE");
+    const realTimeIdx = columnHeaders.indexOf("REAL TIME GRADING RULE");
+
+    // ✅ Check if we're leaving a column that affects Real Time values OR Real Time columns directly
+    const affectsRealTimeMeasurement = [
+      topMeasIdx,
+      ppMeasIdx,
+      fitMeasIdx,
+      msrMeasIdx,
+      realTimeMeasIdx,
+    ].includes(col);
+    const affectsRealTimeGradingRule = [
+      topIdx,
+      ppIdx,
+      fitIdx,
+      msrIdx,
+      realTimeIdx,
+    ].includes(col);
+
+    // Only calculate sizes if we're leaving a relevant column
+    if (!affectsRealTimeMeasurement && !affectsRealTimeGradingRule) {
+      return; // Not a relevant column, don't calculate
+    }
+
+    // ✅ Use setTimeout to ensure we get the updated tableData after handleCellChange
+    setTimeout(() => {
+      // ✅ FORCE UPDATE Real Time values with current tableData before calculation
+      const updated = [...tableData];
+
+      // Force update Real Time Measurement with priority: TOP > PP > FIT > MSR
+      const currentTopMeas = updated[row][topMeasIdx] as string;
+      const currentPpMeas = updated[row][ppMeasIdx] as string;
+      const currentFitMeas = updated[row][fitMeasIdx] as string;
+      const currentMsrMeas = updated[row][msrMeasIdx] as string;
+
+      updated[row][realTimeMeasIdx] =
+        currentTopMeas ||
+        currentPpMeas ||
+        currentFitMeas ||
+        currentMsrMeas ||
+        "";
+
+      // Force update Real Time Grading Rule with priority: TOP > PP > FIT > MSR
+      const currentTopGrade = updated[row][topIdx] as string;
+      const currentPpGrade = updated[row][ppIdx] as string;
+      const currentFitGrade = updated[row][fitIdx] as string;
+      const currentMsrGrade = updated[row][msrIdx] as string;
+
+      updated[row][realTimeIdx] =
+        currentTopGrade ||
+        currentPpGrade ||
+        currentFitGrade ||
+        currentMsrGrade ||
+        "";
+
+      // ✅ Now get the UPDATED Real Time values for calculation
+      const currentMsrMeasurement = updated[row][msrMeasIdx] as string;
+      const currentRealTimeMeasurement = updated[row][
+        realTimeMeasIdx
+      ] as string;
+      const currentMsrGradingRule = updated[row][msrIdx] as string;
+      const currentRealTimeGradingRule = updated[row][realTimeIdx] as string;
+
+      console.log("Real Time values after FORCED update:", {
+        currentMsrMeasurement,
+        currentRealTimeMeasurement,
+        currentMsrGradingRule,
+        currentRealTimeGradingRule,
+        blurredColumn:
+          col === msrMeasIdx
+            ? "MSR Measurement"
+            : col === msrIdx
+            ? "MSR Grading Rule"
+            : col === realTimeMeasIdx
+            ? "Real Time Measurement"
+            : col === realTimeIdx
+            ? "Real Time Grading Rule"
+            : col === topMeasIdx
+            ? "Top Changed Measurement"
+            : col === ppMeasIdx
+            ? "PP Changed Measurement"
+            : col === fitMeasIdx
+            ? "Fit Changed Measurement"
+            : col === topIdx
+            ? "Top Changed Grading Rule"
+            : col === ppIdx
+            ? "PP Changed Grading Rule"
+            : col === fitIdx
+            ? "Fit Grading Rule"
+            : "Other",
+      });
+
+      // ✅ Determine when to calculate sizes based on UPDATED Real Time values
+      const shouldCalculateSizes =
+        // Case 1: Both MSR Measurement and MSR Grading Rule are filled
+        (currentMsrMeasurement && currentMsrGradingRule) ||
+        // Case 2: Only MSR Grading Rule is filled (regardless of MSR Measurement)
+        (currentMsrGradingRule && !currentMsrMeasurement) ||
+        // Case 3: Real Time values are used when MSR values are not available
+        (currentRealTimeMeasurement && currentRealTimeGradingRule) ||
+        (currentRealTimeGradingRule && !currentRealTimeMeasurement);
+
+      console.log(
+        "Should calculate sizes (after FORCED update):",
+        shouldCalculateSizes
+      );
+
+      if (shouldCalculateSizes) {
+        // Determine which measurement and grading rule to use
+        const baseSizeInput = currentRealTimeMeasurement || "";
+        const gradingInput = currentRealTimeGradingRule || "";
+
+        // Only proceed if we have a grading rule (measurement is optional in some cases)
+        if (gradingInput) {
+          const baseSizeType = "S"; // Default base size type
+
+          console.log("Calculating sizes with CORRECT values:", {
+            baseSizeType,
+            baseSizeInput,
+            gradingInput,
+            trigger:
+              col === msrMeasIdx
+                ? "MSR Measurement"
+                : col === msrIdx
+                ? "MSR Grading Rule"
+                : col === realTimeMeasIdx
+                ? "Real Time Measurement"
+                : col === realTimeIdx
+                ? "Real Time Grading Rule"
+                : col === topMeasIdx
+                ? "Top Changed Measurement"
+                : col === ppMeasIdx
+                ? "PP Changed Measurement"
+                : col === fitMeasIdx
+                ? "Fit Changed Measurement"
+                : col === topIdx
+                ? "Top Changed Grading Rule"
+                : col === ppIdx
+                ? "PP Changed Grading Rule"
+                : col === fitIdx
+                ? "Fit Grading Rule"
+                : "Other",
+          });
+
+          const sizes = calculateSizes(
+            baseSizeType,
+            baseSizeInput,
+            gradingInput
+          );
+
+          const hasNegativeSize =
+            sizes.xs < 0 ||
+            sizes.s < 0 ||
+            sizes.m < 0 ||
+            sizes.l < 0 ||
+            sizes.xl < 0;
+
+          // Get size column indices
+          const xsCol = columnHeaders.findIndex((header) => header === "XS");
+          const sCol = columnHeaders.findIndex((header) => header === "S");
+          const mCol = columnHeaders.findIndex((header) => header === "M");
+          const lCol = columnHeaders.findIndex((header) => header === "L");
+          const xlCol = columnHeaders.findIndex((header) => header === "XL");
+
+          // Size calculation logic
+          const msrMeasurementCol = columnHeaders.findIndex((header) =>
+            header.includes("MSR MEASUREMENT")
+          );
+          const msrGradingRuleCol = columnHeaders.findIndex((header) =>
+            header.includes("MSR GRADING RULE")
+          );
+
+          if (hasNegativeSize) {
+            // ✅ Show alert for negative sizes
+            alert(
+              "Invalid Size Calculation: The grading rule resulted in negative sizes. All size values and inputs will be cleared."
+            );
+
+            console.log(
+              "Negative size detected, clearing all size values:",
+              sizes
+            );
+
+            // Clear all size columns
+            if (xsCol !== -1) updated[row][xsCol] = "";
+            if (sCol !== -1) updated[row][sCol] = "";
+            if (mCol !== -1) updated[row][mCol] = "";
+            if (lCol !== -1) updated[row][lCol] = "";
+            if (xlCol !== -1) updated[row][xlCol] = "";
+
+            // ✅ Clear MSR measurement and grading rule inputs
+            if (msrMeasurementCol !== -1) updated[row][msrMeasurementCol] = "";
+            if (msrGradingRuleCol !== -1) updated[row][msrGradingRuleCol] = "";
+            if (fitMeasIdx !== -1) updated[row][fitMeasIdx] = "";
+            if (fitIdx !== -1) updated[row][fitIdx] = "";
+            if (ppMeasIdx !== -1) updated[row][ppMeasIdx] = "";
+            if (ppIdx !== -1) updated[row][ppIdx] = "";
+            if (topMeasIdx !== -1) updated[row][topMeasIdx] = "";
+            if (topIdx !== -1) updated[row][topIdx] = "";
+
+            // Also clear Real Time values since they caused the negative calculation
+            if (realTimeMeasIdx !== -1) updated[row][realTimeMeasIdx] = "";
+            if (realTimeIdx !== -1) updated[row][realTimeIdx] = "";
+          } else {
+            // ✅ All sizes are valid (>= 0), update normally
+            console.log("All sizes are valid, updating size columns:", sizes);
     // Always recalculate sizes
     const msrMeasurementCol = columnHeaders.findIndex((header) =>
       header.includes("MSR MEASUREMENT")
@@ -649,7 +972,69 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
         value: toFractionString(sizes.xl).toString(),
       };
 
-    setTableData(updated);
+            // ✅ Clear non-selected MSR inputs based on what was actually used
+            if (currentMsrMeasurement && currentMsrGradingRule) {
+              // Both MSR values used - don't clear anything
+              console.log("Using MSR values - keeping both inputs");
+            }
+          }
+
+          // ✅ Apply all updates at once
+          setTableData(updated);
+        }
+      } else {
+        // ✅ Handle cases where only measurement is filled (no grading rule)
+
+        // Case: Only measurement is filled (any type)
+        if (
+          (currentMsrMeasurement || currentRealTimeMeasurement) &&
+          !currentMsrGradingRule &&
+          !currentRealTimeGradingRule &&
+          [msrMeasIdx, topMeasIdx, ppMeasIdx, fitMeasIdx].includes(col)
+        ) {
+          const sCol = columnHeaders.findIndex((header) => header === "S");
+
+          // ✅ Use Real Time Measurement value (which now has the correct updated value)
+          const baseSizeValue =
+            currentRealTimeMeasurement || currentMsrMeasurement;
+
+          if (sCol !== -1) {
+            updated[row][sCol] = baseSizeValue;
+          }
+
+          // Clear other size columns since we don't have grading rule
+          const xsCol = columnHeaders.findIndex((header) => header === "XS");
+          const mCol = columnHeaders.findIndex((header) => header === "M");
+          const lCol = columnHeaders.findIndex((header) => header === "L");
+          const xlCol = columnHeaders.findIndex((header) => header === "XL");
+
+          if (xsCol !== -1) updated[row][xsCol] = "";
+          if (mCol !== -1) updated[row][mCol] = "";
+          if (lCol !== -1) updated[row][lCol] = "";
+          if (xlCol !== -1) updated[row][xlCol] = "";
+
+          // ✅ Apply updates
+          setTableData(updated);
+          console.log(
+            "Only measurement filled, setting base size (S) to:",
+            baseSizeValue,
+            "from",
+            col === topMeasIdx
+              ? "TOP"
+              : col === ppMeasIdx
+              ? "PP"
+              : col === fitMeasIdx
+              ? "FIT"
+              : col === msrMeasIdx
+              ? "MSR"
+              : "Real Time"
+          );
+        } else {
+          // ✅ Still apply the Real Time updates even if no size calculation
+          setTableData(updated);
+        }
+      }
+    }, 0); // ✅ Delay to ensure Real Time updates are applied first
   };
 
   function calculateSizes(
@@ -667,14 +1052,15 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
           parseFraction(gradingInput),
           parseFraction(gradingInput),
         ];
+
     let xs = NaN,
       s = NaN,
       m = NaN,
       l = NaN,
       xl = NaN;
 
-    // Base size value
-    let base = parseFraction(baseSizeInput);
+    // Base size value - if empty, use 0 as default
+    let base = baseSizeInput ? parseFraction(baseSizeInput) : 0;
 
     // Logic: left of base size is -, right is +
     switch (baseSizeType) {
@@ -714,6 +1100,8 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
         xs = s - grading[0];
         break;
     }
+
+    console.log("Calculated sizes:", { xs, s, m, l, xl });
     return { xs, s, m, l, xl };
   }
   function handlePasteCellChange(colIndex: number) {
@@ -1026,6 +1414,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
       )
     );
   }, [tableData]);
+
   useEffect(() => {
     if (!isDragging) return;
 
@@ -1048,17 +1437,20 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
       stopAutoScroll();
     };
   }, [isDragging]);
+
   useEffect(() => {
     const handleClick = () => setContextMenu1(null);
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, []);
+
   useEffect(() => {
     const savedWidths = localStorage.getItem(`table_colWidths_${tablename}`);
     if (savedWidths) {
       setColWidths(JSON.parse(savedWidths));
     }
   }, []);
+
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
@@ -1067,6 +1459,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
       selectRef.current.focus();
     }
   }, [editingCell]);
+
   const handleMouseMoveForScroll = (e: {
     clientX: number;
     clientY: number;
@@ -1111,6 +1504,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
       return updated;
     });
   };
+
   const unhighlightRow = (rowIndex: number) => {
     setCellColors((prev) => {
       const updated = [...prev];
@@ -1260,6 +1654,10 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
     setRedoStack,
     lastSnapshotRef,
   });
+
+  // image model
+  const [issues, setIssues] = useState<Issue[]>([]);
+
 
   const getCellHistory = async (
     cellid: string,
@@ -1721,7 +2119,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                       </>
                     ))}
                   </tr>
-                  <tr className="sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
+                  <tr className="sticky top-0 z-30 bg-white border border-gray-300 border-b-2 p-2 text-sm font-semibold">
                     {columnHeaders?.map((_, i) => (
                       <>
                         <th
@@ -1789,10 +2187,9 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                             setDraggedColIndex(null);
                           }}
                           onDragOver={(e) => e.preventDefault()}
-                          className={`border  
-                          }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${
-                            i === 0 ? "" : ""
-                          }`}
+                          className={`border ${
+                            isDragging ? "cursor-move" : "cursor-pointer"
+                          } ${i === 0 ? "" : ""}`}
                         >
                           {columnHeaders[i]}
 
@@ -1906,7 +2303,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                               {rowIndex + 1}
                             </td>
                           ) : columnHeaders[colIndex] ===
-                            "Measurement Picture" ? (
+                            "MEASUREMENT PICTURE URL" ? (
                             rowIndex === -1 ? (
                               <td>
                                 <textarea
@@ -2200,9 +2597,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                                     {(cell.value as string[]).map((src, i) => (
                                       <div
                                         key={i}
-                                        style={{
-                                          position: "relative",
-                                        }}
+                                        className="relative group"
                                         onClick={(e) => e.stopPropagation()}
                                         onMouseEnter={() =>
                                           setHoveredImage({
@@ -2224,7 +2619,12 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                                             });
                                           }}
                                           onDoubleClick={(e) => {
-                                            handleOpenImageEditor(src, src);
+                                            handleOpenImageEditor(
+                                              rowIndex,
+                                              colIndex,
+                                              i,
+                                              src
+                                            );
                                           }}
                                           style={{
                                             width: "100%",
@@ -2265,13 +2665,10 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                                           src={src}
                                         />
 
-                                        {/* Delete button visible only on hover */}
-                                        {hoveredImage &&
-                                          hoveredImage.row === rowIndex &&
-                                          hoveredImage.col === colIndex &&
-                                          hoveredImage.index === i && (
-                                            <button
-                                              onClick={(e) => {
+                                        
+                                        <div className="absolute top-1 right-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200 flex flex-col gap-1">
+                                          <Button
+                                            onClick={(e) => {
                                                 setTableData((prev) => {
                                                   const updated = [...prev];
                                                   const cell =
@@ -2306,31 +2703,18 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
 
                                                   return updated;
                                                 });
-
-                                                setTimeout(() => {
-                                                  autoResizeAllTextareas(e);
-                                                }, 0);
-                                              }}
-                                              style={{
-                                                position: "absolute",
-                                                top: 5,
-                                                right: 0,
-                                                background: "white",
-                                                color: "red",
-                                                border: "none",
-                                                borderRadius: "50%",
-                                                width: "18px",
-                                                height: "18px",
-                                                fontSize: "16px",
-                                                cursor: "pointer",
-                                                boxShadow:
-                                                  "0 0 3px rgba(0,0,0,0.3)",
-                                              }}
-                                              title="Delete image"
-                                            >
-                                              ×
-                                            </button>
-                                          )}
+                                              setTimeout(() => {
+                                                autoResizeAllTextareas(e);
+                                              }, 0);
+                                            }}
+                                            variant="destructive"
+                                            size="icon"
+                                            className="h-6 w-6"
+                                            aria-label="Delete image"
+                                          >
+                                            <X size={16} />
+                                          </Button>
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
@@ -2376,12 +2760,21 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                               }}
                               onClick={(e) => {
                                 // e.stopPropagation();
+                                if (!isCellEditable(rowIndex, colIndex)) {
+                                  // Just select the cell but don't enter edit mode
+                                  setSelectedCell([rowIndex, colIndex]);
+                                  setSelectionAnchor(null);
+                                  return;
+                                }
+
                                 setEditingCell([rowIndex, colIndex]);
                                 setSelectedCell([rowIndex, colIndex]);
                                 setSelectionAnchor(null);
                                 setIsFocusedEdit(false); // It's a single-click edit
                               }}
                               onDoubleClick={(e) => {
+                                if (!isCellEditable(rowIndex, colIndex)) return; // Prevent double-click editing
+
                                 e.stopPropagation();
                                 setEditingCell([rowIndex, colIndex]);
                                 setIsFocusedEdit(true); // Free edit mode
@@ -2434,6 +2827,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                               <select
                                 value={cell.value}
                                 data-cell={`${rowIndex}-${colIndex}`}
+                                disabled={!isCellEditable(rowIndex, colIndex)}
                                 ref={
                                   editingCell?.[0] === rowIndex &&
                                   editingCell?.[1] === colIndex
@@ -2441,6 +2835,8 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                                     : null
                                 }
                                 onChange={(e) => {
+                                  if (!isCellEditable(rowIndex, colIndex))
+                                    return; // Prevent changes
                                   handleCellChange(
                                     rowIndex,
                                     colIndex,
@@ -2448,6 +2844,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                                   );
                                 }}
                                 onBlur={() => {
+                                  handleCellBlur(rowIndex, colIndex);
                                   setEditingCell(null);
                                 }}
                                 onMouseDown={(e) => {
@@ -2551,7 +2948,11 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                                     });
                                   }
                                 }}
-                                className="w-full border outline-none text-sm p-2 bg-white"
+                                className={`w-full border outline-none text-sm p-2 ${
+                                  !isCellEditable(rowIndex, colIndex)
+                                    ? "bg-gray-100 cursor-not-allowed opacity-60"
+                                    : "bg-white"
+                                }`}
                               >
                                 <option value="">Select...</option>
                                 <option value="Yes">Yes</option>
@@ -2591,6 +2992,13 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                                 });
                               }}
                               onClick={(e) => {
+                                if (!isCellEditable(rowIndex, colIndex)) {
+                                  // Just select the cell but don't enter edit mode
+                                  setSelectedCell([rowIndex, colIndex]);
+                                  setSelectionAnchor(null);
+                                  return;
+                                }
+
                                 // e.stopPropagation();
                                 setEditingCell([rowIndex, colIndex]);
                                 setSelectedCell([rowIndex, colIndex]);
@@ -2598,6 +3006,8 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                                 setIsFocusedEdit(false); // It's a single-click edit
                               }}
                               onDoubleClick={(e) => {
+                                if (!isCellEditable(rowIndex, colIndex)) return; // Prevent double-click editing
+
                                 e.stopPropagation();
                                 setEditingCell([rowIndex, colIndex]);
                                 setIsFocusedEdit(true); // Free edit mode
@@ -2650,6 +3060,8 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                               <textarea
                                 value={cell.value}
                                 data-cell={`${rowIndex}-${colIndex}`}
+                                readOnly={!isCellEditable(rowIndex, colIndex)}
+                                disabled={!isCellEditable(rowIndex, colIndex)}
                                 ref={
                                   editingCell?.[0] === rowIndex &&
                                   editingCell?.[1] === colIndex
@@ -2657,6 +3069,9 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                                     : null
                                 }
                                 onChange={(e) => {
+                                  if (!isCellEditable(rowIndex, colIndex))
+                                    return;
+
                                   handleCellChange(
                                     rowIndex,
                                     colIndex,
@@ -2666,6 +3081,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                                 }}
                                 onBlur={() => {
                                   // pushToHistory(tableData); // Only push once editing is done
+                                  handleCellBlur(rowIndex, colIndex);
                                   setEditingCell(null);
                                 }}
                                 onPaste={(e) => {
@@ -2705,58 +3121,6 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                                     e.target as HTMLTextAreaElement
                                   )
                                 }
-                                // onKeyDown={(e) => {
-                                //   if (!editingCell) return;
-
-                                //   const [row, col] = editingCell;
-                                //   const maxRow = tableData.length - 1;
-                                //   const maxCol = tableData[0].length - 1;
-
-                                //   if (e.key === "Escape") {
-                                //     e.preventDefault();
-                                //     setEditingCell(null);
-                                //     return;
-                                //   }
-
-                                //   if (e.key === "Enter" && !e.shiftKey) {
-                                //     e.preventDefault();
-                                //     const nextRow = Math.min(row + 1, maxRow);
-                                //     setEditingCell([nextRow, col]);
-                                //     setSelectedCell([nextRow, col]);
-                                //     setSelectionAnchor([nextRow, col]);
-                                //     setSelectedRange({
-                                //       start: [nextRow, col],
-                                //       end: [nextRow, col],
-                                //     });
-                                //     return;
-                                //   }
-
-                                //   if (e.key === "Tab") {
-                                //     e.preventDefault();
-                                //     let nextCol = e.shiftKey
-                                //       ? col - 1
-                                //       : col + 1;
-                                //     let nextRow = row;
-
-                                //     console.log([nextRow, nextCol]);
-
-                                //     setEditingCell([nextRow, nextCol]);
-                                //     setSelectedCell([nextRow, nextCol]);
-                                //     setSelectionAnchor([nextRow, nextCol]);
-                                //     setSelectedRange({
-                                //       start: [nextRow, nextCol],
-                                //       end: [nextRow, nextCol],
-                                //     });
-
-                                //     setTimeout(() => {
-                                //       const el = document.querySelector(
-                                //         `[data-cell="${nextRow}-${nextCol}"]`
-                                //       );
-                                //       (el as HTMLTextAreaElement)?.focus();
-                                //       (el as HTMLTextAreaElement)?.select();
-                                //     }, 0);
-                                //   }
-                                // }}
                                 onKeyDown={(e) => {
                                   const [row = 0, col = 0] = editingCell ?? [];
                                   const maxRow = tableData.length - 1;
@@ -2915,8 +3279,11 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
                                   rowIndex === 0
                                     ? "text-black p-3! text-[15px]!"
                                     : "p-3!"
-                                } className="w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top"
-`}
+                                } w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top ${
+                                  !isCellEditable(rowIndex, colIndex)
+                                    ? "bg-gray-100 cursor-not-allowed opacity-60"
+                                    : ""
+                                }`}
                                 rows={1}
                               />
                             </td>
@@ -2937,15 +3304,21 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
             save
           </button>
         </div>
+        {isImageEditorOpen && editingImageInfo && (
+          <ImageEditorModal
+            isOpen={isImageEditorOpen}
+            onClose={handleCloseImageEditor}
+            image={editingImageInfo.image}
+            onSave={(newImageDataUrl) =>
+              handleSaveEditedImage(
+                editingImageInfo.issueId,
+                editingImageInfo.image.id,
+                newImageDataUrl
+              )
+            }
+          />
+        )}
       </main>
-      {isImageEditorOpen && editingImageInfo && (
-        <ImageEditorModal
-          isOpen={isImageEditorOpen}
-          onClose={handleCloseImageEditor}
-          image={editingImageInfo.image}
-          onSave={(newImageDataUrl) => handleSaveEditedImage(newImageDataUrl)}
-        />
-      )}
     </>
   );
 }

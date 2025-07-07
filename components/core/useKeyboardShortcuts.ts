@@ -139,7 +139,7 @@ export function useKeyboardShortcuts({
 
         if (e.key === "ArrowUp") newRow = Math.max(0, row - 1);
         else if (e.key === "ArrowDown") newRow = Math.min(maxRow, row + 1);
-        else if (e.key === "ArrowLeft") newCol = Math.max(0, col - 1);
+        else if (e.key === "ArrowLeft") newCol = Math.max(2, col - 1);
         else if (e.key === "ArrowRight") newCol = Math.min(maxCol, col + 1);
         else if (e.key === "Enter") newRow = Math.min(row + 1, maxRow);
         else if (e.key === "Tab") newCol = e.shiftKey ? col - 1 : col + 1;
