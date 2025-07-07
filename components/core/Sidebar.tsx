@@ -9,6 +9,7 @@ import { TbLogout } from "react-icons/tb";
 import { toast } from "sonner";
 import { API_ENDPOINTS } from "@/lib/api";
 import { IoIosNotifications } from "react-icons/io";
+import { Image } from "lucide-react";
 
 export default function Sidebar({ isSidebarOpen }: any) {
   const isOpen: boolean = isSidebarOpen;
@@ -19,7 +20,7 @@ export default function Sidebar({ isSidebarOpen }: any) {
 
   useEffect(() => {
     setUnreadCount(2);
-  }, [])
+  }, []);
 
   const menuItems = [
     { icon: <MdDashboard size={22} />, label: "Dashboard", path: "/Dashboard" },
@@ -42,6 +43,11 @@ export default function Sidebar({ isSidebarOpen }: any) {
       icon: <MdLocalShipping size={22} />,
       label: "Shipped Styles",
       path: "/shipped-styles",
+    },
+    {
+      icon: <Image size={22} />,
+      label: "Image Editor",
+      path: "/issue-tracker",
     },
   ];
 
@@ -73,7 +79,7 @@ export default function Sidebar({ isSidebarOpen }: any) {
         return;
       }
 
-      // removing localstorage saved infos 
+      // removing localstorage saved infos
 
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
@@ -100,7 +106,7 @@ export default function Sidebar({ isSidebarOpen }: any) {
 
       {/* Main Navigation */}
       <nav className="flex flex-col px-2 pt-4 space-y-2 flex-grow">
-        {menuItems.map((item:any, idx) => {
+        {menuItems.map((item: any, idx) => {
           const isActive = pathname.startsWith(item.path);
           return (
             <button
@@ -116,7 +122,9 @@ export default function Sidebar({ isSidebarOpen }: any) {
               <div className="flex items-center">
                 <span className="text-[22px]">{item.icon}</span>
                 {isOpen && (
-                  <span className="ml-4 text-[15px] font-medium">{item.label}</span>
+                  <span className="ml-4 text-[15px] font-medium">
+                    {item.label}
+                  </span>
                 )}
               </div>
 

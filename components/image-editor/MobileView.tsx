@@ -32,9 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import Curve from "../ui/Icons/curve";
-import DoubleArrowCurve from "../ui/Icons/curve-double-arrow";
-import { useEffect } from "react";
 import { HistoryAction } from "@/types/history";
 
 interface MobileViewProps {

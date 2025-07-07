@@ -40,7 +40,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -139,7 +139,7 @@ export default function ImageEditorModal({
   const [showCropConfirm, setShowCropConfirm] = useState(false);
   const [showCurveConfirm, setShowCurveConfirm] = useState(false);
   const [showCurveArrowConfirm, setShowCurveArrowConfirm] = useState(false);
-
+  const { toast } = useToast();
   const [currentStroke, setCurrentStroke] = useState<Point[]>([]);
 
   const {
@@ -2313,7 +2313,9 @@ export default function ImageEditorModal({
                       color={currentColor}
                       setColor={setCurrentColor}
                       brushSize={brushSize}
+                      setBrushSize={setBrushSize}
                       strokeStyle={strokeStyle}
+                      setStrokeStyle={setStrokeStyle}
                       backgroundColor={backgroundColor}
                       setBackgroundColor={setBackgroundColor}
                       onAdd={handleKonvaRectAdd}
@@ -2343,7 +2345,9 @@ export default function ImageEditorModal({
                       color={currentColor}
                       setColor={setCurrentColor}
                       brushSize={brushSize}
+                      setBrushSize={setBrushSize}
                       strokeStyle={strokeStyle}
+                      setStrokeStyle={setStrokeStyle}
                       circles={circles}
                       backgroundColor={backgroundColor}
                       setBackgroundColor={setBackgroundColor}
@@ -2373,7 +2377,9 @@ export default function ImageEditorModal({
                       color={currentColor}
                       setColor={setCurrentColor}
                       brushSize={brushSize}
+                      setBrushSize={setBrushSize}
                       strokeStyle={strokeStyle}
+                      setStrokeStyle={setStrokeStyle}
                       onAdd={handleKonvaArrowAdd}
                       onMove={handleKonvaArrowMove}
                       arrows={arrows}
@@ -2401,7 +2407,9 @@ export default function ImageEditorModal({
                       color={currentColor}
                       setColor={setCurrentColor}
                       brushSize={brushSize}
+                      setBrushSize={setBrushSize}
                       strokeStyle={strokeStyle}
+                      setStrokeStyle={setStrokeStyle}
                       arrows={doubleArrows}
                       onAdd={handleKonvaDoubleArrowAdd}
                       onMove={handleKonvaDoubleArrowMove}
@@ -2459,7 +2467,9 @@ export default function ImageEditorModal({
                       color={currentColor}
                       setColor={setCurrentColor}
                       brushSize={brushSize}
+                      setBrushSize={setBrushSize}
                       strokeStyle={strokeStyle}
+                      setStrokeStyle={setStrokeStyle}
                       backgroundColor={backgroundColor}
                       setBackgroundColor={setBackgroundColor}
                       onAdd={handleKonvaRectAdd}
@@ -2489,7 +2499,9 @@ export default function ImageEditorModal({
                       color={currentColor}
                       setColor={setCurrentColor}
                       brushSize={brushSize}
+                      setBrushSize={setBrushSize}
                       strokeStyle={strokeStyle}
+                      setStrokeStyle={setStrokeStyle}
                       circles={circles}
                       backgroundColor={backgroundColor}
                       setBackgroundColor={setBackgroundColor}
@@ -2519,7 +2531,9 @@ export default function ImageEditorModal({
                       color={currentColor}
                       setColor={setCurrentColor}
                       brushSize={brushSize}
+                      setBrushSize={setBrushSize}
                       strokeStyle={strokeStyle}
+                      setStrokeStyle={setStrokeStyle}
                       onAdd={handleKonvaArrowAdd}
                       onMove={handleKonvaArrowMove}
                       arrows={arrows}
@@ -2547,7 +2561,9 @@ export default function ImageEditorModal({
                       color={currentColor}
                       setColor={setCurrentColor}
                       brushSize={brushSize}
+                      setBrushSize={setBrushSize}
                       strokeStyle={strokeStyle}
+                      setStrokeStyle={setStrokeStyle}
                       arrows={doubleArrows}
                       onAdd={handleKonvaDoubleArrowAdd}
                       onMove={handleKonvaDoubleArrowMove}
