@@ -19,6 +19,7 @@ interface CurveToolProps {
 export const CurveTool: React.FC<CurveToolProps> = ({
   active,
   canvasRef,
+
   onFinishCurve,
   setActiveTool,
   currentColor,
@@ -27,7 +28,10 @@ export const CurveTool: React.FC<CurveToolProps> = ({
 }) => {
   const [curves, setCurves] = useState<Point[][]>([]);
   const [currentCurve, setCurrentCurve] = useState<Point[]>([]);
-  const [selectedCurveIndex, setSelectedCurveIndex] = useState<number | null>(null);
+  const [selectedCurveIndex, setSelectedCurveIndex] = useState<number | null>(
+    null
+  );
+
   const [dragging, setDragging] = useState<number | null>(null);
   const [mousePos, setMousePos] = useState<Point | null>(null);
   const [drawing, setDrawing] = useState<boolean>(active);
@@ -115,7 +119,7 @@ export const CurveTool: React.FC<CurveToolProps> = ({
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
-    
+
     // Calculate position relative to the canvas
     return {
       x: e.clientX - rect.left,
@@ -150,7 +154,7 @@ export const CurveTool: React.FC<CurveToolProps> = ({
     const hitIndex = curves.findIndex((curve) =>
       curve.some((pt) => isNear(pt, pos, 8))
     );
-    
+
     if (hitIndex !== -1) {
       setSelectedCurveIndex(hitIndex);
       return;
@@ -261,7 +265,14 @@ export const CurveTool: React.FC<CurveToolProps> = ({
     }
   };
 
-  useEffect(draw, [curves, currentCurve, selectedCurveIndex, dragging, drawing, mousePos]);
+  useEffect(draw, [
+    curves,
+    currentCurve,
+    selectedCurveIndex,
+    dragging,
+    drawing,
+    mousePos,
+  ]);
 
   useEffect(() => {
     if (!drawing) return;
