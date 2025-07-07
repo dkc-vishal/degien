@@ -31,9 +31,11 @@ export default function Table({
   imagecol,
   imagecol2,
   columnheaders,
-  spreadsheet
+  spreadsheet,
 }: any) {
-  const [frozenColIndices, setFrozenColIndices] = useState<number[]>(spreadsheet.grid_dimensions.frozen_columns || []);
+  const [frozenColIndices, setFrozenColIndices] = useState<number[]>(
+    spreadsheet.grid_dimensions.frozen_columns || []
+  );
   const [selectedHistory, setSelectedHistory] = useState<{
     key: string;
     row: number;
@@ -82,7 +84,7 @@ export default function Table({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollDirectionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const animationFrameRef = useRef<number | null>(null);
-  
+
   const [columnHeaders, setColumnHeaders] = useState(
     Array.from({ length: col }, (_, colIndex) =>
       colIndex === imagecol || colIndex === imagecol2
@@ -99,7 +101,7 @@ export default function Table({
     }
   }, []);
   const [colWidths, setColWidths] = useState(
-    Array.from({ length: columnheaders.length }, (_,i) => columnheaders[i]) // Default width of 100 if not specified
+    Array.from({ length: columnheaders.length }, (_, i) => columnheaders[i]) // Default width of 100 if not specified
   );
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
@@ -602,7 +604,7 @@ export default function Table({
   // ]);
 
   const insertRow = (index: number) => {
-     pushToHistory(tableData); // ✅ Store before editing
+    pushToHistory(tableData); // ✅ Store before editing
     const newRow = new Array(tableData[0].length).fill("");
     const updated = [
       ...tableData.slice(0, index),
@@ -613,7 +615,7 @@ export default function Table({
   };
 
   const insertCol = (index: number) => {
-     pushToHistory(tableData); // ✅ Store before editing
+    pushToHistory(tableData); // ✅ Store before editing
     // Update column headers
     const newHeaders = [...columnHeaders];
     newHeaders.splice(index, 0, "");
@@ -621,7 +623,7 @@ export default function Table({
 
     // Update table data
     const newData = tableData.map((row) => {
-       pushToHistory(tableData); // ✅ Store before editing
+      pushToHistory(tableData); // ✅ Store before editing
       const newRow = [...row];
       newRow.splice(index, 0, "");
       return newRow;
@@ -635,7 +637,7 @@ export default function Table({
   };
 
   const deleteRow = (index: number) => {
-     pushToHistory(tableData); // ✅ Store before editing
+    pushToHistory(tableData); // ✅ Store before editing
     if (tableData.length <= 1) return;
     const updated = [
       ...tableData.slice(0, index),
@@ -645,7 +647,7 @@ export default function Table({
   };
 
   const deleteCol = (deleteIndex: number) => {
-     pushToHistory(tableData); // ✅ Store before editing
+    pushToHistory(tableData); // ✅ Store before editing
     // Guard clause: don't allow deleting if there's only 1 column left
     if (columnHeaders.length <= 1) return;
 
@@ -844,7 +846,7 @@ export default function Table({
   }
 
   const highlightRow = (rowIndex: number, color = "#fff3cd") => {
-     pushToHistory(tableData); // ✅ Store before editing
+    pushToHistory(tableData); // ✅ Store before editing
     setCellColors((prev) => {
       const updated = [...prev];
       updated[rowIndex] = updated[rowIndex].map(() => color);
@@ -852,7 +854,7 @@ export default function Table({
     });
   };
   const unhighlightRow = (rowIndex: number) => {
-     pushToHistory(tableData); // ✅ Store before editing
+    pushToHistory(tableData); // ✅ Store before editing
     setCellColors((prev) => {
       const updated = [...prev];
       updated[rowIndex] = updated[rowIndex].map(() => "");
@@ -1346,7 +1348,8 @@ export default function Table({
                               const [moved] = newRow.splice(draggedColIndex, 1);
                               newRow.splice(i, 0, moved);
                               let temp = colWidths[i].width;
-                              colWidths[i].width = colWidths[draggedColIndex].width;
+                              colWidths[i].width =
+                                colWidths[draggedColIndex].width;
                               colWidths[draggedColIndex].width = temp;
                               localStorage.setItem(
                                 `table_colWidths_${tablename}`,
@@ -1451,7 +1454,8 @@ export default function Table({
                               const [moved] = newRow.splice(draggedColIndex, 1);
                               newRow.splice(i, 0, moved);
                               let temp = colWidths[i].width;
-                              colWidths[i].width = colWidths[draggedColIndex].width;
+                              colWidths[i].width =
+                                colWidths[draggedColIndex].width;
                               colWidths[draggedColIndex].width = temp;
                               localStorage.setItem(
                                 `table_colWidths_${tablename}`,
@@ -1525,7 +1529,8 @@ export default function Table({
                             <td
                               style={{
                                 backgroundColor:
-                                  cellColors?.[rowIndex]?.[colIndex] || "bg-slate-200",
+                                  cellColors?.[rowIndex]?.[colIndex] ||
+                                  "bg-slate-200",
                                 width: colWidths[colIndex].width,
                                 minWidth: 50,
                                 textAlign: "center",
@@ -1967,7 +1972,7 @@ export default function Table({
                                       nextRow = Math.min(maxRow, row + 1);
                                     if (e.key === "ArrowLeft") {
                                       console.log(col);
-                                        nextCol = Math.max(2, col - 1);
+                                      nextCol = Math.max(2, col - 1);
                                     }
                                     if (e.key === "ArrowRight")
                                       nextCol = Math.min(maxCol, col + 1);
@@ -2011,9 +2016,7 @@ export default function Table({
                                     {(cell as string[]).map((src, i) => (
                                       <div
                                         key={i}
-                                        style={{
-                                          position: "relative",
-                                        }}
+                                        className="relative group"
                                         onClick={(e) => e.stopPropagation()}
                                         onMouseEnter={() =>
                                           setHoveredImage({
@@ -2038,12 +2041,22 @@ export default function Table({
                                             const tempImage = {
                                               id: `temp-${Date.now()}`,
                                               url: src,
-                                              file: new File([], `image-${rowIndex}-${colIndex}-${i}.png`, {
-                                                type: src.match(/data:(image\/\w+);/)?.[1] || "image/*",
-                                              }),
+                                              file: new File(
+                                                [],
+                                                `image-${rowIndex}-${colIndex}-${i}.png`,
+                                                {
+                                                  type:
+                                                    src.match(
+                                                      /data:(image\/\w+);/
+                                                    )?.[1] || "image/*",
+                                                }
+                                              ),
                                               name: `image-${rowIndex}-${colIndex}-${i}.png`,
                                             };
-                                            handleOpenImageEditor(src, tempImage);
+                                            handleOpenImageEditor(
+                                              src,
+                                              tempImage
+                                            );
                                           }}
                                           style={{
                                             width: "100%",
@@ -2085,66 +2098,28 @@ export default function Table({
                                         />
 
                                         {/* Delete button visible only on hover */}
-                                        {/* {hoveredImage &&
-                                          hoveredImage.row === rowIndex &&
-                                          hoveredImage.col === colIndex &&
-                                          hoveredImage.index === i && (
-                                            // <button
-                                            //   onClick={(e) => {
-                                            //     const updated = [...tableData];
-                                            //     (
-                                            //       updated[rowIndex][
-                                            //         colIndex
-                                            //       ] as string[]
-                                            //     ).splice(i, 1);
-                                            //     setTableData(updated);
-                                            //     setTimeout(() => {
-                                            //       autoResizeAllTextareas(e);
-                                            //     }, 0);
-                                            //   }}
-                                            //   style={{
-                                            //     position: "absolute",
-                                            //     top: 5,
-                                            //     right: 0,
-                                            //     background: "white",
-                                            //     color: "red",
-                                            //     border: "none",
-                                            //     borderRadius: "50%",
-                                            //     width: "18px",
-                                            //     height: "18px",
-                                            //     fontSize: "16px",
-                                            //     cursor: "pointer",
-                                            //     boxShadow:
-                                            //       "0 0 3px rgba(0,0,0,0.3)",
-                                            //   }}
-                                            //   title="Delete image"
-                                            // >
-                                            //   ×
-                                            // </button> */}
-                                            <div className="absolute top-5 right-1 opacity-100  transition-opacity duration-200 flex flex-col gap-1 z-10">
-
-                                            <Button 
-                                              onClick={(e) => {
-                                                const updated = [...tableData];
-                                                (
-                                                  updated[rowIndex][
-                                                    colIndex
-                                                  ] as string[]
-                                                ).splice(i, 1);
-                                                setTableData(updated);
-                                                setTimeout(() => {
-                                                  autoResizeAllTextareas(e);
-                                                }, 0);
-                                              }}
-                                              variant="destructive"
-                                              size="icon"
-                                              className="h-6 w-6"
-                                              aria-label="Delete image"
-                                              >
-                                              <X size={16} />
-                                            </Button>
-                                            </div>
-                                          {/* )} */}
+                                        <div className="absolute top-1 right-1 lg:opacity-0  lg:group-hover:opacity-100 transition-opacity duration-200 flex flex-col gap-1 z-10">
+                                          <Button
+                                            onClick={(e) => {
+                                              const updated = [...tableData];
+                                              (
+                                                updated[rowIndex][
+                                                  colIndex
+                                                ] as string[]
+                                              ).splice(i, 1);
+                                              setTableData(updated);
+                                              setTimeout(() => {
+                                                autoResizeAllTextareas(e);
+                                              }, 0);
+                                            }}
+                                            variant="destructive"
+                                            size="icon"
+                                            className="h-6 w-6"
+                                            aria-label="Delete image"
+                                          >
+                                            <X size={16} />
+                                          </Button>
+                                        </div>
                                       </div>
                                     ))}
                                   </div>
@@ -2245,10 +2220,10 @@ export default function Table({
                                 )}
 
                               <textarea
-                              style={{
-                                backgroundColor:
-                                  cellColors?.[rowIndex]?.[colIndex] || "",
-                              }}
+                                style={{
+                                  backgroundColor:
+                                    cellColors?.[rowIndex]?.[colIndex] || "",
+                                }}
                                 value={cell}
                                 data-cell={`${rowIndex}-${colIndex}`}
                                 ref={
@@ -2347,7 +2322,7 @@ export default function Table({
                                     setEditingCell(null);
                                     return;
                                   }
-                                  
+
                                   // if (e.key === "Enter" && !e.shiftKey) {
                                   //   e.preventDefault();
                                   //   const nextRow = Math.min(row + 1, maxRow);

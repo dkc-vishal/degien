@@ -321,10 +321,9 @@ const KonvaCircle = forwardRef<KonvaCircleHandle, KonvaCircleProps>(
                   stroke: color,
                   strokeWidth: brushSize,
                   dash: getDashPattern(strokeStyle, brushSize),
-                  ...(backgroundColor &&
-                    backgroundColor !== "transparent" && {
-                      fill: backgroundColor,
-                    }),
+                  ...(backgroundColor !== undefined && {
+                    fill: backgroundColor,
+                  }),
                 }
               : c
           )

@@ -40,6 +40,7 @@ import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { Button } from "../ui/button";
 import { X } from "lucide-react";
+import { BaseNextResponse } from "next/dist/server/base-http";
 function parseFraction(input: string): number {
   input = input.trim();
   if (!input) return 0;
@@ -59,12 +60,36 @@ function parseFraction(input: string): number {
 }
 
 // Helper to convert decimal to fraction string (up to 1/16 precision)
+// function toFractionString(value: number): string {
+//   if (isNaN(value)) return "";
+//   const whole = Math.floor(value);
+//   let frac = value - whole;
+//   let closest = "";
+//   let minDiff = 1;
+//   for (let d = 2; d <= 16; d++) {
+//     const n = Math.round(frac * d);
+//     const diff = Math.abs(frac - n / d);
+//     if (n > 0 && diff < minDiff) {
+//       closest = `${n}/${d}`;
+//       minDiff = diff;
+//     }
+//   }
+//   if (closest && whole > 0) return `${whole} ${closest}`;
+//   if (closest) return closest;
+//   return `${whole}`;
+// }
+
 function toFractionString(value: number): string {
   if (isNaN(value)) return "";
-  const whole = Math.floor(value);
-  let frac = value - whole;
+
+  // Handle zero case
+  if (value === 0) return "0";
+
+  const whole = Math.floor(Math.abs(value));
+  let frac = Math.abs(value) - whole;
   let closest = "";
   let minDiff = 1;
+
   for (let d = 2; d <= 16; d++) {
     const n = Math.round(frac * d);
     const diff = Math.abs(frac - n / d);
@@ -73,9 +98,14 @@ function toFractionString(value: number): string {
       minDiff = diff;
     }
   }
-  if (closest && whole > 0) return `${whole} ${closest}`;
-  if (closest) return closest;
-  return `${whole}`;
+
+  let result = "";
+  if (closest && whole > 0) result = `${whole} ${closest}`;
+  else if (closest) result = closest;
+  else result = `${whole}`;
+
+  // Add negative sign if original value was negative
+  return value < 0 ? `-${result}` : result;
 }
 
 type Row = {
@@ -175,6 +205,7 @@ export default function Table({
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
   const [copiedImage, setCopiedImage] = useState<string | null>(null);
+
   // const handleMouseMove = (e: MouseEvent) => {
   //   if (resizingColIndex.current === null) return;
 
@@ -426,15 +457,18 @@ export default function Table({
 
     setTableData(updated);
   };
+
   useEffect(() => {
     localStorage.setItem(`table_data_${tablename}`, JSON.stringify(tableData));
   }, [tableData]);
+
   const menuItems = [
     { icon: <FaTachometerAlt />, label: "Dashboard" },
     { icon: <FaClipboardList />, label: "Tech Specs" },
     { icon: <FaTools />, label: "Inspections" },
     { icon: <FaWrench />, label: "Settings" },
   ];
+
   const [searchTerm, setSearchTerm] = useState("");
 
   // Table: 5 rows x 12 cols, with editable default values
@@ -460,6 +494,7 @@ export default function Table({
     setHistory((prev) => [...prev, JSON.parse(snapshot)]);
     setRedoStack([]); // clear redo on new action
   };
+
   const [editHistoryMap, setEditHistoryMap] = useState<
     Record<
       string,
@@ -471,6 +506,30 @@ export default function Table({
       }[]
     >
   >({});
+
+  const isCellEditable = (rowIndex: number, colIndex: number) => {
+    // Find the index of "Real Time Grading Rule" column
+    const realTimeGradingRuleIndex = columnHeaders.findIndex(
+      (header) => header === "REAL TIME GRADING RULE"
+    );
+
+    // If "Real Time Grading Rule" column is found and current column is after it, make it read-only
+    if (
+      realTimeGradingRuleIndex !== -1 &&
+      colIndex >= realTimeGradingRuleIndex
+    ) {
+      return false;
+    }
+
+    // Columns 0 and 1 are always non-editable (drag handle and row number)
+    if (colIndex <= 1) {
+      return false;
+    }
+
+    // All other columns are editable
+    return true;
+  };
+
   const [RealTimeMeasurment, setRealTimemeasuremtn] = useState<string[]>([]);
 
   const handleCellChange = (row: number, col: number, value: string) => {
@@ -481,11 +540,14 @@ export default function Table({
     const updated = [...tableData];
     updated[row][col] = value;
     setTableData(updated);
+
+    // Real Time Measurement logic
     const topMeasIdx = columnHeaders.indexOf("TOP CHANGED MEASUREMENT");
     const ppMeasIdx = columnHeaders.indexOf("PP CHANGED MEASUREMENT");
     const fitMeasIdx = columnHeaders.indexOf("FIT CHANGED MEASUREMENT");
     const msrMeasIdx = columnHeaders.indexOf("MSR MEASUREMENT");
     const realTimeMeasIdx = columnHeaders.indexOf("REAL TIME MEASUREMENT");
+
     function updateRealTimeMeasurement(row: any) {
       row[realTimeMeasIdx] =
         row[topMeasIdx] ||
@@ -494,15 +556,12 @@ export default function Table({
         row[msrMeasIdx] ||
         "";
     }
+
     if ([topMeasIdx, ppMeasIdx, fitMeasIdx, msrMeasIdx].includes(col)) {
       updateRealTimeMeasurement(updated[row]);
     }
 
-    // Inside handleCellChange, after updating the cell:
-    if ([topMeasIdx, ppMeasIdx, fitMeasIdx, msrMeasIdx].includes(col)) {
-      updateRealTimeMeasurement(updated[row]);
-    }
-    // Grading rule logic
+    // Real Time Grading Rule logic
     const topIdx = columnHeaders.indexOf("TOP CHANGED GRADING RULE");
     const ppIdx = columnHeaders.indexOf("PP CHANGED GRADING RULE");
     const fitIdx = columnHeaders.indexOf("FIT GRADING RULE");
@@ -513,49 +572,14 @@ export default function Table({
       row[realTimeIdx] =
         row[topIdx] || row[ppIdx] || row[fitIdx] || row[msrIdx] || "";
     }
+
     if ([topIdx, ppIdx, fitIdx, msrIdx].includes(col)) {
       updateRealTimeGradingRule(updated[row]);
     }
 
-    // Always recalculate sizes on any cell change
-    const msrMeasurementCol = columnHeaders.findIndex((header) =>
-      header.includes("MSR MEASUREMENT")
-    );
-    const msrGradingRuleCol = columnHeaders.findIndex((header) =>
-      header.includes("REAL TIME GRADING RULE")
-    );
-
-    const msrBaseSizeTypeCol = columnHeaders.findIndex((header) =>
-      header.includes("base size type")
-    );
-
-    const baseSizeInput = updated[row][realTimeMeasIdx] as string;
-    const gradingInput = updated[row][msrGradingRuleCol] as string;
-    // You can use the value from the table if you want:
-    // const baseSizeType = updated[rowIdx][msrBaseSizeTypeCol] as Row["baseSizeType"] || "S";
-    const baseSizeType = "S";
-    console.log(
-      baseSizeType,
-      String(RealTimeMeasurment[realTimeIdx]),
-      gradingInput
-    );
-    const sizes = calculateSizes(baseSizeType, baseSizeInput, gradingInput);
-
-    const xsCol = columnHeaders.findIndex((header) => header === "XS");
-    const sCol = columnHeaders.findIndex((header) => header === "S");
-    const mCol = columnHeaders.findIndex((header) => header === "M");
-    const lCol = columnHeaders.findIndex((header) => header === "L");
-    const xlCol = columnHeaders.findIndex((header) => header === "XL");
-
-    if (xsCol !== -1)
-      updated[row][xsCol] = toFractionString(sizes.xs).toString();
-    if (sCol !== -1) updated[row][sCol] = toFractionString(sizes.s).toString();
-    if (mCol !== -1) updated[row][mCol] = toFractionString(sizes.m).toString();
-    if (lCol !== -1) updated[row][lCol] = toFractionString(sizes.l).toString();
-    if (xlCol !== -1)
-      updated[row][xlCol] = toFractionString(sizes.xl).toString();
-
     setTableData(updated);
+
+    // Update edit history
     setEditHistoryMap((prev) => ({
       ...prev,
       [key]: [
@@ -569,6 +593,302 @@ export default function Table({
       ],
     }));
   };
+
+  const handleCellBlur = (row: number, col: number) => {
+    setEditingCell(null);
+
+    // Get column indices
+    const topMeasIdx = columnHeaders.indexOf("TOP CHANGED MEASUREMENT");
+    const ppMeasIdx = columnHeaders.indexOf("PP CHANGED MEASUREMENT");
+    const fitMeasIdx = columnHeaders.indexOf("FIT CHANGED MEASUREMENT");
+    const msrMeasIdx = columnHeaders.indexOf("MSR MEASUREMENT");
+    const realTimeMeasIdx = columnHeaders.indexOf("REAL TIME MEASUREMENT");
+    const topIdx = columnHeaders.indexOf("TOP CHANGED GRADING RULE");
+    const ppIdx = columnHeaders.indexOf("PP CHANGED GRADING RULE");
+    const fitIdx = columnHeaders.indexOf("FIT GRADING RULE");
+    const msrIdx = columnHeaders.indexOf("MSR GRADING RULE");
+    const realTimeIdx = columnHeaders.indexOf("REAL TIME GRADING RULE");
+
+    // ✅ Check if we're leaving a column that affects Real Time values OR Real Time columns directly
+    const affectsRealTimeMeasurement = [
+      topMeasIdx,
+      ppMeasIdx,
+      fitMeasIdx,
+      msrMeasIdx,
+      realTimeMeasIdx,
+    ].includes(col);
+    const affectsRealTimeGradingRule = [
+      topIdx,
+      ppIdx,
+      fitIdx,
+      msrIdx,
+      realTimeIdx,
+    ].includes(col);
+
+    // Only calculate sizes if we're leaving a relevant column
+    if (!affectsRealTimeMeasurement && !affectsRealTimeGradingRule) {
+      return; // Not a relevant column, don't calculate
+    }
+
+    // ✅ Use setTimeout to ensure we get the updated tableData after handleCellChange
+    setTimeout(() => {
+      // ✅ FORCE UPDATE Real Time values with current tableData before calculation
+      const updated = [...tableData];
+
+      // Force update Real Time Measurement with priority: TOP > PP > FIT > MSR
+      const currentTopMeas = updated[row][topMeasIdx] as string;
+      const currentPpMeas = updated[row][ppMeasIdx] as string;
+      const currentFitMeas = updated[row][fitMeasIdx] as string;
+      const currentMsrMeas = updated[row][msrMeasIdx] as string;
+
+      updated[row][realTimeMeasIdx] =
+        currentTopMeas ||
+        currentPpMeas ||
+        currentFitMeas ||
+        currentMsrMeas ||
+        "";
+
+      // Force update Real Time Grading Rule with priority: TOP > PP > FIT > MSR
+      const currentTopGrade = updated[row][topIdx] as string;
+      const currentPpGrade = updated[row][ppIdx] as string;
+      const currentFitGrade = updated[row][fitIdx] as string;
+      const currentMsrGrade = updated[row][msrIdx] as string;
+
+      updated[row][realTimeIdx] =
+        currentTopGrade ||
+        currentPpGrade ||
+        currentFitGrade ||
+        currentMsrGrade ||
+        "";
+
+      // ✅ Now get the UPDATED Real Time values for calculation
+      const currentMsrMeasurement = updated[row][msrMeasIdx] as string;
+      const currentRealTimeMeasurement = updated[row][
+        realTimeMeasIdx
+      ] as string;
+      const currentMsrGradingRule = updated[row][msrIdx] as string;
+      const currentRealTimeGradingRule = updated[row][realTimeIdx] as string;
+
+      console.log("Real Time values after FORCED update:", {
+        currentMsrMeasurement,
+        currentRealTimeMeasurement,
+        currentMsrGradingRule,
+        currentRealTimeGradingRule,
+        blurredColumn:
+          col === msrMeasIdx
+            ? "MSR Measurement"
+            : col === msrIdx
+            ? "MSR Grading Rule"
+            : col === realTimeMeasIdx
+            ? "Real Time Measurement"
+            : col === realTimeIdx
+            ? "Real Time Grading Rule"
+            : col === topMeasIdx
+            ? "Top Changed Measurement"
+            : col === ppMeasIdx
+            ? "PP Changed Measurement"
+            : col === fitMeasIdx
+            ? "Fit Changed Measurement"
+            : col === topIdx
+            ? "Top Changed Grading Rule"
+            : col === ppIdx
+            ? "PP Changed Grading Rule"
+            : col === fitIdx
+            ? "Fit Grading Rule"
+            : "Other",
+      });
+
+      // ✅ Determine when to calculate sizes based on UPDATED Real Time values
+      const shouldCalculateSizes =
+        // Case 1: Both MSR Measurement and MSR Grading Rule are filled
+        (currentMsrMeasurement && currentMsrGradingRule) ||
+        // Case 2: Only MSR Grading Rule is filled (regardless of MSR Measurement)
+        (currentMsrGradingRule && !currentMsrMeasurement) ||
+        // Case 3: Real Time values are used when MSR values are not available
+        (currentRealTimeMeasurement && currentRealTimeGradingRule) ||
+        (currentRealTimeGradingRule && !currentRealTimeMeasurement);
+
+      console.log(
+        "Should calculate sizes (after FORCED update):",
+        shouldCalculateSizes
+      );
+
+      if (shouldCalculateSizes) {
+        // Determine which measurement and grading rule to use
+        const baseSizeInput = currentRealTimeMeasurement || "";
+        const gradingInput = currentRealTimeGradingRule || "";
+
+        // Only proceed if we have a grading rule (measurement is optional in some cases)
+        if (gradingInput) {
+          const baseSizeType = "S"; // Default base size type
+
+          console.log("Calculating sizes with CORRECT values:", {
+            baseSizeType,
+            baseSizeInput,
+            gradingInput,
+            trigger:
+              col === msrMeasIdx
+                ? "MSR Measurement"
+                : col === msrIdx
+                ? "MSR Grading Rule"
+                : col === realTimeMeasIdx
+                ? "Real Time Measurement"
+                : col === realTimeIdx
+                ? "Real Time Grading Rule"
+                : col === topMeasIdx
+                ? "Top Changed Measurement"
+                : col === ppMeasIdx
+                ? "PP Changed Measurement"
+                : col === fitMeasIdx
+                ? "Fit Changed Measurement"
+                : col === topIdx
+                ? "Top Changed Grading Rule"
+                : col === ppIdx
+                ? "PP Changed Grading Rule"
+                : col === fitIdx
+                ? "Fit Grading Rule"
+                : "Other",
+          });
+
+          const sizes = calculateSizes(
+            baseSizeType,
+            baseSizeInput,
+            gradingInput
+          );
+
+          const hasNegativeSize =
+            sizes.xs < 0 ||
+            sizes.s < 0 ||
+            sizes.m < 0 ||
+            sizes.l < 0 ||
+            sizes.xl < 0;
+
+          // Get size column indices
+          const xsCol = columnHeaders.findIndex((header) => header === "XS");
+          const sCol = columnHeaders.findIndex((header) => header === "S");
+          const mCol = columnHeaders.findIndex((header) => header === "M");
+          const lCol = columnHeaders.findIndex((header) => header === "L");
+          const xlCol = columnHeaders.findIndex((header) => header === "XL");
+
+          // Size calculation logic
+          const msrMeasurementCol = columnHeaders.findIndex((header) =>
+            header.includes("MSR MEASUREMENT")
+          );
+          const msrGradingRuleCol = columnHeaders.findIndex((header) =>
+            header.includes("MSR GRADING RULE")
+          );
+
+          if (hasNegativeSize) {
+            // ✅ Show alert for negative sizes
+            alert(
+              "Invalid Size Calculation: The grading rule resulted in negative sizes. All size values and inputs will be cleared."
+            );
+
+            console.log(
+              "Negative size detected, clearing all size values:",
+              sizes
+            );
+
+            // Clear all size columns
+            if (xsCol !== -1) updated[row][xsCol] = "";
+            if (sCol !== -1) updated[row][sCol] = "";
+            if (mCol !== -1) updated[row][mCol] = "";
+            if (lCol !== -1) updated[row][lCol] = "";
+            if (xlCol !== -1) updated[row][xlCol] = "";
+
+            // ✅ Clear MSR measurement and grading rule inputs
+            if (msrMeasurementCol !== -1) updated[row][msrMeasurementCol] = "";
+            if (msrGradingRuleCol !== -1) updated[row][msrGradingRuleCol] = "";
+            if (fitMeasIdx !== -1) updated[row][fitMeasIdx] = "";
+            if (fitIdx !== -1) updated[row][fitIdx] = "";
+            if (ppMeasIdx !== -1) updated[row][ppMeasIdx] = "";
+            if (ppIdx !== -1) updated[row][ppIdx] = "";
+            if (topMeasIdx !== -1) updated[row][topMeasIdx] = "";
+            if (topIdx !== -1) updated[row][topIdx] = "";
+
+            // Also clear Real Time values since they caused the negative calculation
+            if (realTimeMeasIdx !== -1) updated[row][realTimeMeasIdx] = "";
+            if (realTimeIdx !== -1) updated[row][realTimeIdx] = "";
+          } else {
+            // ✅ All sizes are valid (>= 0), update normally
+            console.log("All sizes are valid, updating size columns:", sizes);
+
+            if (xsCol !== -1)
+              updated[row][xsCol] = toFractionString(sizes.xs).toString();
+            if (sCol !== -1)
+              updated[row][sCol] = toFractionString(sizes.s).toString();
+            if (mCol !== -1)
+              updated[row][mCol] = toFractionString(sizes.m).toString();
+            if (lCol !== -1)
+              updated[row][lCol] = toFractionString(sizes.l).toString();
+            if (xlCol !== -1)
+              updated[row][xlCol] = toFractionString(sizes.xl).toString();
+
+            // ✅ Clear non-selected MSR inputs based on what was actually used
+            if (currentMsrMeasurement && currentMsrGradingRule) {
+              // Both MSR values used - don't clear anything
+              console.log("Using MSR values - keeping both inputs");
+            }
+          }
+
+          // ✅ Apply all updates at once
+          setTableData(updated);
+        }
+      } else {
+        // ✅ Handle cases where only measurement is filled (no grading rule)
+
+        // Case: Only measurement is filled (any type)
+        if (
+          (currentMsrMeasurement || currentRealTimeMeasurement) &&
+          !currentMsrGradingRule &&
+          !currentRealTimeGradingRule &&
+          [msrMeasIdx, topMeasIdx, ppMeasIdx, fitMeasIdx].includes(col)
+        ) {
+          const sCol = columnHeaders.findIndex((header) => header === "S");
+
+          // ✅ Use Real Time Measurement value (which now has the correct updated value)
+          const baseSizeValue =
+            currentRealTimeMeasurement || currentMsrMeasurement;
+
+          if (sCol !== -1) {
+            updated[row][sCol] = baseSizeValue;
+          }
+
+          // Clear other size columns since we don't have grading rule
+          const xsCol = columnHeaders.findIndex((header) => header === "XS");
+          const mCol = columnHeaders.findIndex((header) => header === "M");
+          const lCol = columnHeaders.findIndex((header) => header === "L");
+          const xlCol = columnHeaders.findIndex((header) => header === "XL");
+
+          if (xsCol !== -1) updated[row][xsCol] = "";
+          if (mCol !== -1) updated[row][mCol] = "";
+          if (lCol !== -1) updated[row][lCol] = "";
+          if (xlCol !== -1) updated[row][xlCol] = "";
+
+          // ✅ Apply updates
+          setTableData(updated);
+          console.log(
+            "Only measurement filled, setting base size (S) to:",
+            baseSizeValue,
+            "from",
+            col === topMeasIdx
+              ? "TOP"
+              : col === ppMeasIdx
+              ? "PP"
+              : col === fitMeasIdx
+              ? "FIT"
+              : col === msrMeasIdx
+              ? "MSR"
+              : "Real Time"
+          );
+        } else {
+          // ✅ Still apply the Real Time updates even if no size calculation
+          setTableData(updated);
+        }
+      }
+    }, 0); // ✅ Delay to ensure Real Time updates are applied first
+  };
+
   function calculateSizes(
     baseSizeType: Row["baseSizeType"],
     baseSizeInput: string,
@@ -584,14 +904,15 @@ export default function Table({
           parseFraction(gradingInput),
           parseFraction(gradingInput),
         ];
+
     let xs = NaN,
       s = NaN,
       m = NaN,
       l = NaN,
       xl = NaN;
 
-    // Base size value
-    let base = parseFraction(baseSizeInput);
+    // Base size value - if empty, use 0 as default
+    let base = baseSizeInput ? parseFraction(baseSizeInput) : 0;
 
     // Logic: left of base size is -, right is +
     switch (baseSizeType) {
@@ -631,8 +952,11 @@ export default function Table({
         xs = s - grading[0];
         break;
     }
+
+    console.log("Calculated sizes:", { xs, s, m, l, xl });
     return { xs, s, m, l, xl };
   }
+
   function handlepastecellChange(colIndex: number) {
     const column = tableData.map((row) => row[colIndex]);
     for (let i = 0; i < column.length; i++) {
@@ -710,152 +1034,6 @@ export default function Table({
       // inputRef.current.select(); // Optional: selects all text
     }
   }, [editingCell]);
-  //   useEffect(() => {
-  //   console.log("Updated history:", history);
-  // }, [history]);
-  // useEffect(() => {
-  //   if (typeof window === "undefined") return;
-
-  //   const handleKeyDown = (e: KeyboardEvent) => {
-  //     if ((e.ctrlKey || e.metaKey) && e.key === "c") {
-  //       if (!selectedRange && !selectedCell) return;
-
-  //       let start: [number, number], end: [number, number];
-
-  //       if (selectedRange) {
-  //         ({ start, end } = selectedRange);
-  //       } else if (selectedCell) {
-  //         start = end = selectedCell;
-  //       } else return;
-
-  //       const startRow = Math.min(start[0], end[0]);
-  //       const endRow = Math.max(start[0], end[0]);
-  //       const startCol = Math.min(start[1], end[1]);
-  //       const endCol = Math.max(start[1], end[1]);
-
-  //       let copiedText = "";
-  //       for (let row = startRow; row <= endRow; row++) {
-  //         const rowData = [];
-  //         for (let col = startCol; col <= endCol; col++) {
-  //           rowData.push(tableData?.[row]?.[col] ?? "");
-  //         }
-  //         copiedText += rowData.join("\t") + "\n";
-  //       }
-
-  //       e.preventDefault();
-
-  //       // ✅ Fallback method using execCommand
-  //       const textarea = document.createElement("textarea");
-  //       textarea.value = copiedText;
-  //       document.body.appendChild(textarea);
-  //       textarea.select();
-  //       try {
-  //         document.execCommand("copy");
-  //         console.log("Copied to clipboard via fallback");
-  //       } catch (err) {
-  //         console.error("Fallback copy failed:", err);
-  //       }
-  //       document.body.removeChild(textarea);
-  //     }
-  //     if ((e.ctrlKey || e.metaKey) && e.key === "x") {
-  //       console.log(!selectedRange && !selectedCell);
-  //       if (!selectedRange && !selectedCell) return;
-
-  //       let start: [number, number], end: [number, number];
-  //       if (selectedRange) {
-  //         ({ start, end } = selectedRange);
-  //       } else if (selectedCell) {
-  //         start = end = selectedCell;
-  //       } else return;
-
-  //       const startRow = Math.min(start[0], end[0]);
-  //       const endRow = Math.max(start[0], end[0]);
-  //       const startCol = Math.min(start[1], end[1]);
-  //       const endCol = Math.max(start[1], end[1]);
-
-  //       let copiedText = "";
-  //       const updated = [...tableData];
-
-  //       for (let row = startRow; row <= endRow; row++) {
-  //         const rowData = [];
-  //         for (let col = startCol; col <= endCol; col++) {
-  //           rowData.push(updated[row][col]);
-  //           updated[row][col] = ""; // Clear content
-  //         }
-  //         copiedText += rowData.join("\t") + "\n";
-  //       }
-
-  //       setTableData(updated);
-  //       e.preventDefault();
-
-  //       const textarea = document.createElement("textarea");
-  //       textarea.value = copiedText;
-  //       document.body.appendChild(textarea);
-  //       textarea.select();
-  //       document.execCommand("copy");
-  //       document.body.removeChild(textarea);
-  //     }
-  //     // UNDO
-  //     if ((e.ctrlKey || e.metaKey) && e.key === "z") {
-  //       e.preventDefault();
-
-  //       if (history.length === 0) return;
-
-  //       const prev = JSON.parse(JSON.stringify(history[history.length - 1])); // deep clone
-
-  //       console.log("Undoing to:", prev);
-
-  //       setRedoStack((r) => [tableData, ...r]);
-  //       setTableData(prev); // async
-  //       setHistory((h) => h.slice(0, -1));
-  //       lastSnapshotRef.current = JSON.stringify(prev);
-  //     }
-
-  //     if ((e.ctrlKey || e.metaKey) && e.key === "y") {
-  //       e.preventDefault();
-  //       if (redoStack.length === 0) return;
-
-  //       const next = redoStack[0];
-  //       setHistory((h) => [...h, tableData]);
-  //       setTableData(next);
-  //       setRedoStack((r) => r.slice(1));
-  //       lastSnapshotRef.current = JSON.stringify(next);
-  //     }
-
-  //     if (e.key === "Enter" && selectedCell) {
-  //       e.preventDefault();
-  //       setEditingCell(selectedCell);
-  //       return;
-  //     }
-  //     if (e.key === "Tab" && selectedCell) {
-  //       e.preventDefault();
-  //       setEditingCell(selectedCell);
-  //       return;
-  //     }
-
-  //     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-  //       e.preventDefault();
-  //       setEditingCell(selectedCell);
-
-  //       return;
-  //     }
-
-  //     // Escape to cancel editing
-  //     if (e.key === "Escape" && editingCell) {
-  //       e.preventDefault();
-
-  //       setEditingCell(null);
-  //       return;
-  //     }
-  //   };
-
-  //   window.addEventListener("keydown", handleKeyDown);
-  //   return () => window.removeEventListener("keydown", handleKeyDown);
-  // }, [
-  //   selectedRange?.start?.toString(),
-  //   selectedRange?.end?.toString(),
-  //   selectedCell?.toString(),
-  // ]);
 
   const insertRow = (index: number) => {
     const newRow = new Array(tableData[0].length).fill("");
@@ -1700,9 +1878,9 @@ export default function Table({
                             setDraggedColIndex(null);
                           }}
                           onDragOver={(e) => e.preventDefault()}
-                          className={`border ${isDragging ? "cursor-move" : "cursor-pointer"} ${
-                            i === 0 ? "" : ""
-                          }`}
+                          className={`border ${
+                            isDragging ? "cursor-move" : "cursor-pointer"
+                          } ${i === 0 ? "" : ""}`}
                         >
                           {columnHeaders[i]}
 
@@ -2245,12 +2423,21 @@ export default function Table({
                               }}
                               onClick={(e) => {
                                 // e.stopPropagation();
+                                if (!isCellEditable(rowIndex, colIndex)) {
+                                  // Just select the cell but don't enter edit mode
+                                  setSelectedCell([rowIndex, colIndex]);
+                                  setSelectionAnchor(null);
+                                  return;
+                                }
+
                                 setEditingCell([rowIndex, colIndex]);
                                 setSelectedCell([rowIndex, colIndex]);
                                 setSelectionAnchor(null);
                                 setIsFocusedEdit(false); // It's a single-click edit
                               }}
                               onDoubleClick={(e) => {
+                                if (!isCellEditable(rowIndex, colIndex)) return; // Prevent double-click editing
+
                                 e.stopPropagation();
                                 setEditingCell([rowIndex, colIndex]);
                                 setIsFocusedEdit(true); // Free edit mode
@@ -2303,6 +2490,7 @@ export default function Table({
                               <select
                                 value={cell}
                                 data-cell={`${rowIndex}-${colIndex}`}
+                                disabled={!isCellEditable(rowIndex, colIndex)}
                                 ref={
                                   editingCell?.[0] === rowIndex &&
                                   editingCell?.[1] === colIndex
@@ -2310,6 +2498,8 @@ export default function Table({
                                     : null
                                 }
                                 onChange={(e) => {
+                                  if (!isCellEditable(rowIndex, colIndex))
+                                    return; // Prevent changes
                                   handleCellChange(
                                     rowIndex,
                                     colIndex,
@@ -2317,6 +2507,7 @@ export default function Table({
                                   );
                                 }}
                                 onBlur={() => {
+                                  handleCellBlur(rowIndex, colIndex);
                                   setEditingCell(null);
                                 }}
                                 onMouseDown={(e) => {
@@ -2420,7 +2611,11 @@ export default function Table({
                                     });
                                   }
                                 }}
-                                className="w-full border outline-none text-sm p-2 bg-white"
+                                className={`w-full border outline-none text-sm p-2 ${
+                                  !isCellEditable(rowIndex, colIndex)
+                                    ? "bg-gray-100 cursor-not-allowed opacity-60"
+                                    : "bg-white"
+                                }`}
                               >
                                 <option value="">Select...</option>
                                 <option value="Yes">Yes</option>
@@ -2459,6 +2654,13 @@ export default function Table({
                                 });
                               }}
                               onClick={(e) => {
+                                if (!isCellEditable(rowIndex, colIndex)) {
+                                  // Just select the cell but don't enter edit mode
+                                  setSelectedCell([rowIndex, colIndex]);
+                                  setSelectionAnchor(null);
+                                  return;
+                                }
+
                                 // e.stopPropagation();
                                 setEditingCell([rowIndex, colIndex]);
                                 setSelectedCell([rowIndex, colIndex]);
@@ -2466,6 +2668,8 @@ export default function Table({
                                 setIsFocusedEdit(false); // It's a single-click edit
                               }}
                               onDoubleClick={(e) => {
+                                if (!isCellEditable(rowIndex, colIndex)) return; // Prevent double-click editing
+
                                 e.stopPropagation();
                                 setEditingCell([rowIndex, colIndex]);
                                 setIsFocusedEdit(true); // Free edit mode
@@ -2518,6 +2722,8 @@ export default function Table({
                               <textarea
                                 value={cell}
                                 data-cell={`${rowIndex}-${colIndex}`}
+                                readOnly={!isCellEditable(rowIndex, colIndex)}
+                                disabled={!isCellEditable(rowIndex, colIndex)}
                                 ref={
                                   editingCell?.[0] === rowIndex &&
                                   editingCell?.[1] === colIndex
@@ -2525,6 +2731,9 @@ export default function Table({
                                     : null
                                 }
                                 onChange={(e) => {
+                                  if (!isCellEditable(rowIndex, colIndex))
+                                    return;
+
                                   handleCellChange(
                                     rowIndex,
                                     colIndex,
@@ -2534,6 +2743,7 @@ export default function Table({
                                 }}
                                 onBlur={() => {
                                   // pushToHistory(tableData); // Only push once editing is done
+                                  handleCellBlur(rowIndex, colIndex);
                                   setEditingCell(null);
                                 }}
                                 onPaste={(e) => {
@@ -2573,58 +2783,6 @@ export default function Table({
                                     e.target as HTMLTextAreaElement
                                   )
                                 }
-                                // onKeyDown={(e) => {
-                                //   if (!editingCell) return;
-
-                                //   const [row, col] = editingCell;
-                                //   const maxRow = tableData.length - 1;
-                                //   const maxCol = tableData[0].length - 1;
-
-                                //   if (e.key === "Escape") {
-                                //     e.preventDefault();
-                                //     setEditingCell(null);
-                                //     return;
-                                //   }
-
-                                //   if (e.key === "Enter" && !e.shiftKey) {
-                                //     e.preventDefault();
-                                //     const nextRow = Math.min(row + 1, maxRow);
-                                //     setEditingCell([nextRow, col]);
-                                //     setSelectedCell([nextRow, col]);
-                                //     setSelectionAnchor([nextRow, col]);
-                                //     setSelectedRange({
-                                //       start: [nextRow, col],
-                                //       end: [nextRow, col],
-                                //     });
-                                //     return;
-                                //   }
-
-                                //   if (e.key === "Tab") {
-                                //     e.preventDefault();
-                                //     let nextCol = e.shiftKey
-                                //       ? col - 1
-                                //       : col + 1;
-                                //     let nextRow = row;
-
-                                //     console.log([nextRow, nextCol]);
-
-                                //     setEditingCell([nextRow, nextCol]);
-                                //     setSelectedCell([nextRow, nextCol]);
-                                //     setSelectionAnchor([nextRow, nextCol]);
-                                //     setSelectedRange({
-                                //       start: [nextRow, nextCol],
-                                //       end: [nextRow, nextCol],
-                                //     });
-
-                                //     setTimeout(() => {
-                                //       const el = document.querySelector(
-                                //         `[data-cell="${nextRow}-${nextCol}"]`
-                                //       );
-                                //       (el as HTMLTextAreaElement)?.focus();
-                                //       (el as HTMLTextAreaElement)?.select();
-                                //     }, 0);
-                                //   }
-                                // }}
                                 onKeyDown={(e) => {
                                   const [row = 0, col = 0] = editingCell ?? [];
                                   const maxRow = tableData.length - 1;
@@ -2772,7 +2930,11 @@ export default function Table({
                                   rowIndex === 0
                                     ? "text-black p-3! text-[15px]!"
                                     : "p-3!"
-                                } w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top`}
+                                } w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top ${
+                                  !isCellEditable(rowIndex, colIndex)
+                                    ? "bg-gray-100 cursor-not-allowed opacity-60"
+                                    : ""
+                                }`}
                                 rows={1}
                               />
                             </td>
