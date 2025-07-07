@@ -1,7 +1,6 @@
 "use client";
 // import ImageEditorModal from "@/components/image-editor/ImageEditorModal";
 import ImageEditorModal from "../image-editor/ImageEditorModal";
-import { toast } from "@/hooks/use-toast";
 import { useEffect, useRef } from "react"; // Make sure useRef is imported
 import React, { useState } from "react";
 
@@ -40,7 +39,7 @@ import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { Button } from "../ui/button";
 import { X } from "lucide-react";
-import { BaseNextResponse } from "next/dist/server/base-http";
+import { toast } from "sonner";
 function parseFraction(input: string): number {
   input = input.trim();
   if (!input) return 0;
@@ -58,26 +57,6 @@ function parseFraction(input: string): number {
   // Whole number
   return parseFloat(input);
 }
-
-// Helper to convert decimal to fraction string (up to 1/16 precision)
-// function toFractionString(value: number): string {
-//   if (isNaN(value)) return "";
-//   const whole = Math.floor(value);
-//   let frac = value - whole;
-//   let closest = "";
-//   let minDiff = 1;
-//   for (let d = 2; d <= 16; d++) {
-//     const n = Math.round(frac * d);
-//     const diff = Math.abs(frac - n / d);
-//     if (n > 0 && diff < minDiff) {
-//       closest = `${n}/${d}`;
-//       minDiff = diff;
-//     }
-//   }
-//   if (closest && whole > 0) return `${whole} ${closest}`;
-//   if (closest) return closest;
-//   return `${whole}`;
-// }
 
 function toFractionString(value: number): string {
   if (isNaN(value)) return "";
@@ -338,9 +317,14 @@ export default function Table({
       return newData;
     });
 
-    toast({
-      title: "Image updated",
+    // toast({
+    //   title: "Image updated",
+    //   description: "Your changes have been saved.",
+    // });
+    toast.success("Image Updated", {
       description: "Your changes have been saved.",
+      position: "top-right",
+      duration: 3000,
     });
     handleCloseImageEditor();
   };
@@ -780,9 +764,16 @@ export default function Table({
 
           if (hasNegativeSize) {
             // ✅ Show alert for negative sizes
-            alert(
-              "Invalid Size Calculation: The grading rule resulted in negative sizes. All size values and inputs will be cleared."
-            );
+            // alert(
+            //   "Invalid Size Calculation: The grading rule resulted in negative sizes. All size values and inputs will be cleared."
+            // );
+
+            toast.error("Invalid Size Calculation", {
+              description:
+                "The grading rule resulted in negative sizes. All size values and inputs will be cleared.",
+              position: "top-right",
+              duration: 3000,
+            });
 
             console.log(
               "Negative size detected, clearing all size values:",
