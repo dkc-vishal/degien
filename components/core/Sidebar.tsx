@@ -1,20 +1,28 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { FaUserFriends, FaTshirt } from "react-icons/fa";
 import { MdDashboard, MdLocalShipping } from "react-icons/md";
 import { GiSewingMachine } from "react-icons/gi";
 import { CgProfile } from "react-icons/cg";
 import { TbLogout } from "react-icons/tb";
-// import { toast } from "sonner";
+import { toast } from "sonner";
+import { API_ENDPOINTS } from "@/lib/api";
+import { IoIosNotifications } from "react-icons/io";
 
 export default function Sidebar({ isSidebarOpen }: any) {
   const isOpen: boolean = isSidebarOpen;
   const router = useRouter();
   const pathname = usePathname();
 
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    setUnreadCount(2);
+  }, [])
+
   const menuItems = [
-    { icon: <MdDashboard size={22} />, label: "Dashboard", path: "/dashboard" },
+    { icon: <MdDashboard size={22} />, label: "Dashboard", path: "/Dashboard" },
     {
       icon: <FaUserFriends size={22} />,
       label: "User Management",
@@ -50,16 +58,13 @@ export default function Sidebar({ isSidebarOpen }: any) {
     // }
 
     try {
-      const res = await fetch(
-        "http://shivam-mac.local:8000/api/v1.0/auth/logout/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ refresh: refreshToken }),
-        }
-      );
+      const res = await fetch(`${API_ENDPOINTS.logout.url}`, {
+        method: API_ENDPOINTS.logout.method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refresh: refreshToken }),
+      });
 
       if (!res.ok) {
         const err = await res.json();
@@ -68,9 +73,13 @@ export default function Sidebar({ isSidebarOpen }: any) {
         return;
       }
 
+      // removing localstorage saved infos 
+
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
-      // toast.success("Logged out successfully.");
+      localStorage.removeItem("loggedInUser");
+
+      toast.success("Logged out successfully.");
       router.push("/Auth/Login");
     } catch (error) {
       console.error("Logout error:", error);
@@ -91,7 +100,7 @@ export default function Sidebar({ isSidebarOpen }: any) {
 
       {/* Main Navigation */}
       <nav className="flex flex-col px-2 pt-4 space-y-2 flex-grow">
-        {menuItems.map((item, idx) => {
+        {menuItems.map((item:any, idx) => {
           const isActive = pathname.startsWith(item.path);
           return (
             <button
@@ -104,10 +113,19 @@ export default function Sidebar({ isSidebarOpen }: any) {
                   : "hover:bg-gray-800 text-gray-300"
               }`}
             >
-              <span className="text-[22px]">{item.icon}</span>
-              {/* {isOpen && ( */}
-              <span className="ml-4 text-[15px] font-medium">{item.label}</span>
-              {/* )} */}
+              <div className="flex items-center">
+                <span className="text-[22px]">{item.icon}</span>
+                {isOpen && (
+                  <span className="ml-4 text-[15px] font-medium">{item.label}</span>
+                )}
+              </div>
+
+              {/* Notification badge */}
+              {isOpen && item.label === "Notifications" && item.unread > 0 && (
+                <span className="text-xs bg-red-500 text-white px-2 py-[1px] rounded-full font-bold">
+                  {item.unread}
+                </span>
+              )}
             </button>
           );
         })}

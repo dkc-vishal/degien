@@ -19,7 +19,7 @@ const CreateStyleModal: React.FC<CreateStyleModalProps> = ({ onClose, onCreate }
                     onClick={onClose}
                     className="absolute top-4 right-6 text-red-500 hover:text-red-600 text-xl 
                    transform transition-transform duration-200 ease-in-out hover:bg-gray-100 
-                   rounded-full p-1 hover:scale-125 cursor-pointer"
+                   rounded-full p-1 cursor-pointer"
                 >
                     <RxCross2 />
                 </button>

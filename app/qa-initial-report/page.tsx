@@ -286,17 +286,17 @@ export default function QaIntialReport() {
             </div>
           </div>
         </div>
-        <div style={{ marginTop: "75px" }} className="print-container">
-          {columnHeaders.length > 0 && (
-            <Table
-              col={12}
-              row={20}
-              imagecol={3}
-              tablename="mid-final"
-              columnheaders={columnHeaders}
-              spreadsheet={tableData}
-            />
-          )}
+        <div style={{marginTop:"75px"}} className="print-container">
+               {columnHeaders.length>0 && (
+                 <Table
+                   col={12}
+                   row={50}
+                   imagecol={3}
+                   tablename="mid-final"
+                   columnheaders={columnHeaders}
+                   spreadsheet={tableData}
+                 />
+               )}
         </div>
       </div>
     </>

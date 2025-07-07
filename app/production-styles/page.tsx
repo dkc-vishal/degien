@@ -1,26 +1,27 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { LayoutGrid, List, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import CreateStyleModal from "@/components/core/CreateStyleModal";
 
 const StyleCard = ({ styleName, image, order, quantity, onClick }) => (
   <div
     onClick={onClick}
-    className="flex flex-col bg-white rounded-lg shadow-sm border border-gray-100 hover:border-blue-400 hover:shadow-md transition duration-200 transform hover:-translate-y-1 cursor-pointer w-[250px] h-[260px] mb-8"
+    className="flex flex-col bg-white rounded-[2px] shadow-sm border border-gray-100 hover:border-blue-400 hover:shadow-md cursor-pointer w-[340px] h-[370px] mb-1"
   >
     {/* Style Name */}
-    <div className="px-3 pt-2 pb-1 text-[18px] font-extrabold text-gray-800 border-b border-gray-100 h-[56px] flex items-center justify-center leading-tight overflow-hidden whitespace-nowrap truncate line-clamp-1">
+    <div className="px-3 pt-2 pb-1 text-[20px] font-extrabold text-gray-800 border-b border-gray-100 h-[60px] flex items-center justify-center leading-tight overflow-hidden whitespace-nowrap truncate line-clamp-1">
       {styleName}
     </div>
 
     {/* Image or No Image Placeholder */}
-    <div className="w-[140px] h-[120px] mx-auto mt-2 flex items-center justify-center">
+
+    <div className="w-[270px] h-[210px] mx-auto mt-4 flex items-center justify-center">
       {image ? (
         <img
           src={image}
           alt={styleName}
-          className="w-[140px] h-[120px] object-cover"
+          className="w-full h-full object-cover rounded-[2px]"
         />
       ) : (
         <span className="italic text-red-600 font-semibold text-sm text-center">
@@ -30,7 +31,7 @@ const StyleCard = ({ styleName, image, order, quantity, onClick }) => (
     </div>
 
     {/* Order & Qty */}
-    <div className="pl-4 mt-4 text-sm text-gray-700 font-semibold">
+    <div className="pl-6 mt-6 text-base text-gray-700 font-semibold space-y-1">
       <div>Order: {order}</div>
       <div>Qty: {quantity}</div>
     </div>
@@ -39,15 +40,10 @@ const StyleCard = ({ styleName, image, order, quantity, onClick }) => (
 
 const ProductionStyles = () => {
 
-  const [styles, setStyles] = useState<StyleType[]>([]);
+  const [styles, setStyles] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const [viewMode, setViewMode] = useState("card");
-  const router = useRouter();
-
-  // create new style modal state 
-
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchStyles = async () => {
@@ -70,7 +66,7 @@ const ProductionStyles = () => {
     fetchStyles();
   }, []);
 
-  const handleCreateStyle = (styleName: string) => {
+  const handleCreateStyle = (styleName) => {
     const newStyle = {
       styleName,
       image: "",
@@ -87,76 +83,32 @@ const ProductionStyles = () => {
   };
 
   return (
-    <div className="w-full px-6 py-8">
+    <div className="w-full min-h-screen bg-gray-50 px-8 py-10">
       <div className="flex justify-between items-center mb-6 border-b pb-4 border-gray-200">
-        <h2 className="text-2xl font-bold text-gray-800">Styles</h2>
-        <div className="flex items-center gap-8 mr-32">
+        <h2 className="text-3xl font-bold text-gray-800">Production Styles</h2>
+        <div className="flex items-center gap-6 mr-32">
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-1 px-4 py-1.5 bg-blue-400 hover:bg-white hover:text-blue-400 text-white text-lg rounded-md transition cursor-pointer border border-transparent shadow-md hover:border-blue-400"
+            className="inline-flex items-center gap-2 px-5 py-2 bg-blue-400 hover:bg-white hover:text-blue-400 text-white text-lg rounded-md transition cursor-pointer border border-transparent shadow-md hover:border-blue-400"
           >
             <Plus className="w-6 h-6" />
             Create New Style
           </button>
-          <button
-            onClick={() => setViewMode(viewMode === "card" ? "list" : "card")}
-            className="bg-blue-100 hover:bg-blue-500 text-blue-400 p-2 rounded-full transition cursor-pointer hover:text-white"
-            aria-label="Toggle View"
-            title="Toggle View"
-          >
-            {viewMode === "card" ? <List className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
-          </button>
         </div>
       </div>
 
-      {viewMode === "card" ? (
-        <div className="flex flex-wrap gap-12 justify-center mt-9">
-          {styles.map((style, index) => (
-            <StyleCard key={index} {...style} onClick={() => handleCardClick(style.styleName)} />
-          ))}
-        </div>
-      ) : (
-        <div className="overflow-x-auto mt-6">
-          <table className="min-w-full bg-white rounded-xl shadow-sm text-sm">
-            <thead className="bg-blue-50 text-blue-700">
-              <tr className="text-center font-medium">
-                <th className="px-6 py-3">Style Name</th>
-                <th className="px-6 py-3">Image</th>
-                <th className="px-6 py-3">Order</th>
-                <th className="px-6 py-3">Quantity</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {styles.map((style, index) => (
-                <tr key={index} onClick={() => handleCardClick(style.styleName)} className="hover:bg-blue-50 text-center transition-all cursor-pointer">
-                  <td className="px-6 py-4 font-medium text-gray-800">{style.styleName}</td>
-                  <td className="px-6 py-4">
-                    {style.image ? (
-                      <img src={style.image} alt={style.styleName} className="w-14 h-14 object-cover rounded-md mx-auto" />
-                    ) : (
-                      <span className="text-red-600 font-bold">No Image Uploaded!</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">{style.order}</td>
-                  <td className="px-6 py-4">{style.quantity}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-9 mt-9">
+        {styles.map((style, index) => (
+          <StyleCard key={index} {...style} onClick={() => handleCardClick(style.styleName)} />
+        ))}
+      </div>
+
+      {showCreateModal && (
+        <CreateStyleModal
+          onClose={() => setShowCreateModal(false)}
+          onCreate={handleCreateStyle}
+        />
       )}
-
-      {/* Create new style modal */}
-
-      {
-        showCreateModal && (
-          <CreateStyleModal
-            onClose={() => setShowCreateModal(false)}
-            onCreate={handleCreateStyle}
-          />
-        )
-      }
-
     </div>
   );
 };

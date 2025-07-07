@@ -30,6 +30,7 @@ interface CurveToolProps {
 export const CurveTool: React.FC<CurveToolProps> = ({
   active,
   canvasRef,
+
   onFinishCurve,
   setActiveTool,
   currentColor,
@@ -212,6 +213,7 @@ export const CurveTool: React.FC<CurveToolProps> = ({
 
     const rect = canvas.getBoundingClientRect();
 
+
     // Calculate position relative to the canvas
     return {
       x: e.clientX - rect.left,
@@ -249,6 +251,7 @@ export const CurveTool: React.FC<CurveToolProps> = ({
     const hitIndex = curves.findIndex((curve) =>
       curve.some((pt) => isNear(pt, pos, 8))
     );
+
 
     if (hitIndex !== -1) {
       setSelectedCurveIndex(hitIndex);
@@ -316,6 +319,14 @@ export const CurveTool: React.FC<CurveToolProps> = ({
     }
   };
 
+  useEffect(draw, [
+    curves,
+    currentCurve,
+    selectedCurveIndex,
+    dragging,
+    drawing,
+    mousePos,
+  ]);
   useEffect(draw, [
     curves,
     currentCurve,

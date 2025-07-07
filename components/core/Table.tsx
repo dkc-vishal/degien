@@ -3,7 +3,7 @@ import ImageEditorModal from "@/components/image-editor/ImageEditorModal";
 import { toast } from "@/hooks/use-toast";
 import { useEffect, useRef } from "react"; // Make sure useRef is imported
 import React, { useState } from "react";
-
+import axios from "axios";
 export interface Issue {
   id: string;
   // description: string;
@@ -19,11 +19,35 @@ import {
   FaWrench,
   FaTools,
 } from "react-icons/fa";
+import { API_ENDPOINTS } from "@/lib/api";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { IssueImage } from "@/types";
 import { Button } from "../ui/button";
 import { X } from "lucide-react";
+import { get } from "http";
+import { set } from "date-fns";
+type AllowedDataType = "str" | "number" | "bool" | string;
+
+type CellData = {
+  cell_id: string;
+  row: number;
+  column: number;
+  value: AllowedDataType | string[];
+  data_type: AllowedDataType | string[];
+  is_editable: boolean;
+  is_header: boolean;
+  has_shape: boolean;
+};
+type CellHistory = {
+  cell_history_id: string;
+  created_at: string; // ISO 8601 date string
+  edited_by: string;
+  has_shape: boolean;
+  is_highlighted: boolean;
+  new_value: string;
+  old_value: string;
+};
 export default function Table({
   tablename,
   col,
@@ -42,16 +66,12 @@ export default function Table({
     col: number;
     x: number;
     y: number;
-    history: {
-      oldValue: string;
-      newValue: string;
-      editedBy: string;
-      editedAt: string;
-    }[];
+    history: CellHistory[];
   } | null>(null);
 
   const [isDragging, setIsDragging] = useState(false);
-  type TableRow = (string | string[])[];
+
+  type TableRow = CellData[];
   const [cellShapes, setCellShapes] = useState<Record<string, string>>({});
 
   const [draggedRowIndex, setDraggedRowIndex] = useState<number | null>(null);
@@ -94,12 +114,12 @@ export default function Table({
   );
   const tableRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const shareddata = localStorage.getItem(`table_data_${tablename}`);
-    if (shareddata) {
-      setTableData(JSON.parse(shareddata));
-    }
-  }, []);
+  // useEffect(() => {
+  //   const shareddata = localStorage.getItem(`table_data_${tablename}`);
+  //   if (shareddata) {
+  //     setTableData(JSON.parse(shareddata));
+  //   }
+  // }, []);
   const [colWidths, setColWidths] = useState(
     Array.from({ length: columnheaders.length }, (_, i) => columnheaders[i]) // Default width of 100 if not specified
   );
@@ -187,26 +207,60 @@ export default function Table({
     setIsImageEditorOpen(false);
     setEditingImageInfo(null);
   };
-
-  const handleSaveEditedImage = (newImageDataUrl: string) => {
-    const { rownumber, colnumber, imgindex } = imageSeleted;
-    setTableData((prevData) => {
-      const newData = [...prevData];
-      const row = [...newData[rownumber]];
-      const images = [...(row[colnumber] as string[])];
-
-      images[imgindex] = newImageDataUrl; // Replace image at index
-      row[colnumber] = images;
-      newData[rownumber] = row;
-
-      return newData;
+  function generateUUID() {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === "x" ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
     });
-    toast({
-      title: "Image updated",
-      description: "Your changes have been saved.",
+  }
+
+  const generateEmptyRow = (rowIndex: number): TableRow => {
+    return Array.from({ length: col }, (_, colIndex) => {
+      return {
+        cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+
+        row: rowIndex,
+        column: colIndex,
+        value: "",
+        data_type: "str", // or infer from columnHeaders if needed
+        is_editable: true,
+        is_header: false,
+        has_shape: false,
+      };
     });
-    handleCloseImageEditor();
   };
+const handleSaveEditedImage = (newImageDataUrl: string) => {
+  const { rownumber, colnumber, imgindex } = imageSeleted;
+
+  setTableData((prevData) => {
+    const newData = [...prevData];
+    const cell = newData[rownumber][colnumber];
+
+    const isSingleImage =
+      cell.data_type === "single_image" ;
+
+    if (isSingleImage && Array.isArray(cell.value)) {
+      const updatedImages = [...cell.value];
+      updatedImages[imgindex] = newImageDataUrl;
+
+      newData[rownumber][colnumber] = {
+        ...cell,
+        value: updatedImages,
+      };
+    }
+
+    return newData;
+  });
+
+  toast({
+    title: "Image updated",
+    description: "Your changes have been saved.",
+  });
+
+  handleCloseImageEditor();
+};
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -227,11 +281,7 @@ export default function Table({
     };
   }, []);
   const [tableData, setTableData] = useState<TableRow[]>(
-    Array.from({ length: row }, () =>
-      Array.from({ length: col }, (_, colIndex) =>
-        columnHeaders[colIndex] === "Measurement Picture" ? [] : ""
-      )
-    )
+    Array.from({ length: row }, () => generateEmptyRow(row))
   );
   const [autofillStart, setAutofillStart] = useState<[number, number] | null>(
     null
@@ -239,8 +289,27 @@ export default function Table({
   const [autofillTarget, setAutofillTarget] = useState<[number, number] | null>(
     null
   );
-
+  const setCellValue = (celldata: CellData) => {
+    if (celldata.data_type === "single_image") {
+      celldata.value = []; // Ensure value is an array for single_image type
+    }
+    setTableData((prevData) => {
+      const newData = [...prevData]; // shallow copy rows
+      const newRow = [...newData[celldata.row]];
+      newRow[celldata.column] = celldata; // update the specific cell
+      newData[celldata.row] = newRow; // put the updated row back
+      return newData; // update the whole table
+    });
+  };
+  useEffect(() => {
+    const sheeetdata = spreadsheet.cells;
+    for (const [key, cell] of Object.entries(sheeetdata)) {
+      const typedCell = cell as CellData;
+      setCellValue(typedCell);
+    }
+  }, []);
   const [contextMenu, setContextMenu] = useState<{
+    cellid: string | null;
     visible: boolean;
     x: number;
     y: number;
@@ -261,7 +330,16 @@ export default function Table({
     col: number;
     isHeader?: boolean;
   } | null>(null);
-
+  useEffect(() => {
+    if (contextMenu?.visible) {
+      // Do something after contextMenu is set and visible
+      console.log("Context menu updated:", contextMenu);
+    }
+  }, [contextMenu]);
+  useEffect(() => {
+    // Do something after contextMenu is set and visible
+    console.log("Context menu updated:", selectedHistory);
+  }, [selectedHistory]);
   const [selectionAnchor, setSelectionAnchor] = useState<
     [number, number] | null
   >(null);
@@ -284,50 +362,72 @@ export default function Table({
     startCol: number
   ) => {
     e.preventDefault();
-    console.log(e.clipboardData);
+
     const clipboard = e.clipboardData.getData("text");
 
-    const rows = clipboard
-      .split(/\r?\n/) // No trim!
-      .map((row) => row.split("\t"));
+    const rows = clipboard.split(/\r?\n/).map((row) => row.split("\t"));
 
-    // Clone current table
     let updated = [...tableData];
 
-    // 🆕 Auto-expand rows if needed
+    // 🆕 Auto-expand rows
     while (updated.length < startRow + rows.length) {
-      updated.push(Array(updated[0].length).fill(""));
+      const newRowIndex = updated.length;
+      const newRow: CellData[] = Array.from(
+        { length: updated[0].length },
+        (_, colIndex) => ({
+          cell_id: crypto.randomUUID(),
+          row: newRowIndex,
+          column: colIndex,
+          value: "",
+          data_type: "str",
+          is_editable: true,
+          is_header: false,
+          has_shape: false,
+        })
+      );
+      updated.push(newRow);
     }
 
-    // 🆕 Auto-expand columns if needed
-    while (updated[0].length < startCol + rows[0].length) {
-      updated = updated.map((row) => [
-        ...row,
-        ...Array(startCol + rows[0].length - row.length).fill(""),
-      ]);
+    // 🆕 Auto-expand columns
+    const neededCols = startCol + rows[0].length;
+    if (updated[0].length < neededCols) {
+      updated = updated.map((row, rowIndex) => {
+        const extraCells = Array.from(
+          { length: neededCols - row.length },
+          (_, colOffset) => ({
+            cell_id: crypto.randomUUID(),
+            row: rowIndex,
+            column: row.length + colOffset,
+            value: "",
+            data_type: "str",
+            is_editable: true,
+            is_header: false,
+            has_shape: false,
+          })
+        );
+        return [...row, ...extraCells];
+      });
     }
 
-    // Paste the copied values into the updated table
+    // ✅ Paste clipboard data into cells
     rows.forEach((row, rowOffset) => {
       row.forEach((value, colOffset) => {
         const r = startRow + rowOffset;
         const c = startCol + colOffset;
-        updated[r][c] = value;
+        updated[r][c] = {
+          ...updated[r][c],
+          value,
+        };
       });
     });
-    pushToHistory(tableData);
 
+    pushToHistory(tableData);
     setTableData(updated);
   };
   useEffect(() => {
     localStorage.setItem(`table_data_${tablename}`, JSON.stringify(tableData));
   }, [tableData]);
-  const menuItems = [
-    { icon: <FaTachometerAlt />, label: "Dashboard" },
-    { icon: <FaClipboardList />, label: "Tech Specs" },
-    { icon: <FaTools />, label: "Inspections" },
-    { icon: <FaWrench />, label: "Settings" },
-  ];
+
   const [searchTerm, setSearchTerm] = useState("");
 
   // Table: 5 rows x 12 cols, with editable default values
@@ -353,38 +453,19 @@ export default function Table({
     setHistory((prev) => [...prev, JSON.parse(snapshot)]);
     setRedoStack([]); // clear redo on new action
   };
-  const [editHistoryMap, setEditHistoryMap] = useState<
-    Record<
-      string,
-      {
-        oldValue: string;
-        newValue: string;
-        editedBy: string;
-        editedAt: string;
-      }[]
-    >
-  >({});
+  const [editHistoryMap, setEditHistoryMap] = useState<CellHistory[]>([]);
 
   const handleCellChange = (row: number, col: number, value: string) => {
     pushToHistory(tableData); // ✅ Store before editing
-    const oldValue = tableData[row][col] as string;
+    const oldValue = tableData[row][col].value as string;
 
     const key = `${row}-${col}`;
     const updated = [...tableData];
-    updated[row][col] = value;
+    updated[row][col] = {
+      ...updated[row][col],
+      value,
+    };
     setTableData(updated);
-    setEditHistoryMap((prev) => ({
-      ...prev,
-      [key]: [
-        ...(prev[key] || []),
-        {
-          oldValue: oldValue,
-          newValue: value,
-          editedBy: "vishal",
-          editedAt: new Date().toLocaleString(),
-        },
-      ],
-    }));
   };
 
   const autoResizeTextarea = (el: HTMLTextAreaElement) => {
@@ -413,7 +494,8 @@ export default function Table({
     return () => window.removeEventListener("mouseup", handleMouseUp);
   }, []);
   const getImageAt = (row: number, col: number, index: number) => {
-    return tableData[row][col][index]; // Example
+    console.log(tableData[row][col].value[index]);
+    return tableData[row][col].value[index]; // Example
   };
 
   const updateImageAt = (
@@ -423,194 +505,49 @@ export default function Table({
     image: string
   ) => {
     const updated = [...tableData];
-    if (Array.isArray(updated[row][col])) {
-      (updated[row][col] as string[])[index] = image;
+    if (Array.isArray(updated[row][col].value)) {
+      (updated[row][col].value as string[])[index] = image;
     }
     setTableData(updated);
   };
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        if (e.key.toLowerCase() === "c") {
-          if (imageSeleted) {
-            const { rownumber, colnumber, imgindex } = imageSeleted;
-            const src = getImageAt(rownumber, colnumber, imgindex); // Your function to get image src
-            setCopiedImage(src);
-          }
-        }
-        if (e.key.toLowerCase() === "v") {
-          if (copiedImage && imageSeleted) {
-            const { rownumber, colnumber, imgindex } = imageSeleted;
-            updateImageAt(rownumber, colnumber, imgindex, copiedImage);
-          }
-        }
-      }
-    };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [imageSeleted, copiedImage]);
   useEffect(() => {
     if (inputRef.current) {
       // inputRef.current.focus();
       // inputRef.current.select(); // Optional: selects all text
     }
   }, [editingCell]);
-  //   useEffect(() => {
-  //   console.log("Updated history:", history);
-  // }, [history]);
-  // useEffect(() => {
-  //   if (typeof window === "undefined") return;
-
-  //   const handleKeyDown = (e: KeyboardEvent) => {
-  //     if ((e.ctrlKey || e.metaKey) && e.key === "c") {
-  //       if (!selectedRange && !selectedCell) return;
-
-  //       let start: [number, number], end: [number, number];
-
-  //       if (selectedRange) {
-  //         ({ start, end } = selectedRange);
-  //       } else if (selectedCell) {
-  //         start = end = selectedCell;
-  //       } else return;
-
-  //       const startRow = Math.min(start[0], end[0]);
-  //       const endRow = Math.max(start[0], end[0]);
-  //       const startCol = Math.min(start[1], end[1]);
-  //       const endCol = Math.max(start[1], end[1]);
-
-  //       let copiedText = "";
-  //       for (let row = startRow; row <= endRow; row++) {
-  //         const rowData = [];
-  //         for (let col = startCol; col <= endCol; col++) {
-  //           rowData.push(tableData?.[row]?.[col] ?? "");
-  //         }
-  //         copiedText += rowData.join("\t") + "\n";
-  //       }
-
-  //       e.preventDefault();
-
-  //       // ✅ Fallback method using execCommand
-  //       const textarea = document.createElement("textarea");
-  //       textarea.value = copiedText;
-  //       document.body.appendChild(textarea);
-  //       textarea.select();
-  //       try {
-  //         document.execCommand("copy");
-  //         console.log("Copied to clipboard via fallback");
-  //       } catch (err) {
-  //         console.error("Fallback copy failed:", err);
-  //       }
-  //       document.body.removeChild(textarea);
-  //     }
-  //     if ((e.ctrlKey || e.metaKey) && e.key === "x") {
-  //       console.log(!selectedRange && !selectedCell);
-  //       if (!selectedRange && !selectedCell) return;
-
-  //       let start: [number, number], end: [number, number];
-  //       if (selectedRange) {
-  //         ({ start, end } = selectedRange);
-  //       } else if (selectedCell) {
-  //         start = end = selectedCell;
-  //       } else return;
-
-  //       const startRow = Math.min(start[0], end[0]);
-  //       const endRow = Math.max(start[0], end[0]);
-  //       const startCol = Math.min(start[1], end[1]);
-  //       const endCol = Math.max(start[1], end[1]);
-
-  //       let copiedText = "";
-  //       const updated = [...tableData];
-
-  //       for (let row = startRow; row <= endRow; row++) {
-  //         const rowData = [];
-  //         for (let col = startCol; col <= endCol; col++) {
-  //           rowData.push(updated[row][col]);
-  //           updated[row][col] = ""; // Clear content
-  //         }
-  //         copiedText += rowData.join("\t") + "\n";
-  //       }
-
-  //       setTableData(updated);
-  //       e.preventDefault();
-
-  //       const textarea = document.createElement("textarea");
-  //       textarea.value = copiedText;
-  //       document.body.appendChild(textarea);
-  //       textarea.select();
-  //       document.execCommand("copy");
-  //       document.body.removeChild(textarea);
-  //     }
-  //     // UNDO
-  //     if ((e.ctrlKey || e.metaKey) && e.key === "z") {
-  //       e.preventDefault();
-
-  //       if (history.length === 0) return;
-
-  //       const prev = JSON.parse(JSON.stringify(history[history.length - 1])); // deep clone
-
-  //       console.log("Undoing to:", prev);
-
-  //       setRedoStack((r) => [tableData, ...r]);
-  //       setTableData(prev); // async
-  //       setHistory((h) => h.slice(0, -1));
-  //       lastSnapshotRef.current = JSON.stringify(prev);
-  //     }
-
-  //     if ((e.ctrlKey || e.metaKey) && e.key === "y") {
-  //       e.preventDefault();
-  //       if (redoStack.length === 0) return;
-
-  //       const next = redoStack[0];
-  //       setHistory((h) => [...h, tableData]);
-  //       setTableData(next);
-  //       setRedoStack((r) => r.slice(1));
-  //       lastSnapshotRef.current = JSON.stringify(next);
-  //     }
-
-  //     if (e.key === "Enter" && selectedCell) {
-  //       e.preventDefault();
-  //       setEditingCell(selectedCell);
-  //       return;
-  //     }
-  //     if (e.key === "Tab" && selectedCell) {
-  //       e.preventDefault();
-  //       setEditingCell(selectedCell);
-  //       return;
-  //     }
-
-  //     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
-  //       e.preventDefault();
-  //       setEditingCell(selectedCell);
-
-  //       return;
-  //     }
-
-  //     // Escape to cancel editing
-  //     if (e.key === "Escape" && editingCell) {
-  //       e.preventDefault();
-
-  //       setEditingCell(null);
-  //       return;
-  //     }
-  //   };
-
-  //   window.addEventListener("keydown", handleKeyDown);
-  //   return () => window.removeEventListener("keydown", handleKeyDown);
-  // }, [
-  //   selectedRange?.start?.toString(),
-  //   selectedRange?.end?.toString(),
-  //   selectedCell?.toString(),
-  // ]);
 
   const insertRow = (index: number) => {
-    pushToHistory(tableData); // ✅ Store before editing
-    const newRow = new Array(tableData[0].length).fill("");
+    const colCount = tableData[0]?.length || 0;
+
+    // ✅ 1. Create a full row of CellData
+    const newRow: CellData[] = Array.from(
+      { length: colCount },
+      (_, colIndex) => ({
+        cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+        row: index,
+        column: colIndex,
+        value: "",
+        data_type: "str",
+        is_editable: true,
+        is_header: false,
+        has_shape: false,
+      })
+    );
+
+    // ✅ 2. Insert and reindex affected rows
     const updated = [
       ...tableData.slice(0, index),
       newRow,
-      ...tableData.slice(index),
+      ...tableData.slice(index).map((row, rowIdx) =>
+        row.map((cell, colIdx) => ({
+          ...cell,
+          row: index + 1 + rowIdx,
+        }))
+      ),
     ];
+    console.log(newRow);
     setTableData(updated);
   };
 
@@ -618,21 +555,37 @@ export default function Table({
     pushToHistory(tableData); // ✅ Store before editing
     // Update column headers
     const newHeaders = [...columnHeaders];
-    newHeaders.splice(index, 0, "");
+    newHeaders.splice(index, 0, ""); // Insert empty header at index
     setColumnHeaders(newHeaders);
 
-    // Update table data
-    const newData = tableData.map((row) => {
-      pushToHistory(tableData); // ✅ Store before editing
+    // ✅ 2. Update table data with a new CellData inserted at index in each row
+    const newData = tableData.map((row, rowIndex) => {
       const newRow = [...row];
-      newRow.splice(index, 0, "");
-      return newRow;
+
+      const newCell: CellData = {
+        cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+        row: rowIndex,
+        column: index,
+        value: "",
+        data_type: "str",
+        is_editable: true,
+        is_header: false,
+        has_shape: false,
+      };
+
+      newRow.splice(index, 0, newCell);
+
+      // Re-index columns after inserted cell
+      return newRow.map((cell, colIdx) => ({
+        ...cell,
+        column: colIdx,
+      }));
     });
     setTableData(newData);
 
-    // Update column widths
+    // ✅ 3. Update column widths
     const newWidths = [...colWidths];
-    newWidths.splice(index, 0, 100); // 100 is default width; change as needed
+    newWidths.splice(index, 0, 100); // Default width
     setColWidths(newWidths);
   };
 
@@ -664,7 +617,6 @@ export default function Table({
     });
     setTableData(newData);
   };
-
   const handleImagePasteOrDrop = (
     files: File[],
     rowIndex: number,
@@ -676,17 +628,22 @@ export default function Table({
     if (imageFiles.length === 0) return;
 
     const imageUrls = imageFiles.map((file) => URL.createObjectURL(file));
-
+    console.log(imageUrls);
     setTableData((prev) => {
       const updated = [...prev];
-      const current = updated[rowIndex][colIndex];
+      const currentCell = updated[rowIndex][colIndex].value;
 
-      const existingUrls = Array.isArray(current) ? current : [];
+      // Make sure the value is an array of strings (image URLs)
+      const existingUrls: string[] = Array.isArray(currentCell)
+        ? currentCell.map((v) => String(v))
+        : [];
+
       const newUniqueUrls = imageUrls.filter(
         (url) => !existingUrls.includes(url)
       );
 
-      updated[rowIndex][colIndex] = [...existingUrls, ...newUniqueUrls];
+      updated[rowIndex][colIndex].value = [...existingUrls, ...newUniqueUrls];
+
       return updated;
     });
   };
@@ -783,14 +740,19 @@ export default function Table({
 
   const clearSelectedCells = () => {
     pushToHistory(tableData); // ✅ Store before editing
+
     if (!selectedRange) return;
 
     const { start, end } = selectedRange;
+
     const [startRow, startCol] = start;
+
     const [endRow, endCol] = end;
 
     const newData = [...tableData];
+
     console.log(newData);
+
     for (
       let row = Math.min(startRow, endRow);
       row <= Math.max(startRow, endRow);
@@ -801,7 +763,16 @@ export default function Table({
         col <= Math.max(startCol, endCol);
         col++
       ) {
-        newData[row][col] = ""; // Clear cell content
+        newData[row][col] = {
+          cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+          row: row,
+          column: col,
+          value: "",
+          data_type: "str",
+          is_editable: true,
+          is_header: false,
+          has_shape: false,
+        }; // Clear cell content
       }
     }
 
@@ -964,6 +935,29 @@ export default function Table({
       document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [autofillStart, autofillTarget, tableData]);
+  useEffect(() => {
+    console.log("first");
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key.toLowerCase() === "c") {
+          if (imageSeleted) {
+            const { rownumber, colnumber, imgindex } = imageSeleted;
+            const src = getImageAt(rownumber, colnumber, imgindex); // Your function to get image src
+            setCopiedImage(src);
+          }
+        }
+        if (e.key.toLowerCase() === "v") {
+          if (copiedImage && imageSeleted) {
+            const { rownumber, colnumber, imgindex } = imageSeleted;
+            updateImageAt(rownumber, colnumber, imgindex, copiedImage);
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [imageSeleted, copiedImage]);
   useKeyboardShortcuts({
     tableData,
     setTableData,
@@ -980,6 +974,31 @@ export default function Table({
     setRedoStack,
     lastSnapshotRef,
   });
+  const getCellHistory = async (cellid: string, contextMenu: { row: number; col: number; x: number; y: number }) => {
+const res = await axios.get(API_ENDPOINTS.cellHistory(cellid).url);
+
+const updatedMap = { ...editHistoryMap, ...res.data.data };
+
+const key = `${contextMenu.row}-${contextMenu.col}`;
+    setSelectedHistory((s) => ({
+      ...s,
+      key,
+      row: contextMenu.row,
+      col: contextMenu.col,
+      x: contextMenu.x,
+      y: contextMenu.y,
+      history: updatedMap,
+    }));
+    setSelectedHistoryIndex(Object.keys(updatedMap).length - 1);
+
+
+
+                
+
+
+  };
+
+
   return (
     <>
       {contextMenu1?.visible && (
@@ -1110,7 +1129,7 @@ export default function Table({
               Delete Row
             </li>
 
-            <li
+            {/* <li
               onClick={() => {
                 deleteCol(contextMenu.col);
                 setContextMenu(null);
@@ -1118,21 +1137,14 @@ export default function Table({
               className="hover:bg-gray-100 px-4 py-2 cursor-pointer text-red-500"
             >
               Delete Column
-            </li>
+            </li> */}
             <li
               onClick={() => {
-                const key = `${contextMenu.row}-${contextMenu.col}`;
-                const history = editHistoryMap[key] || [];
-                setSelectedHistory({
-                  key,
-                  row: contextMenu.row,
-                  col: contextMenu.col,
-                  x: contextMenu.x,
-                  y: contextMenu.y,
-                  history,
-                });
-                setSelectedHistoryIndex(history.length - 1);
-                // setContextMenu(null);
+                if (contextMenu.cellid) {
+                  getCellHistory(contextMenu.cellid, contextMenu);
+                }
+               
+                setContextMenu(null);
               }}
               className="hover:bg-gray-100 px-4 py-2 cursor-pointer text-blue-600"
             >
@@ -1178,7 +1190,8 @@ export default function Table({
           </div>
         </div>
       )}
-      {selectedHistory && selectedHistory.history.length > 0 && (
+      {selectedHistory && (
+
         <div
           className="absolute bg-white border border-gray-300 rounded-lg shadow-lg w-80 z-50"
           style={{
@@ -1207,15 +1220,15 @@ export default function Table({
               {/* Next Button */}
               <button
                 disabled={
-                  selectedHistoryIndex >= selectedHistory.history.length - 1
+                  selectedHistoryIndex >= Object.keys(selectedHistory.history).length - 1
                 }
                 onClick={() =>
                   setSelectedHistoryIndex((i) =>
-                    Math.min(i + 1, selectedHistory.history.length - 1)
+                    Math.min(i + 1, Object.keys(selectedHistory.history).length - 1)
                   )
                 }
                 className={`text-lg px-1 transition ${
-                  selectedHistoryIndex >= selectedHistory.history.length - 1
+                  selectedHistoryIndex >= Object.keys(selectedHistory.history).length - 1
                     ? "text-gray-300"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
@@ -1224,31 +1237,30 @@ export default function Table({
               </button>
             </div>
           </div>
-
-          <div className="p-4">
+                <div className="p-4">
             {(() => {
               const entry = selectedHistory.history[selectedHistoryIndex];
               return (
                 <div className="flex gap-3 items-start">
                   <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white font-semibold">
-                    {entry.editedBy.charAt(0).toUpperCase()}
+                    {entry.edited_by.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">
                     <div className="font-medium text-sm text-gray-800">
-                      {entry.editedBy}
+                      {entry.edited_by}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {entry.editedAt}
+                      {entry.created_at}
                     </div>
                     <div className="mt-1 text-sm text-gray-700">
                       Previous_value:{" "}
                       <span className="italic text-red-500">
-                        "{entry.oldValue}"
+                        "{entry.old_value}"
                       </span>{" "}
                       <br />
                       New_Value:
                       <span className="italic text-green-600">
-                        "{entry.newValue}"
+                        "{entry.new_value}"
                       </span>
                       <br />
                       has_shape:
@@ -1513,8 +1525,10 @@ export default function Table({
                     .filter((row) =>
                       row.some(
                         (cell) =>
-                          typeof cell === "string" &&
-                          cell.toLowerCase().includes(searchTerm.toLowerCase())
+                          typeof cell.value === "string" &&
+                          cell.value
+                            .toLowerCase()
+                            .includes(searchTerm.toLowerCase())
                       )
                     )
                     .map((row, rowIndex) => (
@@ -1788,13 +1802,14 @@ export default function Table({
                                     const updated = [...tableData];
                                     if (
                                       !Array.isArray(
-                                        updated[rowIndex][colIndex]
+                                        updated[rowIndex][colIndex].value
                                       )
                                     )
-                                      updated[rowIndex][colIndex] = [];
+                                      updated[rowIndex][colIndex].value = [];
 
                                     (
-                                      updated[rowIndex][colIndex] as string[]
+                                      updated[rowIndex][colIndex]
+                                        .value as string[]
                                     ).push(copiedImage);
                                     setTableData(updated);
                                     console.log("Image pasted from clipboard");
@@ -1815,8 +1830,9 @@ export default function Table({
                                     const updated = [...tableData];
 
                                     // Remove from old cell
-                                    updated[fromRow][fromCol] = (
-                                      updated[fromRow][fromCol] as string[]
+                                    updated[fromRow][fromCol].value = (
+                                      updated[fromRow][fromCol]
+                                        .value as string[]
                                     ).filter(
                                       (img) =>
                                         img !== draggedImageSource.current
@@ -1825,14 +1841,15 @@ export default function Table({
                                     // Add to new cell
                                     if (
                                       !Array.isArray(
-                                        updated[rowIndex][colIndex]
+                                        updated[rowIndex][colIndex].value
                                       )
                                     ) {
-                                      updated[rowIndex][colIndex] = [];
+                                      updated[rowIndex][colIndex].value = [];
                                     }
 
                                     (
-                                      updated[rowIndex][colIndex] as string[]
+                                      updated[rowIndex][colIndex]
+                                        .value as string[]
                                     ).push(draggedImageSource.current);
 
                                     setTableData(updated);
@@ -1845,6 +1862,7 @@ export default function Table({
                                     );
 
                                     if (imageFiles.length > 0) {
+                                      console.log("hello");
                                       handleImagePasteOrDrop(
                                         imageFiles,
                                         rowIndex,
@@ -2101,17 +2119,45 @@ export default function Table({
                                         <div className="absolute top-1 right-1 lg:opacity-0  lg:group-hover:opacity-100 transition-opacity duration-200 flex flex-col gap-1 z-10">
                                           <Button
                                             onClick={(e) => {
-                                              const updated = [...tableData];
-                                              (
-                                                updated[rowIndex][
-                                                  colIndex
-                                                ] as string[]
-                                              ).splice(i, 1);
-                                              setTableData(updated);
-                                              setTimeout(() => {
-                                                autoResizeAllTextareas(e);
-                                              }, 0);
-                                            }}
+                                                setTableData((prev) => {
+                                                  const updated = [...prev];
+                                                  const cell =
+                                                    updated[rowIndex][colIndex];
+
+                                                  const isSingleImage =
+                                                    cell.data_type ===
+                                                      "single_image" ||
+                                                    (Array.isArray(
+                                                      cell.data_type
+                                                    ) &&
+                                                      cell.data_type.includes(
+                                                        "single_image"
+                                                      ));
+
+                                                  if (
+                                                    isSingleImage &&
+                                                    Array.isArray(cell.value)
+                                                  ) {
+                                                    const newImages = [
+                                                      ...cell.value,
+                                                    ];
+                                                    newImages.splice(i, 1);
+
+                                                    updated[rowIndex][
+                                                      colIndex
+                                                    ] = {
+                                                      ...cell,
+                                                      value: newImages,
+                                                    };
+                                                  }
+
+                                                  return updated;
+                                                });
+
+                                                setTimeout(() => {
+                                                  autoResizeAllTextareas(e);
+                                                }, 0);
+                                              }}
                                             variant="destructive"
                                             size="icon"
                                             className="h-6 w-6"
@@ -2155,6 +2201,7 @@ export default function Table({
                               onContextMenu={(e) => {
                                 e.preventDefault();
                                 setContextMenu({
+                                  cellid: cell.cell_id,
                                   visible: true,
                                   x: e.pageX,
                                   y: e.pageY,
@@ -2224,7 +2271,7 @@ export default function Table({
                                   backgroundColor:
                                     cellColors?.[rowIndex]?.[colIndex] || "",
                                 }}
-                                value={cell}
+                                value={cell.value}
                                 data-cell={`${rowIndex}-${colIndex}`}
                                 ref={
                                   editingCell?.[0] === rowIndex &&
@@ -2284,13 +2331,14 @@ export default function Table({
                                   const [row, col] = editingCell ?? [];
                                   const maxRow = tableData.length - 1;
                                   const maxCol = tableData[0].length - 1;
-                                  if (
-                                    e.key === "Delete" || // Windows / external keyboards
-                                    e.key === "Backspace" // MacBook Delete key
-                                  ) {
-                                    console.log("ok");
-                                    e.preventDefault(); // Prevent accidental browser navigation
-                                    clearSelectedCells();
+                                  if (!isFocusedEdit) {
+                                    if (
+                                      e.key === "Delete" // MacBook Delete key
+                                    ) {
+                                      console.log("ok");
+                                      e.preventDefault(); // Prevent accidental browser navigation
+                                      clearSelectedCells();
+                                    }
                                   }
 
                                   // Allow caret movement but block outer handlers in freemode

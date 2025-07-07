@@ -24,7 +24,7 @@ const page: React.FC = () => {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const [showPassword, setShowPassword] = useState(false) ; 
+  const [showPassword, setShowPassword] = useState(false);
 
   const validate = () => {
     const errors = { email: "", password: "" };
@@ -94,7 +94,7 @@ const page: React.FC = () => {
       setLoading(true);
 
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/Dashboard");
       }, 2000);
 
     } catch (err) {
@@ -148,44 +148,38 @@ const page: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-100 px-4">
+    <div className="min-h-screen w-full flex items-center justify-center px-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md bg-white p-8 rounded-lg shadow-sm border border-gray-200"
+        className="w-full max-w-md bg-white p-8 rounded-2xl shadow-lg border border-gray-200"
       >
-        <h2 className="text-xl font-semibold text-center text-gray-800 mb-4">
-          User Login
+        <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
+          🔐 Login to Your Account
         </h2>
 
         {error && (
-          <div className="text-red-600 text-sm text-center font-medium mb-3">
+          <div className="text-red-600 text-sm text-center font-medium mb-4">
             {error}
           </div>
         )}
         {success && (
-          <div className="text-green-600 text-sm text-center font-medium mb-3">
+          <div className="text-green-600 text-sm text-center font-medium mb-4">
             {success}
           </div>
         )}
 
         {/* Email */}
-        <div className="mb-4">
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+        <div className="mb-5">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
             Email <span className="text-red-500">*</span>
           </label>
           <input
             type="email"
-            id="email"
             name="email"
             value={form.email}
             onChange={handleChange}
-            autoComplete="email"
             placeholder="e.g. john@example.com"
-            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.email ? "border-red-400" : "border-gray-300"
-              }`}
+            className={`w-full px-4 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldErrors.email ? "border-red-400" : "border-gray-300"}`}
           />
           {fieldErrors.email && (
             <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
@@ -193,107 +187,78 @@ const page: React.FC = () => {
         </div>
 
         {/* Password */}
-
-        <div className="mb-4 relative">
-          <label
-            htmlFor="password"
-            className="block text-sm font-medium text-gray-700 mb-1"
-          >
+        <div className="mb-6 relative">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
             Password <span className="text-red-500">*</span>
           </label>
           <input
             type={showPassword ? "text" : "password"}
-            id="password"
             name="password"
             value={form.password}
             onChange={handleChange}
-            autoComplete="current-password"
             placeholder="Enter your password"
-            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.password ? "border-red-400" : "border-gray-300"
-              }`}
+            className={`w-full px-4 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldErrors.password ? "border-red-400" : "border-gray-300"}`}
           />
-
-        {/* Toggle icon */}
-
-        <span
-          className="absolute right-3 top-8.5 cursor-pointer text-gray-500"
-          onClick={() => setShowPassword((prev) => !prev)}
-        >
-          {
-            showPassword ? (
-              <AiFillEyeInvisible className="w-5 h-5"/>
-            ) : (
-              <AiFillEye className="w-5 h-5"/>
-            )
-          }
-        </span>
-
+          <span
+            className="absolute right-4 top-9 cursor-pointer text-gray-500"
+            onClick={() => setShowPassword((prev) => !prev)}
+          >
+            {showPassword ? <AiFillEyeInvisible size={18} /> : <AiFillEye size={18} />}
+          </span>
           {fieldErrors.password && (
             <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
           )}
         </div>
 
-        {/* Submit */}
-
+        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading}
-          className={`w-full text-white text-sm font-medium py-2 mt-5 rounded-md transition duration-200 ${loading
-            ? "bg-blue-300 cursor-not-allowed"
-            : "bg-blue-500 hover:bg-blue-600 cursor-pointer"
+          onClick={buttonClick}
+          className={`w-full flex items-center justify-center gap-2 text-white text-sm font-medium py-2 mt-2 rounded-md transition duration-200 cursor-pointer ${loading ? "bg-blue-300 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"
             }`}
-          onClick={() => buttonClick()}
         >
-          <span className="flex items-center justify-center gap-3">
-            <FiLogIn className="w-4 h-4"/>
-            {loading ? "Logging in..." : "Login"}
-          </span>
+          <FiLogIn className="w-5 h-5" />
+          {loading ? "Logging in..." : "Login"}
         </button>
 
-        {/* Showing loading spinner */}
-
+        {/* Loading Spinner */}
         {loading && (
           <div className="mt-4 flex items-center justify-center gap-2 text-sm text-blue-600">
-            <svg
-              className="animate-spin h-4 w-4 text-blue-600"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              ></circle>
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v8z"
-              ></path>
+            <svg className="animate-spin h-4 w-4 text-blue-600" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
             </svg>
-            🚀 Redirecting...
+            Redirecting...
           </div>
         )}
 
-        <div className="mt-3 text-left">
-          <p className="text-sm text-gray-600">
-            First time login? {" "}
+        {/* Footer Links */}
+
+        <div className="mt-6 text-left text-sm text-gray-600 space-y-4">
+          <p>
+            Having System Password?{" "}
             <span
               onClick={() => router.push("/Auth/Change-Password")}
               className="text-blue-600 font-medium hover:underline cursor-pointer"
             >
-              Change Password
+              Update
+            </span>
+          </p>
+          <p>
+            Forgot your password?{" "}
+            <span
+              onClick={() => router.push("/Auth/Forgot-Password")}
+              className="text-blue-600 font-medium hover:underline cursor-pointer"
+            >
+              Reset Here
             </span>
           </p>
         </div>
-
-
       </form>
     </div>
   );
+
 };
 
 export default page;
