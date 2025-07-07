@@ -1111,7 +1111,7 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
               Delete Row
             </li>
 
-            <li
+            {/* <li
               onClick={() => {
                 deleteCol(contextMenu.col);
                 setContextMenu(null);
@@ -1119,7 +1119,7 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
               className="hover:bg-gray-100 px-4 py-2 cursor-pointer text-red-500"
             >
               Delete Column
-            </li>
+            </li> */}
             <li
               onClick={() => {
                 if (contextMenu.cellid) {
