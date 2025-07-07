@@ -20,6 +20,6 @@ export const handleApiError = (error: any) => {
   } else if (error.request) {
     toast.error("Network error - please check your connection");
   } else {
-    toash.error("An unexpected error occurred");
+    toast.error("An unexpected error occurred");
   }
 };

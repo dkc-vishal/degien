@@ -1,3 +1,6 @@
+import { UserRole } from "./auth";
+import { QueryParams } from "./comman";
+
 export interface CreateUserRequest {
   email: string;
   firstName: string;

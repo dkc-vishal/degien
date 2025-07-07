@@ -3,12 +3,12 @@ import {
   User,
   CreateUserRequest,
   UpdateUserRequest,
-  UserFilters,
-  PaginatedResponse,
-} from "../types/user";
+  UserFilter,
+  PaginationResponse,
+} from "../types/index";
 
 export const userEndPoints = {
-  getUsers: (filter?: UserFilters): Promise<PaginatedResponse<User>> =>
+  getUsers: (filter?: UserFilter): Promise<PaginationResponse<User>> =>
     apiClient.get("/users/", { params: filter }),
   getUserById: (id: string): Promise<User> => apiClient.get(`/users/${id}/`),
   createUser: (data: CreateUserRequest): Promise<User> =>

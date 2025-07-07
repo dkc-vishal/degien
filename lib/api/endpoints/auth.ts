@@ -1,5 +1,10 @@
 import { apiClient } from "../client/axios-client";
-import { LoginRequest, LoginResponse } from "../types/auth";
+import {
+  ChangePasswordRequest,
+  LoginRequest,
+  LoginResponse,
+  User,
+} from "../types/auth";
 
 export const authEndpoints = {
   login: (data: LoginRequest): Promise<LoginResponse> =>

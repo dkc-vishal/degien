@@ -23,9 +23,9 @@ export interface ApiError {
 }
 
 export interface QueryParams {
-    page?:number;
-    limit?:number;
-    serach?:string;
-    sortBy?:string:
+    page?: number;
+    limit?: number;
+    search?: string;
+    sortBy?: string;
     sortOrder?: 'asc' | 'desc';
 }

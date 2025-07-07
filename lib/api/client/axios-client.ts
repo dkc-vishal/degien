@@ -1,9 +1,9 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
-
+import { toast } from "sonner";
 export class ApiClient {
   private client: AxiosInstance;
 
-  constructor(baseURL: string) {
+  constructor(baseURL: string | undefined) {
     this.client = axios.create({
       baseURL,
       timeout: 10000,
@@ -17,21 +17,29 @@ export class ApiClient {
   }
 
   private setupInterceptors() {
-    this.client.interceptors.request.use((config) => {
-      const token = localStorage.getItem("auth_token");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`; //explain this line
-      }
-      return config;
-    });
+    this.client.interceptors.request.use(
+      (config) => {
+        const token = localStorage.getItem("auth_token");
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`; //explain this line
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
 
     this.client.interceptors.response.use(
-      (response) => resposne,
+      (response) => response,
       (error) => {
         if (error.resposne?.status === 401) {
           localStorage.removeItem("auth_token");
           window.location.href = "/Auth/Login";
         }
+
+        //add global error handling
+        const message = error.response?.data?.message || "An error occurred";
+        toast.error(message);
+
         return Promise.reject(error);
       }
     );
@@ -40,6 +48,7 @@ export class ApiClient {
   //   wrapper all http method
   async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.get<T>(url, config);
+    return response.data;
   }
 
   async post<T>(
@@ -62,6 +71,15 @@ export class ApiClient {
 
   async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.client.delete<T>(url, config);
+    return response.data;
+  }
+
+  async patch<T>(
+    url: string,
+    data?: any,
+    config?: AxiosRequestConfig
+  ): Promise<T> {
+    const response = await this.client.patch<T>(url, data, config);
     return response.data;
   }
 }

@@ -1,18 +1,22 @@
 import { queryClient } from "../client/query-client";
-import { QueryKey } from "@tanstack/react-query";
+import { queryKeys } from "./query-keys";
 
 export const cacheUtils = {
   invalidateUserList: () => {
     queryClient.invalidateQueries({
-      QueryKey: QueryKey.users.list(),
+      queryKey: queryKeys.users.lists(),
     });
   },
-
+  invalidateUserDetail: (userId: string) => {
+    queryClient.invalidateQueries({
+      queryKey: queryKeys.users.detail(userId),
+    });
+  },
   updateUserInCache: (userId: string, userData: any) => {
-    queryClient.setQueryData(QueryKey.user.detail(userId), userData);
+    queryClient.setQueryData(queryKeys.users.detail(userId), userData);
   },
 
   clearAuthCache: () => {
-    queryClient.removeQueries({ queryKey: QueryKey.auth.all });
+    queryClient.removeQueries({ queryKey: queryKeys.auth.all });
   },
 };
