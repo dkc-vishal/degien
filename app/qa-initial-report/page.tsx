@@ -26,7 +26,7 @@ export default function QaIntialReport() {
   };
     async function fetchdata() {
     const res = await axios.get(
-      "http://shivam-mac.local:8000/api/v1.0/spreadsheet/32dbb7af-18b7-493f-ab77-0781e34a7957"
+      "http://shivam-mac.local:8001/api/v1.0/spreadsheet/32dbb7af-18b7-493f-ab77-0781e34a7957"
     );
     const col_metadata: Record<string, ColumnMetadata> = await res.data.data.column_metadata;
     console.log(res)
@@ -289,7 +289,7 @@ export default function QaIntialReport() {
                {columnHeaders.length>0 && (
                  <Table
                    col={12}
-                   row={20}
+                   row={50}
                    imagecol={3}
                    tablename="mid-final"
                    columnheaders={columnHeaders}

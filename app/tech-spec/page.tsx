@@ -63,7 +63,7 @@ export default function TechSpecSheet() {
           <Table
             col={22}
             row={120}
-            imagecol={3}
+            imagecol={6}
             tablename="tech spec"
             columnheaders={columnHeaders}
             spreadsheet={tableData}

@@ -3,7 +3,7 @@ import ImageEditorModal from "@/components/image-editor/ImageEditorModal";
 import { toast } from "@/hooks/use-toast";
 import { use, useEffect, useRef } from "react"; // Make sure useRef is imported
 import React, { useState } from "react";
-
+import { API_ENDPOINTS } from "@/lib/api";
 export interface Issue {
   id: string;
   // description: string;
@@ -22,6 +22,7 @@ import {
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import axios from "axios";
+import { get } from "http";
 function parseFraction(input: string): number {
   input = input.trim();
   if (!input) return 0;
@@ -73,6 +74,19 @@ function parseGradingArray(input: string): number[] {
     .map((v) => parseFraction(v))
     .slice(0, 4); // Only take up to 4 values
 }
+type AllowedDataType = "str" | "number" | "bool" | string;
+
+type CellData = {
+  cell_id: string;
+  row: number;
+  column: number;
+  value: AllowedDataType | string[];
+  data_type: AllowedDataType | string[];
+  is_editable: boolean;
+  is_header: boolean;
+  has_shape: boolean;
+};
+
 export default function Table({
   tablename,
   col,
@@ -101,7 +115,7 @@ export default function Table({
   } | null>(null);
 
   const [isDragging, setIsDragging] = useState(false);
-  type TableRow = (string | string[])[];
+  type TableRow = CellData[];
   const [cellShapes, setCellShapes] = useState<Record<string, string>>({});
 
   const [draggedRowIndex, setDraggedRowIndex] = useState<number | null>(null);
@@ -196,6 +210,29 @@ export default function Table({
     setIsImageEditorOpen(false);
     setEditingImageInfo(null);
   };
+  function generateUUID() {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === "x" ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+
+  const generateEmptyRow = (rowIndex: number): TableRow => {
+    return Array.from({ length: col }, (_, colIndex) => {
+      return {
+        cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+
+        row: rowIndex,
+        column: colIndex,
+        value: "",
+        data_type: "str", // or infer from columnHeaders if needed
+        is_editable: true,
+        is_header: false,
+        has_shape: false,
+      };
+    });
+  };
 
   const handleSaveEditedImage = (newImageDataUrl: string) => {
     const { rownumber, colnumber, imgindex } = imageSeleted;
@@ -236,37 +273,36 @@ export default function Table({
     };
   }, []);
   const [tableData, setTableData] = useState<TableRow[]>(
-    Array.from({ length: row }, () =>
-      Array.from({ length: col }, (_, colIndex) =>
-        columnHeaders[colIndex] === "Measurement Picture" ? [] : ""
-      )
-    )
+    Array.from({ length: row }, () => generateEmptyRow(row))
   );
+
   const [autofillStart, setAutofillStart] = useState<[number, number] | null>(
     null
   );
   const [autofillTarget, setAutofillTarget] = useState<[number, number] | null>(
     null
   );
-  const setCellValue = (targetRow: number, targetCol: number, newValue: any) => {
-  setTableData(prevData => {
-    const newData = [...prevData]; // shallow copy rows
-    const newRow = [...newData[targetRow]]; // shallow copy the specific row
-    console.log(targetCol,targetRow)
-    newRow[targetCol] = newValue; // update the specific cell
-    newData[targetRow] = newRow; // put the updated row back
-    return newData; // update the whole table
-  });
-};
+  const setCellValue = (celldata: CellData) => {
+    if (celldata.data_type === "single_image") {
+      celldata.value = []; // Ensure value is an array for single_image type
+    }
+    setTableData((prevData) => {
+      const newData = [...prevData]; // shallow copy rows
+      const newRow = [...newData[celldata.row]];
+      newRow[celldata.column] = celldata; // update the specific cell
+      newData[celldata.row] = newRow; // put the updated row back
+      return newData; // update the whole table
+    });
+  };
   useEffect(() => {
     const sheeetdata = spreadsheet.cells;
     for (const [key, cell] of Object.entries(sheeetdata)) {
-  
-      const typedCell = cell as { row: number; column: number; value: string };
-      setCellValue(typedCell.row, typedCell.column, typedCell.value);
+      const typedCell = cell as CellData;
+      setCellValue(typedCell);
     }
-  },[])
+  }, []);
   const [contextMenu, setContextMenu] = useState<{
+    cellid: string | null;
     visible: boolean;
     x: number;
     y: number;
@@ -305,7 +341,7 @@ export default function Table({
   const [history, setHistory] = useState<TableRow[][]>([]);
   const [redoStack, setRedoStack] = useState<TableRow[][]>([]);
   const lastSnapshotRef = useRef<string>("");
-  const handlePaste = (
+  const handlePaste1 = (
     e: React.ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>,
     startRow: number,
     startCol: number
@@ -339,13 +375,85 @@ export default function Table({
       row.forEach((value, colOffset) => {
         const r = startRow + rowOffset;
         const c = startCol + colOffset;
-        updated[r][c] = value;
+        updated[r][c] = {
+          ...updated[r][c],
+          value,
+        };
       });
     });
     pushToHistory(tableData);
 
     setTableData(updated);
   };
+  const handlePaste = (
+    e: React.ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+    startRow: number,
+    startCol: number
+  ) => {
+    e.preventDefault();
+
+    const clipboard = e.clipboardData.getData("text");
+
+    const rows = clipboard.split(/\r?\n/).map((row) => row.split("\t"));
+
+    let updated = [...tableData];
+
+    // 🆕 Auto-expand rows
+    while (updated.length < startRow + rows.length) {
+      const newRowIndex = updated.length;
+      const newRow: CellData[] = Array.from(
+        { length: updated[0].length },
+        (_, colIndex) => ({
+           cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+          row: newRowIndex,
+          column: colIndex,
+          value: "",
+          data_type: "str",
+          is_editable: true,
+          is_header: false,
+          has_shape: false,
+        })
+      );
+      updated.push(newRow);
+    }
+
+    // 🆕 Auto-expand columns
+    const neededCols = startCol + rows[0].length;
+    if (updated[0].length < neededCols) {
+      updated = updated.map((row, rowIndex) => {
+        const extraCells = Array.from(
+          { length: neededCols - row.length },
+          (_, colOffset) => ({
+             cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+            row: rowIndex,
+            column: row.length + colOffset,
+            value: "",
+            data_type: "str",
+            is_editable: true,
+            is_header: false,
+            has_shape: false,
+          })
+        );
+        return [...row, ...extraCells];
+      });
+    }
+
+    // ✅ Paste clipboard data into cells
+    rows.forEach((row, rowOffset) => {
+      row.forEach((value, colOffset) => {
+        const r = startRow + rowOffset;
+        const c = startCol + colOffset;
+        updated[r][c] = {
+          ...updated[r][c],
+          value,
+        };
+      });
+    });
+
+    pushToHistory(tableData);
+    setTableData(updated);
+  };
+
   useEffect(() => {
     localStorage.setItem(`table_data_${tablename}`, JSON.stringify(tableData));
   }, [tableData]);
@@ -389,35 +497,134 @@ export default function Table({
   const [RealTimeMeasurment, setRealTimemeasuremtn] = useState<string[]>([]);
 
   const [RealTimeGradingRule, setRealTimeGradingRule] = useState<string[]>([]);
+  // const handleCellChange1 = (row: number, col: number, value: string) => {
+  //   pushToHistory(tableData); // ✅ Store before editing
+  //   const oldValue = tableData[row][col] as string;
+
+  //   const key = `${row}-${col}`;
+  //   const updated = [...tableData];
+  //   updated[row][col] = value;
+  //   setTableData(updated);
+  //   const topMeasIdx = columnHeaders.indexOf("TOP CHANGED MEASUREMENT");
+  //   const ppMeasIdx = columnHeaders.indexOf("PP CHANGED MEASUREMENT");
+  //   const fitMeasIdx = columnHeaders.indexOf("FIT CHANGED MEASUREMENT");
+  //   const msrMeasIdx = columnHeaders.indexOf("MSR MEASUREMENT");
+  //   const realTimeMeasIdx = columnHeaders.indexOf("REAL TIME MEASUREMENT");
+  //   function updateRealTimeMeasurement(row: any) {
+  //     row[realTimeMeasIdx] =
+  //       row[topMeasIdx] ||
+  //       row[ppMeasIdx] ||
+  //       row[fitMeasIdx] ||
+  //       row[msrMeasIdx] ||
+  //       "";
+  //   }
+  //   if ([topMeasIdx, ppMeasIdx, fitMeasIdx, msrMeasIdx].includes(col)) {
+  //     updateRealTimeMeasurement(updated[row]);
+  //   }
+
+  //   // Inside handleCellChange, after updating the cell:
+  //   if ([topMeasIdx, ppMeasIdx, fitMeasIdx, msrMeasIdx].includes(col)) {
+  //     updateRealTimeMeasurement(updated[row]);
+  //   }
+  //   // Grading rule logic
+  //   const topIdx = columnHeaders.indexOf("TOP CHANGED GRADING RULE");
+  //   const ppIdx = columnHeaders.indexOf("PP CHANGED GRADING RULE");
+  //   const fitIdx = columnHeaders.indexOf("FIT GRADING RULE");
+  //   const msrIdx = columnHeaders.indexOf("MSR GRADING RULE");
+  //   const realTimeIdx = columnHeaders.indexOf("REAL TIME GRADING RULE");
+
+  //   function updateRealTimeGradingRule(row: any) {
+  //     row[realTimeIdx] =
+  //       row[topIdx] || row[ppIdx] || row[fitIdx] || row[msrIdx] || "";
+  //   }
+  //   if ([topIdx, ppIdx, fitIdx, msrIdx].includes(col)) {
+  //     updateRealTimeGradingRule(updated[row]);
+  //   }
+
+  //   // Always recalculate sizes on any cell change
+  //   const msrMeasurementCol = columnHeaders.findIndex((header) =>
+  //     header.includes("MSR MEASUREMENT")
+  //   );
+  //   const msrGradingRuleCol = columnHeaders.findIndex((header) =>
+  //     header.includes("REAL TIME GRADING RULE")
+  //   );
+
+  //   const msrBaseSizeTypeCol = columnHeaders.findIndex((header) =>
+  //     header.includes("base size type")
+  //   );
+
+  //   const baseSizeInput = updated[row][realTimeMeasIdx] as string;
+  //   const gradingInput = updated[row][msrGradingRuleCol] as string;
+  //   const baseSizeType = "S";
+  //   console.log(
+  //     baseSizeType,
+  //     String(RealTimeMeasurment[realTimeIdx]),
+  //     gradingInput
+  //   );
+  //   const sizes = calculateSizes(baseSizeType, baseSizeInput, gradingInput);
+
+  //   const xsCol = columnHeaders.findIndex((header) => header === "XS");
+  //   const sCol = columnHeaders.findIndex((header) => header === "S");
+  //   const mCol = columnHeaders.findIndex((header) => header === "M");
+  //   const lCol = columnHeaders.findIndex((header) => header === "L");
+  //   const xlCol = columnHeaders.findIndex((header) => header === "XL");
+
+  //   if (xsCol !== -1)
+  //     updated[row][xsCol] = toFractionString(sizes.xs).toString();
+  //   if (sCol !== -1) updated[row][sCol] = toFractionString(sizes.s).toString();
+  //   if (mCol !== -1) updated[row][mCol] = toFractionString(sizes.m).toString();
+  //   if (lCol !== -1) updated[row][lCol] = toFractionString(sizes.l).toString();
+  //   if (xlCol !== -1)
+  //     updated[row][xlCol] = toFractionString(sizes.xl).toString();
+
+  //   setTableData(updated);
+  //   setEditHistoryMap((prev) => ({
+  //     ...prev,
+  //     [key]: [
+  //       ...(prev[key] || []),
+  //       {
+  //         oldValue: oldValue,
+  //         newValue: value,
+  //         editedBy: "vishal",
+  //         editedAt: new Date().toLocaleString(),
+  //       },
+  //     ],
+  //   }));
+  // };
   const handleCellChange = (row: number, col: number, value: string) => {
-    pushToHistory(tableData); // ✅ Store before editing
-    const oldValue = tableData[row][col] as string;
+    pushToHistory(tableData);
+
+    const oldValue = tableData[row][col].value;
 
     const key = `${row}-${col}`;
     const updated = [...tableData];
-    updated[row][col] = value;
-    setTableData(updated);
+
+    updated[row][col] = { ...updated[row][col], value };
+
+    // Column index lookups
     const topMeasIdx = columnHeaders.indexOf("TOP CHANGED MEASUREMENT");
     const ppMeasIdx = columnHeaders.indexOf("PP CHANGED MEASUREMENT");
     const fitMeasIdx = columnHeaders.indexOf("FIT CHANGED MEASUREMENT");
     const msrMeasIdx = columnHeaders.indexOf("MSR MEASUREMENT");
     const realTimeMeasIdx = columnHeaders.indexOf("REAL TIME MEASUREMENT");
-    function updateRealTimeMeasurement(row: any) {
-      row[realTimeMeasIdx] =
-        row[topMeasIdx] ||
-        row[ppMeasIdx] ||
-        row[fitMeasIdx] ||
-        row[msrMeasIdx] ||
+
+    function updateRealTimeMeasurement(rowCells: CellData[]) {
+      const newValue =
+        rowCells[topMeasIdx]?.value ||
+        rowCells[ppMeasIdx]?.value ||
+        rowCells[fitMeasIdx]?.value ||
+        rowCells[msrMeasIdx]?.value ||
         "";
+      rowCells[realTimeMeasIdx] = {
+        ...rowCells[realTimeMeasIdx],
+        value: newValue,
+      };
     }
+
     if ([topMeasIdx, ppMeasIdx, fitMeasIdx, msrMeasIdx].includes(col)) {
       updateRealTimeMeasurement(updated[row]);
     }
 
-    // Inside handleCellChange, after updating the cell:
-    if ([topMeasIdx, ppMeasIdx, fitMeasIdx, msrMeasIdx].includes(col)) {
-      updateRealTimeMeasurement(updated[row]);
-    }
     // Grading rule logic
     const topIdx = columnHeaders.indexOf("TOP CHANGED GRADING RULE");
     const ppIdx = columnHeaders.indexOf("PP CHANGED GRADING RULE");
@@ -425,64 +632,82 @@ export default function Table({
     const msrIdx = columnHeaders.indexOf("MSR GRADING RULE");
     const realTimeIdx = columnHeaders.indexOf("REAL TIME GRADING RULE");
 
-    function updateRealTimeGradingRule(row: any) {
-      row[realTimeIdx] =
-        row[topIdx] || row[ppIdx] || row[fitIdx] || row[msrIdx] || "";
+    function updateRealTimeGradingRule(rowCells: CellData[]) {
+      const newValue =
+        rowCells[topIdx]?.value ||
+        rowCells[ppIdx]?.value ||
+        rowCells[fitIdx]?.value ||
+        rowCells[msrIdx]?.value ||
+        "";
+      rowCells[realTimeIdx] = {
+        ...rowCells[realTimeIdx],
+        value: newValue,
+      };
     }
+
     if ([topIdx, ppIdx, fitIdx, msrIdx].includes(col)) {
       updateRealTimeGradingRule(updated[row]);
     }
 
-    // Always recalculate sizes on any cell change
+    // Always recalculate sizes
     const msrMeasurementCol = columnHeaders.findIndex((header) =>
       header.includes("MSR MEASUREMENT")
     );
     const msrGradingRuleCol = columnHeaders.findIndex((header) =>
       header.includes("REAL TIME GRADING RULE")
     );
-
     const msrBaseSizeTypeCol = columnHeaders.findIndex((header) =>
       header.includes("base size type")
     );
 
-    const baseSizeInput = updated[row][realTimeMeasIdx] as string;
-    const gradingInput = updated[row][msrGradingRuleCol] as string;
-    const baseSizeType = "S";
-    console.log(
-      baseSizeType,
-      String(RealTimeMeasurment[realTimeIdx]),
-      gradingInput
-    );
+    const baseSizeInputValue = updated[row][realTimeMeasIdx]?.value || "";
+    const baseSizeInput = Array.isArray(baseSizeInputValue)
+      ? baseSizeInputValue.join(" ")
+      : baseSizeInputValue;
+    const gradingInputValue = updated[row][msrGradingRuleCol]?.value || "";
+    const gradingInput = Array.isArray(gradingInputValue)
+      ? gradingInputValue.join(" ")
+      : gradingInputValue;
+    const baseSizeType = "S"; // Or fetch dynamically if needed
+
     const sizes = calculateSizes(baseSizeType, baseSizeInput, gradingInput);
 
-    const xsCol = columnHeaders.findIndex((header) => header === "XS");
-    const sCol = columnHeaders.findIndex((header) => header === "S");
-    const mCol = columnHeaders.findIndex((header) => header === "M");
-    const lCol = columnHeaders.findIndex((header) => header === "L");
-    const xlCol = columnHeaders.findIndex((header) => header === "XL");
+    const xsCol = columnHeaders.indexOf("XS");
+    const sCol = columnHeaders.indexOf("S");
+    const mCol = columnHeaders.indexOf("M");
+    const lCol = columnHeaders.indexOf("L");
+    const xlCol = columnHeaders.indexOf("XL");
 
-    if (xsCol !== -1)
-      updated[row][xsCol] = toFractionString(sizes.xs).toString();
-    if (sCol !== -1) updated[row][sCol] = toFractionString(sizes.s).toString();
-    if (mCol !== -1) updated[row][mCol] = toFractionString(sizes.m).toString();
-    if (lCol !== -1) updated[row][lCol] = toFractionString(sizes.l).toString();
+    if (xsCol !== -1){
+      updated[row][xsCol] = {
+        ...updated[row][xsCol],
+        value: toFractionString(sizes.xs).toString(),
+      };
+    }
+    if (sCol !== -1)
+      updated[row][sCol] = {
+        ...updated[row][sCol],
+        value: toFractionString(sizes.s).toString(),
+      };
+    if (mCol !== -1)
+      updated[row][mCol] = {
+        ...updated[row][mCol],
+        value: toFractionString(sizes.m).toString(),
+      };
+    if (lCol !== -1)
+      updated[row][lCol] = {
+        ...updated[row][lCol],
+        value: toFractionString(sizes.l).toString(),
+      };
     if (xlCol !== -1)
-      updated[row][xlCol] = toFractionString(sizes.xl).toString();
+      updated[row][xlCol] = {
+        ...updated[row][xlCol],
+        value: toFractionString(sizes.xl).toString(),
+      };
 
     setTableData(updated);
-    setEditHistoryMap((prev) => ({
-      ...prev,
-      [key]: [
-        ...(prev[key] || []),
-        {
-          oldValue: oldValue,
-          newValue: value,
-          editedBy: "vishal",
-          editedAt: new Date().toLocaleString(),
-        },
-      ],
-    }));
   };
+
   function calculateSizes(
     baseSizeType: Row["baseSizeType"],
     baseSizeInput: string,
@@ -547,14 +772,22 @@ export default function Table({
     }
     return { xs, s, m, l, xl };
   }
-  function handlepastecellChange(colIndex: number) {
+  function handlePasteCellChange(colIndex: number) {
     const column = tableData.map((row) => row[colIndex]);
-    for (let i = 0; i < column.length; i++) {
-      let noWhitespaceText = (column[i] as string).split(/\s+/).join(" ");
-      console.log(noWhitespaceText);
-      handleCellChange(i, colIndex, noWhitespaceText);
+
+    for (let rowIndex = 0; rowIndex < column.length; rowIndex++) {
+      const cell = column[rowIndex] as CellData;
+
+      const isSingleImage = cell.data_type === "single_image";
+
+      // Only clean whitespace if not image-type
+      if (!isSingleImage && typeof cell.value === "string") {
+        const noWhitespaceText = cell.value.split(/\s+/).join(" ");
+        handleCellChange(rowIndex, colIndex, noWhitespaceText);
+      }
     }
   }
+
   const autoResizeTextarea = (el: HTMLTextAreaElement) => {
     if (el && el.parentElement) {
       el.parentElement.style.height = "auto"; // Reset height
@@ -581,7 +814,8 @@ export default function Table({
     return () => window.removeEventListener("mouseup", handleMouseUp);
   }, []);
   const getImageAt = (row: number, col: number, index: number) => {
-    return tableData[row][col][index]; // Example
+    console.log(tableData[row][col].value[index]);
+    return tableData[row][col].value[index]; // Example
   };
 
   const updateImageAt = (
@@ -591,33 +825,12 @@ export default function Table({
     image: string
   ) => {
     const updated = [...tableData];
-    if (Array.isArray(updated[row][col])) {
-      (updated[row][col] as string[])[index] = image;
+    if (Array.isArray(updated[row][col].value)) {
+      (updated[row][col].value as string[])[index] = image;
     }
     setTableData(updated);
   };
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        if (e.key.toLowerCase() === "c") {
-          if (imageSeleted) {
-            const { rownumber, colnumber, imgindex } = imageSeleted;
-            const src = getImageAt(rownumber, colnumber, imgindex); // Your function to get image src
-            setCopiedImage(src);
-          }
-        }
-        if (e.key.toLowerCase() === "v") {
-          if (copiedImage && imageSeleted) {
-            const { rownumber, colnumber, imgindex } = imageSeleted;
-            updateImageAt(rownumber, colnumber, imgindex, copiedImage);
-          }
-        }
-      }
-    };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [imageSeleted, copiedImage]);
   useEffect(() => {
     if (inputRef.current) {
       // inputRef.current.focus();
@@ -626,32 +839,72 @@ export default function Table({
   }, [editingCell]);
 
   const insertRow = (index: number) => {
-    const newRow = new Array(tableData[0].length).fill("");
+    const colCount = tableData[0]?.length || 0;
+
+    // ✅ 1. Create a full row of CellData
+    const newRow: CellData[] = Array.from(
+      { length: colCount },
+      (_, colIndex) => ({
+         cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+        row: index,
+        column: colIndex,
+        value: "",
+        data_type: "str",
+        is_editable: true,
+        is_header: false,
+        has_shape: false,
+      })
+    );
+
+    // ✅ 2. Insert and reindex affected rows
     const updated = [
       ...tableData.slice(0, index),
       newRow,
-      ...tableData.slice(index),
+      ...tableData.slice(index).map((row, rowIdx) =>
+        row.map((cell, colIdx) => ({
+          ...cell,
+          row: index + 1 + rowIdx,
+        }))
+      ),
     ];
+    console.log(newRow)
     setTableData(updated);
   };
 
   const insertCol = (index: number) => {
-    // Update column headers
+    // ✅ 1. Update column headers
     const newHeaders = [...columnHeaders];
-    newHeaders.splice(index, 0, "");
+    newHeaders.splice(index, 0, ""); // Insert empty header at index
     setColumnHeaders(newHeaders);
 
-    // Update table data
-    const newData = tableData.map((row) => {
+    // ✅ 2. Update table data with a new CellData inserted at index in each row
+    const newData = tableData.map((row, rowIndex) => {
       const newRow = [...row];
-      newRow.splice(index, 0, "");
-      return newRow;
+
+      const newCell: CellData = {
+         cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+        row: rowIndex,
+        column: index,
+        value: "",
+        data_type: "str",
+        is_editable: true,
+        is_header: false,
+        has_shape: false,
+      };
+
+      newRow.splice(index, 0, newCell);
+
+      // Re-index columns after inserted cell
+      return newRow.map((cell, colIdx) => ({
+        ...cell,
+        column: colIdx,
+      }));
     });
     setTableData(newData);
 
-    // Update column widths
+    // ✅ 3. Update column widths
     const newWidths = [...colWidths];
-    newWidths.splice(index, 0, 100); // 100 is default width; change as needed
+    newWidths.splice(index, 0, 100); // Default width
     setColWidths(newWidths);
   };
 
@@ -682,6 +935,31 @@ export default function Table({
     setTableData(newData);
   };
 
+  // const handleImagePasteOrDrop1 = (
+  //   files: File[],
+  //   rowIndex: number,
+  //   colIndex: number
+  // ) => {
+  //   const imageFiles = Array.from(files).filter((file) =>
+  //     file.type.startsWith("image/")
+  //   );
+  //   if (imageFiles.length === 0) return;
+
+  //   const imageUrls = imageFiles.map((file) => URL.createObjectURL(file));
+
+  //   setTableData((prev) => {
+  //     const updated = [...prev];
+  //     const current = updated[rowIndex][colIndex];
+
+  //     const existingUrls = Array.isArray(current) ? current : [];
+  //     const newUniqueUrls = imageUrls.filter(
+  //       (url) => !existingUrls.includes(url)
+  //     );
+
+  //     updated[rowIndex][colIndex] = [...existingUrls, ...newUniqueUrls];
+  //     return updated;
+  //   });
+  // };
   const handleImagePasteOrDrop = (
     files: File[],
     rowIndex: number,
@@ -693,20 +971,26 @@ export default function Table({
     if (imageFiles.length === 0) return;
 
     const imageUrls = imageFiles.map((file) => URL.createObjectURL(file));
-
+    console.log(imageUrls);
     setTableData((prev) => {
       const updated = [...prev];
-      const current = updated[rowIndex][colIndex];
+      const currentCell = updated[rowIndex][colIndex].value;
 
-      const existingUrls = Array.isArray(current) ? current : [];
+      // Make sure the value is an array of strings (image URLs)
+      const existingUrls: string[] = Array.isArray(currentCell)
+        ? currentCell.map((v) => String(v))
+        : [];
+
       const newUniqueUrls = imageUrls.filter(
         (url) => !existingUrls.includes(url)
       );
 
-      updated[rowIndex][colIndex] = [...existingUrls, ...newUniqueUrls];
+      updated[rowIndex][colIndex].value = [...existingUrls, ...newUniqueUrls];
+
       return updated;
     });
   };
+
   const startAutoScroll = () => {
     if (!scrollContainerRef.current) return;
 
@@ -750,6 +1034,46 @@ export default function Table({
   //     setColWidths(JSON.parse(savedColWidths));
   //   }
   // }, []);
+  const clearSelectedCells = () => {
+    pushToHistory(tableData); // ✅ Store before editing
+
+    if (!selectedRange) return;
+
+    const { start, end } = selectedRange;
+
+    const [startRow, startCol] = start;
+
+    const [endRow, endCol] = end;
+
+    const newData = [...tableData];
+
+    console.log(newData);
+
+    for (
+      let row = Math.min(startRow, endRow);
+      row <= Math.max(startRow, endRow);
+      row++
+    ) {
+      for (
+        let col = Math.min(startCol, endCol);
+        col <= Math.max(startCol, endCol);
+        col++
+      ) {
+        newData[row][col] = {
+           cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+          row: row,
+          column: col,
+          value: "",
+          data_type: "str",
+          is_editable: true,
+          is_header: false,
+          has_shape: false,
+        }; // Clear cell content
+      }
+    }
+
+    setTableData(newData);
+  };
 
   useEffect(() => {
     setCellColors((prevColors) =>
@@ -953,6 +1277,29 @@ export default function Table({
       document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [autofillStart, autofillTarget, tableData]);
+  useEffect(() => {
+    console.log("first");
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key.toLowerCase() === "c") {
+          if (imageSeleted) {
+            const { rownumber, colnumber, imgindex } = imageSeleted;
+            const src = getImageAt(rownumber, colnumber, imgindex); // Your function to get image src
+            setCopiedImage(src);
+          }
+        }
+        if (e.key.toLowerCase() === "v") {
+          if (copiedImage && imageSeleted) {
+            const { rownumber, colnumber, imgindex } = imageSeleted;
+            updateImageAt(rownumber, colnumber, imgindex, copiedImage);
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [imageSeleted, copiedImage]);
   useKeyboardShortcuts({
     tableData,
     setTableData,
@@ -969,10 +1316,12 @@ export default function Table({
     setRedoStack,
     lastSnapshotRef,
   });
+  const getCellHistory = (cellid:string) => {
+    const res = axios.get(API_ENDPOINTS.cellHistory(cellid).url);
+    console.log(res)
+  }
   async function submitbutton() {
-    const res = await axios.post(postapi,{
-
-    })
+    const res = await axios.post(postapi, {});
   }
   return (
     <>
@@ -1115,18 +1464,21 @@ export default function Table({
             </li>
             <li
               onClick={() => {
-                const key = `${contextMenu.row}-${contextMenu.col}`;
-                const history = editHistoryMap[key] || [];
-                setSelectedHistory({
-                  key,
-                  row: contextMenu.row,
-                  col: contextMenu.col,
-                  x: contextMenu.x,
-                  y: contextMenu.y,
-                  history,
-                });
-                setSelectedHistoryIndex(history.length - 1);
-                // setContextMenu(null);
+                if(contextMenu.cellid)
+                  getCellHistory(contextMenu.cellid)
+
+                // const key = `${contextMenu.row}-${contextMenu.col}`;
+
+                // const history = editHistoryMap[key] || [];
+                // setSelectedHistory({
+                //   key,
+                //   row: contextMenu.row,
+                //   col: contextMenu.col,
+                //   x: contextMenu.x,
+                //   y: contextMenu.y,
+                //   history,
+                // });
+                // setSelectedHistoryIndex(history.length - 1);
               }}
               className="hover:bg-gray-100 px-4 py-2 cursor-pointer text-blue-600"
             >
@@ -1507,8 +1859,10 @@ export default function Table({
                     .filter((row) =>
                       row.some(
                         (cell) =>
-                          typeof cell === "string" &&
-                          cell.toLowerCase().includes(searchTerm.toLowerCase())
+                          typeof cell.value === "string" &&
+                          cell.value
+                            .toLowerCase()
+                            .includes(searchTerm.toLowerCase())
                       )
                     )
                     .map((row, rowIndex) => (
@@ -1785,13 +2139,14 @@ export default function Table({
                                     const updated = [...tableData];
                                     if (
                                       !Array.isArray(
-                                        updated[rowIndex][colIndex]
+                                        updated[rowIndex][colIndex].value
                                       )
                                     )
-                                      updated[rowIndex][colIndex] = [];
+                                      updated[rowIndex][colIndex].value = [];
 
                                     (
-                                      updated[rowIndex][colIndex] as string[]
+                                      updated[rowIndex][colIndex]
+                                        .value as string[]
                                     ).push(copiedImage);
                                     setTableData(updated);
                                     console.log("Image pasted from clipboard");
@@ -1812,8 +2167,9 @@ export default function Table({
                                     const updated = [...tableData];
 
                                     // Remove from old cell
-                                    updated[fromRow][fromCol] = (
-                                      updated[fromRow][fromCol] as string[]
+                                    updated[fromRow][fromCol].value = (
+                                      updated[fromRow][fromCol]
+                                        .value as string[]
                                     ).filter(
                                       (img) =>
                                         img !== draggedImageSource.current
@@ -1822,14 +2178,15 @@ export default function Table({
                                     // Add to new cell
                                     if (
                                       !Array.isArray(
-                                        updated[rowIndex][colIndex]
+                                        updated[rowIndex][colIndex].value
                                       )
                                     ) {
-                                      updated[rowIndex][colIndex] = [];
+                                      updated[rowIndex][colIndex].value = [];
                                     }
 
                                     (
-                                      updated[rowIndex][colIndex] as string[]
+                                      updated[rowIndex][colIndex]
+                                        .value as string[]
                                     ).push(draggedImageSource.current);
 
                                     setTableData(updated);
@@ -1842,6 +2199,7 @@ export default function Table({
                                     );
 
                                     if (imageFiles.length > 0) {
+                                      console.log("hello");
                                       handleImagePasteOrDrop(
                                         imageFiles,
                                         rowIndex,
@@ -1863,9 +2221,9 @@ export default function Table({
                                     ★
                                   </div>
                                 )}
-                                {Array.isArray(cell) ? (
+                                {Array.isArray(cell.value) ? (
                                   <div className="flex flex-wrap  justify-center">
-                                    {(cell as string[]).map((src, i) => (
+                                    {(cell.value as string[]).map((src, i) => (
                                       <div
                                         key={i}
                                         style={{
@@ -1940,13 +2298,41 @@ export default function Table({
                                           hoveredImage.index === i && (
                                             <button
                                               onClick={(e) => {
-                                                const updated = [...tableData];
-                                                (
-                                                  updated[rowIndex][
-                                                    colIndex
-                                                  ] as string[]
-                                                ).splice(i, 1);
-                                                setTableData(updated);
+                                                setTableData((prev) => {
+                                                  const updated = [...prev];
+                                                  const cell =
+                                                    updated[rowIndex][colIndex];
+
+                                                  const isSingleImage =
+                                                    cell.data_type ===
+                                                      "single_image" ||
+                                                    (Array.isArray(
+                                                      cell.data_type
+                                                    ) &&
+                                                      cell.data_type.includes(
+                                                        "single_image"
+                                                      ));
+
+                                                  if (
+                                                    isSingleImage &&
+                                                    Array.isArray(cell.value)
+                                                  ) {
+                                                    const newImages = [
+                                                      ...cell.value,
+                                                    ];
+                                                    newImages.splice(i, 1);
+
+                                                    updated[rowIndex][
+                                                      colIndex
+                                                    ] = {
+                                                      ...cell,
+                                                      value: newImages,
+                                                    };
+                                                  }
+
+                                                  return updated;
+                                                });
+
                                                 setTimeout(() => {
                                                   autoResizeAllTextareas(e);
                                                 }, 0);
@@ -2006,6 +2392,7 @@ export default function Table({
                               onContextMenu={(e) => {
                                 e.preventDefault();
                                 setContextMenu({
+                                  cellid: cell.cell_id,
                                   visible: true,
                                   x: e.pageX,
                                   y: e.pageY,
@@ -2071,7 +2458,7 @@ export default function Table({
                                 )}
 
                               <select
-                                value={cell}
+                                value={cell.value}
                                 data-cell={`${rowIndex}-${colIndex}`}
                                 ref={
                                   editingCell?.[0] === rowIndex &&
@@ -2221,6 +2608,7 @@ export default function Table({
                               onContextMenu={(e) => {
                                 e.preventDefault();
                                 setContextMenu({
+                                  cellid: cell.cell_id,
                                   visible: true,
                                   x: e.pageX,
                                   y: e.pageY,
@@ -2286,7 +2674,7 @@ export default function Table({
                                 )}
 
                               <textarea
-                                value={cell}
+                                value={cell.value}
                                 data-cell={`${rowIndex}-${colIndex}`}
                                 ref={
                                   editingCell?.[0] === rowIndex &&
@@ -2315,7 +2703,7 @@ export default function Table({
                                       ),
                                     0
                                   );
-                                  handlepastecellChange(colIndex);
+                                  handlePasteCellChange(colIndex);
                                 }}
                                 onMouseDown={(e) => {
                                   if (e.detail > 1) {
@@ -2399,7 +2787,18 @@ export default function Table({
                                   const [row = 0, col = 0] = editingCell ?? [];
                                   const maxRow = tableData.length - 1;
                                   const maxCol = tableData[0].length - 1;
+                                  if (!isFocusedEdit) {
+                                    if (
+                                      e.key === "Delete" // Windows / external keyboards
+                                      // MacBook Delete key
+                                    ) {
+                                      console.log("ok");
 
+                                      e.preventDefault(); // Prevent accidental browser navigation
+
+                                      clearSelectedCells();
+                                    }
+                                  }
                                   // Allow caret movement but block outer handlers in freemode
                                   if (isFocusedEdit) {
                                     const arrowKeys = [
@@ -2430,113 +2829,113 @@ export default function Table({
                                     return;
                                   }
 
-                                  if (e.key === "Enter" && !e.shiftKey) {
-                                    e.preventDefault();
-                                    const nextRow = Math.min(row + 1, maxRow);
-                                    setEditingCell([nextRow, col] as [
-                                      number,
-                                      number
-                                    ]);
-                                    setSelectedCell([nextRow, col] as [
-                                      number,
-                                      number
-                                    ]);
-                                    setSelectionAnchor([nextRow, col] as [
-                                      number,
-                                      number
-                                    ]);
-                                    setSelectedRange({
-                                      start: [nextRow, col] as [number, number],
-                                      end: [nextRow, col] as [number, number],
-                                    });
-                                    return;
-                                  }
+                                  // if (e.key === "Enter" && !e.shiftKey) {
+                                  //   e.preventDefault();
+                                  //   const nextRow = Math.min(row + 1, maxRow);
+                                  //   setEditingCell([nextRow, col] as [
+                                  //     number,
+                                  //     number
+                                  //   ]);
+                                  //   setSelectedCell([nextRow, col] as [
+                                  //     number,
+                                  //     number
+                                  //   ]);
+                                  //   setSelectionAnchor([nextRow, col] as [
+                                  //     number,
+                                  //     number
+                                  //   ]);
+                                  //   setSelectedRange({
+                                  //     start: [nextRow, col] as [number, number],
+                                  //     end: [nextRow, col] as [number, number],
+                                  //   });
+                                  //   return;
+                                  // }
 
-                                  if (e.key === "Tab") {
-                                    e.preventDefault();
-                                    let nextCol = e.shiftKey
-                                      ? col - 1
-                                      : col + 1;
-                                    let nextRow = row;
+                                  // if (e.key === "Tab") {
+                                  //   e.preventDefault();
+                                  //   let nextCol = e.shiftKey
+                                  //     ? col - 1
+                                  //     : col + 1;
+                                  //   let nextRow = row;
 
-                                    if (nextCol < 2) {
-                                      nextCol = maxCol;
-                                      nextRow = Math.max(2, row - 1);
-                                    } else if (nextCol > maxCol) {
-                                      nextCol = 0;
-                                      nextRow = Math.min(maxRow, row + 1);
-                                    }
+                                  //   if (nextCol < 2) {
+                                  //     nextCol = maxCol;
+                                  //     nextRow = Math.max(2, row - 1);
+                                  //   } else if (nextCol > maxCol) {
+                                  //     nextCol = 0;
+                                  //     nextRow = Math.min(maxRow, row + 1);
+                                  //   }
 
-                                    setEditingCell([nextRow, nextCol] as [
-                                      number,
-                                      number
-                                    ]);
-                                    setSelectedCell([nextRow, nextCol] as [
-                                      number,
-                                      number
-                                    ]);
-                                    setSelectionAnchor([nextRow, nextCol] as [
-                                      number,
-                                      number
-                                    ]);
-                                    setSelectedRange({
-                                      start: [nextRow, nextCol] as [
-                                        number,
-                                        number
-                                      ],
-                                      end: [nextRow, nextCol] as [
-                                        number,
-                                        number
-                                      ],
-                                    });
-                                    return;
-                                  }
+                                  //   setEditingCell([nextRow, nextCol] as [
+                                  //     number,
+                                  //     number
+                                  //   ]);
+                                  //   setSelectedCell([nextRow, nextCol] as [
+                                  //     number,
+                                  //     number
+                                  //   ]);
+                                  //   setSelectionAnchor([nextRow, nextCol] as [
+                                  //     number,
+                                  //     number
+                                  //   ]);
+                                  //   setSelectedRange({
+                                  //     start: [nextRow, nextCol] as [
+                                  //       number,
+                                  //       number
+                                  //     ],
+                                  //     end: [nextRow, nextCol] as [
+                                  //       number,
+                                  //       number
+                                  //     ],
+                                  //   });
+                                  //   return;
+                                  // }
 
-                                  if (
-                                    [
-                                      "ArrowUp",
-                                      "ArrowDown",
-                                      "ArrowLeft",
-                                      "ArrowRight",
-                                    ].includes(e.key)
-                                  ) {
-                                    e.preventDefault();
+                                  // if (
+                                  //   [
+                                  //     "ArrowUp",
+                                  //     "ArrowDown",
+                                  //     "ArrowLeft",
+                                  //     "ArrowRight",
+                                  //   ].includes(e.key)
+                                  // ) {
+                                  //   e.preventDefault();
 
-                                    let nextRow = row;
-                                    let nextCol = col;
+                                  //   let nextRow = row;
+                                  //   let nextCol = col;
 
-                                    if (e.key === "ArrowUp")
-                                      nextRow = Math.max(0, row - 1);
-                                    if (e.key === "ArrowDown")
-                                      nextRow = Math.min(maxRow, row + 1);
-                                    if (e.key === "ArrowLeft")
-                                      nextCol = Math.max(0, col - 1);
-                                    if (e.key === "ArrowRight")
-                                      nextCol = Math.min(maxCol, col + 1);
+                                  //   if (e.key === "ArrowUp")
+                                  //     nextRow = Math.max(0, row - 1);
+                                  //   if (e.key === "ArrowDown")
+                                  //     nextRow = Math.min(maxRow, row + 1);
+                                  //   if (e.key === "ArrowLeft")
+                                  //     nextCol = Math.max(0, col - 1);
+                                  //   if (e.key === "ArrowRight")
+                                  //     nextCol = Math.min(maxCol, col + 1);
 
-                                    setEditingCell([nextRow, nextCol] as [
-                                      number,
-                                      number
-                                    ]);
-                                    setSelectedCell([nextRow, nextCol] as [
-                                      number,
-                                      number
-                                    ]);
-                                    setSelectionAnchor([nextRow, nextCol] as [
-                                      number,
-                                      number
-                                    ]);
-                                    setSelectedRange({
-                                      start: [nextRow, nextCol] as [
-                                        number,
-                                        number
-                                      ],
-                                      end: [nextRow, nextCol] as [
-                                        number,
-                                        number
-                                      ],
-                                    });
-                                  }
+                                  //   setEditingCell([nextRow, nextCol] as [
+                                  //     number,
+                                  //     number
+                                  //   ]);
+                                  //   setSelectedCell([nextRow, nextCol] as [
+                                  //     number,
+                                  //     number
+                                  //   ]);
+                                  //   setSelectionAnchor([nextRow, nextCol] as [
+                                  //     number,
+                                  //     number
+                                  //   ]);
+                                  //   setSelectedRange({
+                                  //     start: [nextRow, nextCol] as [
+                                  //       number,
+                                  //       number
+                                  //     ],
+                                  //     end: [nextRow, nextCol] as [
+                                  //       number,
+                                  //       number
+                                  //     ],
+                                  //   });
+                                  // }
                                 }}
                                 className={`${
                                   rowIndex === 0
@@ -2557,7 +2956,10 @@ export default function Table({
           </div>
 
           {/* Buttons */}
-          <button onClick={submitbutton} className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition duration-200">
+          <button
+            onClick={submitbutton}
+            className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition duration-200"
+          >
             save
           </button>
         </div>
