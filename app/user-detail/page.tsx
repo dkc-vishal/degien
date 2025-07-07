@@ -7,6 +7,7 @@ import UpdateUserModal from "./UpdateUserModal";
 import { toast } from "sonner";
 import { FaUserPlus } from "react-icons/fa6";
 import ResetPasswordModal from "./ResetPasswordModal";
+import { API_ENDPOINTS } from "@/lib/api";
 
 export interface User {
   id: number;
@@ -17,40 +18,58 @@ export interface User {
 }
 
 const UserDetailsPage: React.FC = () => {
-  const [users, setUsers] = useState<User[]>(() => {
-    if (typeof window !== "undefined") {
-      const storedUsers = localStorage.getItem("users");
-      return storedUsers ? JSON.parse(storedUsers) : [];
-    }
-    return [];
-  });
-
-  const [inactiveUsers, setInactiveUsers] = useState<User[]>(() => {
-    if (typeof window !== "undefined") {
-      const storedInactiveUsers = localStorage.getItem("inactiveUsers");
-      return storedInactiveUsers ? JSON.parse(storedInactiveUsers) : [];
-    }
-    return [];
-  });
+  
+  const [users, setUsers] = useState<User[]>([]) ; 
+  const [inActiveUsers, setInActiveUsers] = useState<User[]>([]) ; 
 
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [createdUser, setCreatedUser] = useState<any>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showConfirmInactiveModal, setShowConfirmInactiveModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "inactive">("all");
 
-  const handleDelete = (id: number) => {
-    const userToDeactivate = users.find((u) => u.id === id);
-    if (userToDeactivate) {
-      setInactiveUsers((prev) => [...prev, userToDeactivate]);
-      setUsers((prev) => prev.filter((u) => u.id !== id));
-      toast(`User ${userToDeactivate.username} marked as inactive.`);
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try{
+        const token = localStorage.getItem("access_token") ; 
+
+        if(!token){
+          throw new Error("No access token found.") ; 
+        }
+
+        const endpoint = activeTab === "all" ? API_ENDPOINTS.activeUsers.url : API_ENDPOINTS.inActiveUsers.url ; 
+
+        const res = await fetch(endpoint, {
+          headers: {
+            "Content-Type": "application/json", 
+            Authorization: `Bearer ${token}`
+          }
+        })
+
+        if(!res.ok){
+          throw new Error("Failed to fetch users.")
+        }
+
+        const data = await res.json() ;
+
+        if(activeTab === "all"){
+          setUsers(data.data) ; 
+        }
+        else{
+          setInActiveUsers(data.data) ; 
+        }
+
+      }catch(error){
+        console.error("Error fetching users: ", error) ; 
+
+        toast.error("Error fetching users.") ; 
+      }
     }
-    setShowConfirmInactiveModal(false);
-  };
+
+    fetchUsers() ; 
+  }, [activeTab])
 
   const handleUpdate = (user: User) => {
     setSelectedUser(user);
@@ -67,15 +86,11 @@ const UserDetailsPage: React.FC = () => {
     setShowUpdateModal(false);
   };
 
-  useEffect(() => {
-    localStorage.setItem("users", JSON.stringify(users));
-  }, [users]);
+  const handleInactive = () => {
+    toast.success("Will be handled later.")
+  }
 
-  useEffect(() => {
-    localStorage.setItem("inactiveUsers", JSON.stringify(inactiveUsers));
-  }, [inactiveUsers]);
-
-  const displayedUsers = activeTab === "all" ? users : inactiveUsers;
+  const displayedUsers = activeTab === "all" ? users : inActiveUsers;
 
   return (
     <main className="flex-1 p-4 sm:p-6 bg-gray-50 min-h-screen w-full">
@@ -91,12 +106,12 @@ const UserDetailsPage: React.FC = () => {
           </a>
         </div>
 
-        <div className="flex gap-4 mb-6">
+        <div className="flex gap-4 mb-9">
           <button
             onClick={() => setActiveTab("all")}
             className={`px-3 py-2 rounded-lg font-medium ${activeTab === "all" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700 cursor-pointer"}`}
           >
-            All Users
+            Active Users
           </button>
           <button
             onClick={() => setActiveTab("inactive")}
@@ -131,7 +146,7 @@ const UserDetailsPage: React.FC = () => {
                       <td className="px-4 py-4">
                         <div className="flex justify-center gap-3">
                           <button onClick={() => handleUpdate(user)} className="bg-blue-400 hover:bg-blue-500 text-white px-3 py-1 rounded cursor-pointer">Update</button>
-                          <button onClick={() => { setSelectedUser(user); setShowConfirmInactiveModal(true); }} className="bg-red-400 hover:bg-red-500 text-white px-3 py-1 rounded cursor-pointer">Mark Inactive</button>
+                          <button onClick={() => handleInactive()} className="bg-red-400 hover:bg-red-500 text-white px-3 py-1 rounded cursor-pointer">Mark Inactive</button>
                           <button onClick={() => handleResetPassword(user)} className="bg-teal-500 hover:bg-teal-600 text-white px-3 py-1 rounded cursor-pointer">Reset Password</button>
                         </div>
                       </td>
@@ -173,14 +188,6 @@ const UserDetailsPage: React.FC = () => {
 
       {showSuccessModal && createdUser && (
         <SuccessModal user={createdUser} onClose={() => setShowSuccessModal(false)} />
-      )}
-
-      {showConfirmInactiveModal && selectedUser && (
-        <ConfirmInactiveModal
-          user={selectedUser}
-          onConfirm={() => handleDelete(selectedUser.id)}
-          onCancel={() => setShowConfirmInactiveModal(false)}
-        />
       )}
 
       {showUpdateModal && selectedUser && (
