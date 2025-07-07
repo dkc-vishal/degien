@@ -94,7 +94,7 @@ const page: React.FC = () => {
       setLoading(true);
 
       setTimeout(() => {
-        router.push("/dashboard");
+        router.push("/Dashboard");
       }, 2000);
 
     } catch (err) {

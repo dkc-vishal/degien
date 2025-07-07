@@ -14,7 +14,7 @@ export default function Sidebar({ side }: any) {
   const pathname = usePathname();
 
   const menuItems = [
-    { icon: <MdDashboard size={22} />, label: "Dashboard", path: "/dashboard" },
+    { icon: <MdDashboard size={22} />, label: "Dashboard", path: "/Dashboard" },
     { icon: <FaUserFriends size={22} />, label: "User Management", path: "/user-detail" },
     { icon: <GiSewingMachine size={22} />, label: "Sampling Styles", path: "/sampling-styles" },
     { icon: <FaTshirt size={22} />, label: "Production Styles", path: "/production-styles" },
@@ -34,7 +34,7 @@ export default function Sidebar({ side }: any) {
     }
 
     try {
-      const res = await fetch("http://shivam-mac.local:8000/api/v1.0/auth/logout/", {
+      const res = await fetch("http://shivam-mac.local:8001/api/v1.0/auth/logout/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
