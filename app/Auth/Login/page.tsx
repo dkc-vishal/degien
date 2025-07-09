@@ -26,7 +26,7 @@ const page: React.FC = () => {
   const [success, setSuccess] = useState("");
 
   const [showPassword, setShowPassword] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+
 
   const validate = () => {
     const errors = { email: "", password: "" };
