@@ -230,37 +230,35 @@ export default function Table({
       };
     });
   };
-const handleSaveEditedImage = (newImageDataUrl: string) => {
-  const { rownumber, colnumber, imgindex } = imageSeleted;
+  const handleSaveEditedImage = (newImageDataUrl: string) => {
+    const { rownumber, colnumber, imgindex } = imageSeleted;
 
-  setTableData((prevData) => {
-    const newData = [...prevData];
-    const cell = newData[rownumber][colnumber];
+    setTableData((prevData) => {
+      const newData = [...prevData];
+      const cell = newData[rownumber][colnumber];
 
-    const isSingleImage =
-      cell.data_type === "single_image" ;
+      const isSingleImage = cell.data_type === "single_image";
 
-    if (isSingleImage && Array.isArray(cell.value)) {
-      const updatedImages = [...cell.value];
-      updatedImages[imgindex] = newImageDataUrl;
+      if (isSingleImage && Array.isArray(cell.value)) {
+        const updatedImages = [...cell.value];
+        updatedImages[imgindex] = newImageDataUrl;
 
-      newData[rownumber][colnumber] = {
-        ...cell,
-        value: updatedImages,
-      };
-    }
+        newData[rownumber][colnumber] = {
+          ...cell,
+          value: updatedImages,
+        };
+      }
 
-    return newData;
-  });
+      return newData;
+    });
 
-  toast({
-    title: "Image updated",
-    description: "Your changes have been saved.",
-  });
+    toast({
+      title: "Image updated",
+      description: "Your changes have been saved.",
+    });
 
-  handleCloseImageEditor();
-};
-
+    handleCloseImageEditor();
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -685,7 +683,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
   }, []);
   useEffect(() => {
     const savedColWidths = localStorage.getItem(`table_colWidths_${tablename}`);
-    console.log(savedColWidths);
+    // console.log(savedColWidths);
     if (savedColWidths) {
       setColWidths(JSON.parse(savedColWidths));
     }
@@ -974,12 +972,15 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
     setRedoStack,
     lastSnapshotRef,
   });
-  const getCellHistory = async (cellid: string, contextMenu: { row: number; col: number; x: number; y: number }) => {
-const res = await axios.get(API_ENDPOINTS.cellHistory(cellid).url);
+  const getCellHistory = async (
+    cellid: string,
+    contextMenu: { row: number; col: number; x: number; y: number }
+  ) => {
+    const res = await axios.get(API_ENDPOINTS.cellHistory(cellid).url);
 
-const updatedMap = { ...editHistoryMap, ...res.data.data };
+    const updatedMap = { ...editHistoryMap, ...res.data.data };
 
-const key = `${contextMenu.row}-${contextMenu.col}`;
+    const key = `${contextMenu.row}-${contextMenu.col}`;
     setSelectedHistory((s) => ({
       ...s,
       key,
@@ -990,15 +991,39 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
       history: updatedMap,
     }));
     setSelectedHistoryIndex(Object.keys(updatedMap).length - 1);
-
-
-
-                
-
-
   };
+  const handleSave = async () => {
+    const cellMap: Record<string, CellData> = {};
 
+    tableData.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        const key = `${rowIndex}-${colIndex}`;
+        cellMap[key] = cell;
+      });
+    });
+    const columnMetadata: Record<string, any> = {};
 
+  columnheaders.forEach((col:any, index:number) => {
+    columnMetadata[index] = {
+      width: 200, // default width, adjust as needed
+      header: col.header,
+      data_type: col.data_type,
+      is_editable: col.is_editable,
+      is_frozen: index < 2, // freeze first two columns for example
+      is_hidden: false,
+      is_moveable: false,
+    };
+  });
+
+    console.log({"spreadsheet_id":"32dbb7af-18b7-493f-ab77-0781e34a7957","frozen_column":frozenColIndices,"column_metadata":columnMetadata,"cells": cellMap});
+    const res = await axios.post("http://shivam-mac.local:8001/api/v1.0/spreadsheet/update/32dbb7af-18b7-493f-ab77-0781e34a7957/", {
+      spreadsheet_id: "32dbb7af-18b7-493f-ab77-0781e34a7957",
+      frozen_column: frozenColIndices,
+      column_metadata: columnMetadata,
+      cells: cellMap
+    });
+    console.log(res)
+  };
   return (
     <>
       {contextMenu1?.visible && (
@@ -1143,7 +1168,7 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
                 if (contextMenu.cellid) {
                   getCellHistory(contextMenu.cellid, contextMenu);
                 }
-               
+
                 setContextMenu(null);
               }}
               className="hover:bg-gray-100 px-4 py-2 cursor-pointer text-blue-600"
@@ -1191,7 +1216,6 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
         </div>
       )}
       {selectedHistory && (
-
         <div
           className="absolute bg-white border border-gray-300 rounded-lg shadow-lg w-80 z-50"
           style={{
@@ -1220,15 +1244,20 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
               {/* Next Button */}
               <button
                 disabled={
-                  selectedHistoryIndex >= Object.keys(selectedHistory.history).length - 1
+                  selectedHistoryIndex >=
+                  Object.keys(selectedHistory.history).length - 1
                 }
                 onClick={() =>
                   setSelectedHistoryIndex((i) =>
-                    Math.min(i + 1, Object.keys(selectedHistory.history).length - 1)
+                    Math.min(
+                      i + 1,
+                      Object.keys(selectedHistory.history).length - 1
+                    )
                   )
                 }
                 className={`text-lg px-1 transition ${
-                  selectedHistoryIndex >= Object.keys(selectedHistory.history).length - 1
+                  selectedHistoryIndex >=
+                  Object.keys(selectedHistory.history).length - 1
                     ? "text-gray-300"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
@@ -1237,7 +1266,7 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
               </button>
             </div>
           </div>
-                <div className="p-4">
+          <div className="p-4">
             {(() => {
               const entry = selectedHistory.history[selectedHistoryIndex];
               return (
@@ -2119,45 +2148,44 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
                                         <div className="absolute top-1 right-1 lg:opacity-0  lg:group-hover:opacity-100 transition-opacity duration-200 flex flex-col gap-1 z-10">
                                           <Button
                                             onClick={(e) => {
-                                                setTableData((prev) => {
-                                                  const updated = [...prev];
-                                                  const cell =
-                                                    updated[rowIndex][colIndex];
+                                              setTableData((prev) => {
+                                                const updated = [...prev];
+                                                const cell =
+                                                  updated[rowIndex][colIndex];
 
-                                                  const isSingleImage =
-                                                    cell.data_type ===
-                                                      "single_image" ||
-                                                    (Array.isArray(
-                                                      cell.data_type
-                                                    ) &&
-                                                      cell.data_type.includes(
-                                                        "single_image"
-                                                      ));
+                                                const isSingleImage =
+                                                  cell.data_type ===
+                                                    "single_image" ||
+                                                  (Array.isArray(
+                                                    cell.data_type
+                                                  ) &&
+                                                    cell.data_type.includes(
+                                                      "single_image"
+                                                    ));
 
-                                                  if (
-                                                    isSingleImage &&
-                                                    Array.isArray(cell.value)
-                                                  ) {
-                                                    const newImages = [
-                                                      ...cell.value,
-                                                    ];
-                                                    newImages.splice(i, 1);
+                                                if (
+                                                  isSingleImage &&
+                                                  Array.isArray(cell.value)
+                                                ) {
+                                                  const newImages = [
+                                                    ...cell.value,
+                                                  ];
+                                                  newImages.splice(i, 1);
 
-                                                    updated[rowIndex][
-                                                      colIndex
-                                                    ] = {
+                                                  updated[rowIndex][colIndex] =
+                                                    {
                                                       ...cell,
                                                       value: newImages,
                                                     };
-                                                  }
+                                                }
 
-                                                  return updated;
-                                                });
+                                                return updated;
+                                              });
 
-                                                setTimeout(() => {
-                                                  autoResizeAllTextareas(e);
-                                                }, 0);
-                                              }}
+                                              setTimeout(() => {
+                                                autoResizeAllTextareas(e);
+                                              }, 0);
+                                            }}
                                             variant="destructive"
                                             size="icon"
                                             className="h-6 w-6"
@@ -2359,7 +2387,6 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
                                       setIsFocusedEdit(false); // Exit freemode
                                       // You may also blur textarea or move focus to next
                                     }
-
                                     return;
                                   }
 
@@ -2370,114 +2397,6 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
                                     setEditingCell(null);
                                     return;
                                   }
-
-                                  // if (e.key === "Enter" && !e.shiftKey) {
-                                  //   e.preventDefault();
-                                  //   const nextRow = Math.min(row + 1, maxRow);
-                                  //   setEditingCell([nextRow, col] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectedCell([nextRow, col] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectionAnchor([nextRow, col] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectedRange({
-                                  //     start: [nextRow, col] as [number, number],
-                                  //     end: [nextRow, col] as [number, number],
-                                  //   });
-                                  //   return;
-                                  // }
-
-                                  // if (e.key === "Tab") {
-                                  //   e.preventDefault();
-                                  //   let nextCol = e.shiftKey
-                                  //     ? col - 1
-                                  //     : col + 1;
-                                  //   let nextRow = row;
-
-                                  //   if (nextCol < 2) {
-                                  //     nextCol = maxCol;
-                                  //     nextRow = Math.max(2, row - 1);
-                                  //   } else if (nextCol > maxCol) {
-                                  //     nextCol = 0;
-                                  //     nextRow = Math.min(maxRow, row + 1);
-                                  //   }
-
-                                  //   setEditingCell([nextRow, nextCol] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectedCell([nextRow, nextCol] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectionAnchor([nextRow, nextCol] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectedRange({
-                                  //     start: [nextRow, nextCol] as [
-                                  //       number,
-                                  //       number
-                                  //     ],
-                                  //     end: [nextRow, nextCol] as [
-                                  //       number,
-                                  //       number
-                                  //     ],
-                                  //   });
-                                  //   return;
-                                  // }
-
-                                  // if (
-                                  //   [
-                                  //     "ArrowUp",
-                                  //     "ArrowDown",
-                                  //     "ArrowLeft",
-                                  //     "ArrowRight",
-                                  //   ].includes(e.key)
-                                  // ) {
-                                  //   e.preventDefault();
-
-                                  //   let nextRow = row;
-                                  //   let nextCol = col;
-
-                                  //   if (e.key === "ArrowUp")
-                                  //     nextRow = Math.max(0, row - 1);
-                                  //   if (e.key === "ArrowDown")
-                                  //     nextRow = Math.min(maxRow, row + 1);
-                                  //   if (e.key === "ArrowLeft")
-                                  //     nextCol = Math.max(0, col - 1);
-                                  //   if (e.key === "ArrowRight")
-                                  //     nextCol = Math.min(maxCol, col + 1);
-
-                                  //   setEditingCell([nextRow, nextCol] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectedCell([nextRow, nextCol] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectionAnchor([nextRow, nextCol] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectedRange({
-                                  //     start: [nextRow, nextCol] as [
-                                  //       number,
-                                  //       number
-                                  //     ],
-                                  //     end: [nextRow, nextCol] as [
-                                  //       number,
-                                  //       number
-                                  //     ],
-                                  //   });
-                                  // }
                                 }}
                                 className={`${
                                   rowIndex === 0
@@ -2498,16 +2417,22 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
           </div>
 
           {/* Buttons */}
+                    <button
+            onClick={handleSave}
+            className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition duration-200"
+          >
+            save
+          </button>
         </div>
+        {isImageEditorOpen && editingImageInfo && (
+          <ImageEditorModal
+            isOpen={isImageEditorOpen}
+            onClose={handleCloseImageEditor}
+            image={editingImageInfo.image}
+            onSave={(newImageDataUrl) => handleSaveEditedImage(newImageDataUrl)}
+          />
+        )}
       </main>
-      {isImageEditorOpen && editingImageInfo && (
-        <ImageEditorModal
-          isOpen={isImageEditorOpen}
-          onClose={handleCloseImageEditor}
-          image={editingImageInfo.image}
-          onSave={(newImageDataUrl) => handleSaveEditedImage(newImageDataUrl)}
-        />
-      )}
     </>
   );
 }

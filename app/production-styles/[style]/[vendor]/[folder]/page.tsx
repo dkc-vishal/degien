@@ -5,6 +5,18 @@ import { useParams, useRouter } from "next/navigation";
 import FileCard from "@/components/core/FileCard";
 import FolderCard from "@/components/core/FolderCard";
 
+// Type definitions for folder and file items
+type FileItem = {
+  type: "file";
+  name: string;
+};
+
+type FolderItem = {
+  type: "folder";
+  title: string;
+  files: Array<FolderItem | FileItem>;
+};
+
 const folders: FolderItem[] = [
   {
     type: "folder",

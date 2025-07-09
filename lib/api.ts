@@ -1,4 +1,4 @@
-export const BASE_URL = "http://shivam-mac.local:8001/api/v1.0/auth";
+export const BASE_URL = "http://128.100.10.108:8000/api/v1.0/auth";
 
 export const API_ENDPOINTS = {
     login: {
@@ -59,7 +59,7 @@ export const API_ENDPOINTS = {
     },
     // get cell history 
     cellHistory: (cellId: string) => ({
-        url: `http://shivam-mac.local:8001/api/v1.0/spreadsheet/cell-history/${cellId}/`,
+        url: `http://128.100.10.108:8000/api/v1.0/spreadsheet/cell-history/${cellId}/`,
         method: 'GET'
     })
 }

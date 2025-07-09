@@ -52,7 +52,7 @@ const convertKebabToTitle = (str: string) =>
 
 const VendorPage = ({ params }: { params: { style: string } }) => {
   const router = useRouter();
-  const { style } = use(params);
+  const { style } = params;
   const styleTitle = convertKebabToTitle(style);
 
   const handleVendorClick = (orderId: string) => {

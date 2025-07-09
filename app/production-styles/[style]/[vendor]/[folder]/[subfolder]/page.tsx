@@ -14,9 +14,9 @@ const SubFolderPage = () => {
       .map((w) => w[0].toUpperCase() + w.slice(1))
       .join(" ");
 
-  const displayPath = `Production Styles / ${displayTitle(style)} / ${displayTitle(
-    vendor
-  )} / ${displayTitle(folder)} / ${displayTitle(subfolder)}`;
+  const displayPath = `Production Styles / ${displayTitle(style ?? "")} / ${displayTitle(
+    vendor ?? ""
+  )} / ${displayTitle(folder ?? "")} / ${displayTitle(subfolder ?? "")}`;
 
   // Find the folder
   const matchingFolder = folders.find(
@@ -38,9 +38,11 @@ const SubFolderPage = () => {
 
       {matchingSubfolder && matchingSubfolder.type === "folder" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-6 ml-6">
-          {matchingSubfolder.files.map((file, idx) => (
-            <FileCard key={idx} name={file.name} />
-          ))}
+          {matchingSubfolder.files.map((file, idx) =>
+            file.type === "file" ? (
+              <FileCard key={idx} name={file.name} />
+            ) : null
+          )}
         </div>
       ) : (
         <p className="text-red-500 italic">No files found in this folder.</p>

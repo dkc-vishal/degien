@@ -49,6 +49,11 @@ export default function Sidebar({ isSidebarOpen }: any) {
       label: "Image Editor",
       path: "/issue-tracker",
     },
+        {
+      icon: <Image size={22} />,
+      label: "Notifications",
+      path: "/notifications",
+    },
   ];
 
   const profileItems = [

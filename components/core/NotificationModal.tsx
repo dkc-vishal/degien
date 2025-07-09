@@ -33,7 +33,7 @@ const NotificationModal = ({ title, message, timestamp, onConfirm, onCancel }: N
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-    }, [onCancel]);
+  }, [onCancel]);
 
   const handleConfirm = () => {
     ``
@@ -42,14 +42,13 @@ const NotificationModal = ({ title, message, timestamp, onConfirm, onCancel }: N
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex  justify-center bg-black/10 backdrop-blur-[2px]">
-      <div className="bg-white rounded-xl shadow-2xl p-6 w-[25%] max-w-2xl relative animate-fadeIn h-[30%]">
-        <div className="text-center mb-2 text-3xl " >📩</div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/10 backdrop-blur-[2px]">
+      <div className="bg-white rounded-xl shadow-2xl p-6 w-[90%] max-w-2xl relative animate-fadeIn">
+        <div className="text-center mb-2 text-3xl">📩</div>
 
-        <h2 className="text-xl font-bold text-gray-800 text-center mb-2">{title}</h2>
-        <p className="text-xs text-center text-gray-400 mb-2">{formatDateTime(timestamp)}</p>
+        <h2 className="text-xl font-bold text-gray-800 text-center mb-5">{title}</h2>
         <p className="text-gray-700 text-sm text-center mb-1">{message}</p>
-        
+        <p className="text-xs text-center text-gray-400 mb-9">{formatDateTime(timestamp)}</p>
 
         <label className="flex items-start gap-2 text-sm text-gray-700 mb-8 cursor-pointer">
           <input

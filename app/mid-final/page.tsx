@@ -25,7 +25,7 @@ const MidReportForm = () => {
   const [tableData, setTableData] = useState({});
   async function fetchdata() {
     const res = await axios.get(
-      "http://shivam-mac.local:8001/api/v1.0/spreadsheet/32dbb7af-18b7-493f-ab77-0781e34a7957"
+      "http://128.100.10.108:8000/api/v1.0/spreadsheet/32dbb7af-18b7-493f-ab77-0781e34a7957"
     );
     const col_metadata: Record<string, ColumnMetadata> = await res.data.data
       .column_metadata;

@@ -36,7 +36,11 @@ export function useKeyboardShortcuts({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isCtrl = e.ctrlKey || e.metaKey;
-
+            if (e.key === "Escape") {
+              e.preventDefault();
+              console.log("Escape key pressed");
+              setEditingCell(null);
+            }
       // Copy
       if (isCtrl && e.key === "c") {
         if (!selectedRange && !selectedCell) return;
@@ -156,10 +160,7 @@ export function useKeyboardShortcuts({
       }
 
       // Escape
-      if (e.key === "Escape") {
-        e.preventDefault();
-        setEditingCell(null);
-      }
+
     };  
 
     window.addEventListener("keydown", handleKeyDown);
