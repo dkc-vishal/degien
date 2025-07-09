@@ -160,7 +160,7 @@ export function useKeyboardShortcuts({
         e.preventDefault();
         setEditingCell(null);
       }
-    };
+    };  
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
