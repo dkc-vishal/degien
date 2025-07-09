@@ -350,6 +350,12 @@ const handleSaveEditedImage = (
         !tableRef.current.contains(event.target as Node)
       ) {
         setSelectedCell(null);
+        setCopiedImage(null);
+        setimageSeleted({
+          rownumber: 0,
+          colnumber: 0,
+          imgindex: 0,
+        })
         setSelectedRange(null);
         setSelectionAnchor(null);
       }
