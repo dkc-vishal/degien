@@ -3,14 +3,16 @@ import { toast } from "sonner";
 import { userEndPoints } from "../../endpoints/index";
 import { queryKeys } from "../../utils/query-keys";
 import type { CreateUserRequest, UpdateUserRequest } from "../../types/index";
+import { cacheUtils } from "../../utils";
 
 //check this function is work correct or not
 export const useCreateUser = () => {
-  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: CreateUserRequest) => userEndPoints.createUser(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+    // mutationFn: (data: CreateUserRequest) => userEndPoints.createUser(data),
+    //check this function is work correct or not
+    mutationFn: userEndPoints.createUser,
+    onSuccess: (newUser) => {
+      cacheUtils.users.addUserToList(newUser);
       toast.success("User created successfully");
     },
     onError: (error: any) => {
@@ -21,13 +23,12 @@ export const useCreateUser = () => {
 };
 
 export const useUpdateUser = () => {
-  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateUserRequest }) =>
       userEndPoints.updateUser(id, data),
-    onSuccess: (data, variable) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
-      queryClient.setQueryData(queryKeys.users.detail(variable.id), data);
+    onSuccess: (updatedUser, variable) => {
+      cacheUtils.users.updateUserInList(variable.id, updatedUser);
+      toast.success("User updated successfully");
     },
     onError: () => {
       toast.error("Failed to update user");
@@ -38,9 +39,11 @@ export const useUpdateUser = () => {
 export const useDeleteUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => userEndPoints.deleteUser(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+    // mutationFn: (id: string) => userEndPoints.deleteUser(id),
+    mutationFn: userEndPoints.deleteUser,
+    onSuccess: (_, deletedUserId) => {
+      // queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+      cacheUtils.users.removeUserFromList(deletedUserId);
       toast.success("User deleted successfully");
     },
     onError: (error: any) => {

@@ -1,22 +1,96 @@
 import { queryClient } from "../client/query-client";
+import { User } from "../types";
 import { queryKeys } from "./query-keys";
 
 export const cacheUtils = {
-  invalidateUserList: () => {
-    queryClient.invalidateQueries({
-      queryKey: queryKeys.users.lists(),
-    });
-  },
-  invalidateUserDetail: (userId: string) => {
-    queryClient.invalidateQueries({
-      queryKey: queryKeys.users.detail(userId),
-    });
-  },
-  updateUserInCache: (userId: string, userData: any) => {
-    queryClient.setQueryData(queryKeys.users.detail(userId), userData);
+  //auth cache management
+  auth: {
+    setUser: (user: User) => {
+      queryClient.setQueryData(queryKeys.auth.profile(), user);
+    },
+
+    clearUser: () => {
+      // check if this is needed
+      // queryClient.removeQueries({ queryKey: queryKeys.auth.all });
+      queryClient.removeQueries({ queryKey: queryKeys.auth.profile() });
+    },
+
+    invalidateProfile: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.profile() });
+    },
   },
 
-  clearAuthCache: () => {
-    queryClient.removeQueries({ queryKey: queryKeys.auth.all });
+  users: {
+    invalidateList: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+    },
+
+    updateUserInList: (userId: string, userData: User) => {
+      queryClient.setQueriesData(
+        { queryKey: queryKeys.users.lists() },
+        (oldData: any) => {
+          if (!oldData) return oldData;
+          return {
+            ...oldData,
+            data: oldData.data.map((user: User) =>
+              user.id === userId ? { ...user, ...userData } : user
+            ),
+          };
+        }
+      );
+
+      queryClient.setQueryData(
+        queryKeys.users.detail(userId),
+        (oldData: User | undefined) =>
+          oldData ? { ...oldData, ...userData } : undefined
+      );
+    },
+
+    removeUserFromList: (userId: string) => {
+      queryClient.setQueriesData(
+        { queryKey: queryKeys.users.lists() },
+        (oldData: any) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            data: oldData.data.filter((user: User) => user.id !== userId),
+            total: oldData.total - 1,
+          };
+        }
+      );
+
+      queryClient.removeQueries({ queryKey: queryKeys.users.detail(userId) });
+    },
+
+    addUserToList: (newUser: User) => {
+      queryClient.setQueriesData(
+        { queryKey: queryKeys.users.lists() },
+        (oldData: any) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            data: [newUser, ...oldData.data],
+            total: oldData.total + 1,
+          };
+        }
+      );
+    },
+  },
+
+  //global cache management
+  global: {
+    clearAll: () => {
+      queryClient.clear();
+    },
+
+    invalidateAll: () => {
+      queryClient.invalidateQueries();
+    },
+
+    refetchAll: () => {
+      queryClient.refetchQueries();
+    },
   },
 };

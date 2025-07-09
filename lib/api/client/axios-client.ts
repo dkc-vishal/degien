@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
-import { toast } from "sonner";
+import { handleApiError } from "../utils/error-handler";
 export class ApiClient {
   private client: AxiosInstance;
 
@@ -23,22 +23,36 @@ export class ApiClient {
         if (token) {
           config.headers.Authorization = `Bearer ${token}`; //explain this line
         }
+
+        config.metadata = { startTime: new Date() };
+
         return config;
       },
       (error) => Promise.reject(error)
     );
 
     this.client.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.resposne?.status === 401) {
-          localStorage.removeItem("auth_token");
-          window.location.href = "/Auth/Login";
+      (response: AxiosResponse) => {
+        // Log response time in development
+        if (
+          process.env.NODE_ENV === "development" &&
+          response.config.metadata
+        ) {
+          const endTime = new Date();
+          const duration =
+            endTime.getTime() - response.config.metadata.startTime.getTime();
+          console.log(
+            `✅ ${response.config.method?.toUpperCase()} ${
+              response.config.url
+            } - ${duration}ms`
+          );
         }
 
-        //add global error handling
-        const message = error.response?.data?.message || "An error occurred";
-        toast.error(message);
+        return response;
+      },
+
+      (error) => {
+        handleApiError(error);
 
         return Promise.reject(error);
       }

@@ -1,24 +1,21 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { authEndpoints } from "../../endpoints/auth";
-import { queryKeys } from "../../utils/query-keys";
-import { use } from "react";
+import { cacheUtils } from "../../utils";
 
 export const useLogin = () => {
-  const queryClient = useQueryClient();
-
   // check and correct this function
   return useMutation({
     mutationFn: authEndpoints.login,
-    
+
     onSuccess: (data) => {
       // Store token
-      localStorage.setItem("token", data.token);
+      localStorage.setItem("auth_token", data.token);
       if (data.refreshToken) {
         localStorage.setItem("refresh_token", data.refreshToken);
       }
       // Cache user data
-      queryClient.setQueryData(queryKeys.auth.profile(), data.user);
+      cacheUtils.auth.setUser(data.user);
 
       toast.success("welcome back!");
     },
@@ -30,8 +27,6 @@ export const useLogin = () => {
 };
 
 export const useLogOut = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: authEndpoints.logout,
     onSuccess: () => {
@@ -40,8 +35,8 @@ export const useLogOut = () => {
       localStorage.removeItem("refresh_token");
 
       // Invalidate user data cache
-      queryClient.invalidateQueries({ queryKey: queryKeys.auth.profile() });
-
+      // queryClient.invalidateQueries({ queryKey: queryKeys.auth.profile() });
+      cacheUtils.global.clearAll();
       toast.success("Logged out successfully");
     },
   });
