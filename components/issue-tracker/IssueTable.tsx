@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Issue, IssueImage } from "@/types";
@@ -22,7 +21,7 @@ interface IssueTableProps {
   onDelete: (id: string) => void;
   activeCell: { row: number; col: number } | null;
   selectedCells: Set<string>;
-  tableContainerRef: React.RefObject<HTMLDivElement>;
+  tableContainerRef: React.RefObject<HTMLDivElement | null>;
   onCellMouseDown: (row: number, col: number, event: React.MouseEvent) => void;
   onCellMouseEnter: (row: number, col: number) => void;
   onTableKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
@@ -78,33 +77,41 @@ export default function IssueTable({
       ref={tableContainerRef}
       tabIndex={0}
       onKeyDown={onTableKeyDown}
-      style={{ outline: 'none' }}
+      style={{ outline: "none" }}
     >
-      <Table
-        className="select-none"
-      >
+      <Table className="select-none">
         <TableHeader>
           <TableRow>
-            <TableHead className="w-16 text-center font-headline text-base">S/N</TableHead>
+            <TableHead className="w-16 text-center font-headline text-base">
+              S/N
+            </TableHead>
             <TableHead
               className={cn(
                 "font-headline text-base",
-                selectableColIndices.includes(1) && "cursor-pointer hover:bg-muted/50 transition-colors"
+                selectableColIndices.includes(1) &&
+                  "cursor-pointer hover:bg-muted/50 transition-colors"
               )}
-              onClick={() => selectableColIndices.includes(1) && onColumnHeaderClick(1)}
+              onClick={() =>
+                selectableColIndices.includes(1) && onColumnHeaderClick(1)
+              }
             >
               Issue
             </TableHead>
             <TableHead
               className={cn(
                 "font-headline text-base",
-                selectableColIndices.includes(2) && "cursor-pointer hover:bg-muted/50 transition-colors"
+                selectableColIndices.includes(2) &&
+                  "cursor-pointer hover:bg-muted/50 transition-colors"
               )}
-              onClick={() => selectableColIndices.includes(2) && onColumnHeaderClick(2)}
+              onClick={() =>
+                selectableColIndices.includes(2) && onColumnHeaderClick(2)
+              }
             >
               Images
             </TableHead>
-            <TableHead className="w-32 text-center font-headline text-base">Actions</TableHead>
+            <TableHead className="w-32 text-center font-headline text-base">
+              Actions
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

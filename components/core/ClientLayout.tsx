@@ -12,6 +12,11 @@ export default function ClientLayout({
 }) {
   const pathname = usePathname();
   const isAuthRoute = pathname === "/" || pathname.startsWith("/Auth"); // lowercase!
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen((prev) => !prev);
+  };
 
   return (
     <QueryProvider>

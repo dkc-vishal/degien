@@ -2,15 +2,13 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { Issue, IssueImage } from "@/types";
-// import IssueTable from "@/components/issue-tracker/IssueTable";
-import IssueTable from "../../components/issue-tracker/IssueTable";
+import IssueTable from "@/components/issue-tracker/IssueTable";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import dynamic from "next/dynamic";
 const ImageEditorModal = dynamic(
-  // () => import("../components/image-editor/ImageEditorModal"),
-  () => import("../../components/image-editor/ImageEditorModal"),
+  () => import("@/components/image-editor/ImageEditorModal"),
   {
     ssr: false,
     loading: () => <div>Loading Text Editor...</div>,
@@ -896,7 +894,7 @@ export default function IssueTrackerPage() {
         onDelete={handleDelete}
         activeCell={activeCell}
         selectedCells={selectedCells}
-        tableContainerRef={tableContainerRef as React.RefObject<HTMLDivElement>}
+        tableContainerRef={tableContainerRef}
         onCellMouseDown={handleCellMouseDown}
         onCellMouseEnter={handleCellMouseEnter}
         onTableKeyDown={handleTableKeyDown}

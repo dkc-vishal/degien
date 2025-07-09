@@ -2,21 +2,21 @@
 
 import SheetTitle from "@/components/core/SheetTitle";
 import Table from "../../components/core/Table";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { FaPrint } from "react-icons/fa";
 type ColumnMetadata = {
-  data_type: string;        
-  header: string;           
+  data_type: string;
+  header: string;
   is_editable: boolean;
   is_frozen: boolean;
   is_hidden: boolean;
   is_moveable: boolean;
-  width: string;          
+  width: string;
 };
 export default function QaIntialReport() {
-    const [columnHeaders, setcolumnHeaders] = useState<ColumnMetadata[]>([]);
-    const [tableData, setTableData] = useState({});
+  const [columnHeaders, setcolumnHeaders] = useState<ColumnMetadata[]>([]);
+  const [tableData, setTableData] = useState({});
   const [poNumber, setPoNumber] = useState<string[]>([]);
   const [colorValues, setColorValues] = useState<string[][]>([
     Array(6).fill(Array(6).fill("")),
@@ -24,12 +24,13 @@ export default function QaIntialReport() {
   const handlePrint = () => {
     window.print();
   };
-    async function fetchdata() {
+  async function fetchdata() {
     const res = await axios.get(
       "http://shivam-mac.local:8001/api/v1.0/spreadsheet/32dbb7af-18b7-493f-ab77-0781e34a7957"
     );
-    const col_metadata: Record<string, ColumnMetadata> = await res.data.data.column_metadata;
-    console.log(res)
+    const col_metadata: Record<string, ColumnMetadata> = await res.data.data
+      .column_metadata;
+    console.log(res);
     setTableData(res.data.data);
 
     setcolumnHeaders(Object.values(col_metadata));
@@ -289,7 +290,7 @@ export default function QaIntialReport() {
                {columnHeaders.length>0 && (
                  <Table
                    col={12}
-                   row={20}
+                   row={50}
                    imagecol={3}
                    tablename="mid-final"
                    columnheaders={columnHeaders}
