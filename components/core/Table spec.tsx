@@ -301,7 +301,7 @@ export default function Table({
       };
     });
   };   
-
+   
 const handleSaveEditedImage = (
   issueId: string,
   imageId: string,
