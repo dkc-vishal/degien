@@ -1,14 +1,10 @@
 export interface User {
-  id: string;
+  user_id: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  role: UserRole;
-  department?: Department;
-  avatar?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  name: string;
+  department?: string | null;
+  designation?: string | null;
+  is_vendor: boolean;
 }
 
 export interface LoginRequest {
@@ -17,11 +13,19 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  user: User;
-  token: string;
-  refreshToken: string;
-  accessToken: string;
-  expiresIn: number;
+  data: {
+    access_token: string;
+    refresh_token: string;
+    role: string;
+    user_data: {
+      user_id: string;
+      email: string;
+      name: string;
+      department?: string | null;
+      designation?: string | null;
+      is_vendor: boolean;
+    };
+  };
 }
 
 export interface ChangePasswordRequest {

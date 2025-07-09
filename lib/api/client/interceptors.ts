@@ -26,31 +26,27 @@ export const responseInterceptor = (response: AxiosResponse) => {
   return response;
 };
 
-export const errorInterceptor = (error:any)=>{
+export const errorInterceptor = (error: any) => {
+  const status = error.response?.status;
+  const message = error.response?.data?.message || "Something went wrommg";
 
-    const status= error.response?.status;
-    const message= error.response?.data?.message  || "Something went wrommg";
+  //handle  difference error types
+  switch (status) {
+    case 400:
+      toast.error("Invalid request");
+      break;
+    case 403:
+      toast.error("Access forbidden");
+      break;
+    case 404:
+      toast.error("Resource not found");
+      break;
+    case 500:
+      toast.error("Server error");
+      break;
+    default:
+      toast.error(message);
+  }
 
-
-    //handle  difference error types
-    switch(status){
-        case 400:
-            toast.error('Invalid request');
-            break;
-        case 403:
-            toast.error('Access forbidden');
-            break;
-        case 404:
-            toast.error('Resource not found');
-            break;
-        case 500:
-            toast.error('Server error'):
-            break;
-        default:
-            toast.error(message)
-
-    }
-
-    return Promise.reject(error);
-
-}
+  return Promise.reject(error);
+};

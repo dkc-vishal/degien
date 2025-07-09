@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FiLogIn } from "react-icons/fi";
 import { API_ENDPOINTS } from "@/lib/api";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
+import { useLogin } from "@/lib/api/index";
 
 const page: React.FC = () => {
   const router = useRouter();
@@ -14,6 +15,8 @@ const page: React.FC = () => {
     password: "",
   });
 
+  const loginMutation = useLogin();
+
   const [fieldErrors, setFieldErrors] = useState({
     email: "",
     password: "",
@@ -21,7 +24,6 @@ const page: React.FC = () => {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -54,91 +56,16 @@ const page: React.FC = () => {
       return;
     }
 
-    console.log("Sending login request with: ", form);
+    setSuccess("");
 
-    try {
-      const res = await fetch(API_ENDPOINTS.login.url, {
-        method: API_ENDPOINTS.login.method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(form),
-      });
-
-      const response = await res.json();
-
-      if (!response?.data?.access_token) {
-        console.error("❌ No access_token in response!", response);
-      }
-
-      console.log("🟢 Login response received", res.status);
-      console.log("📦 Parsed response:", response);
-
-      const { access_token, refresh_token } = response.data;
-
-      if (!res.ok) {
-        setError(response?.detail || "Login failed. Please check credentials.");
-        return;
-      }
-
-      localStorage.setItem("access_token", access_token);
-      localStorage.setItem("refresh_token", refresh_token);
-
-      console.log("access_token from response: ", access_token);
-
-      await fetchAndStoreUserProfile(access_token);
-
-      setSuccess("Login successful!");
-      setError("");
-      setLoading(true);
-
-      setTimeout(() => {
-        router.push("/Dashboard");
-      }, 2000);
-    } catch (err) {
-      console.error("🧨 Login failed:", err);
-      setError("Something went wrong. Please try again.");
-    }
-  };
-
-  // Fetching logged-in user's profile using token
-
-  const fetchAndStoreUserProfile = async (accessToken: string) => {
-    console.log("🔐 Using access token:", accessToken);
-
-    if (!accessToken) {
-      console.error("🚨 No access token provided!");
-      return;
-    }
-
-    try {
-      const profileRes = await fetch(API_ENDPOINTS.userProfile.url, {
-        method: API_ENDPOINTS.userProfile.method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      console.log("📨 user-detail fetch response:", profileRes.status);
-
-      if (!profileRes.ok) {
-        const errorText = await profileRes.text();
-        console.error("❌ Failed to fetch user profile:", errorText);
-        throw new Error("Failed to fetch user profile");
-      }
-
-      const userProfile = await profileRes.json();
-      console.log("👤 User Profile:", userProfile);
-
-      // Saving the logged-in user info in localStorage
-
-      localStorage.setItem("loggedInUser", JSON.stringify(userProfile.data));
-
-      console.log("✅ User profile saved");
-    } catch (error) {
-      console.log("❌ fetchAndStoreUserProfile failed:", error);
-    }
+    loginMutation.mutate(form, {
+      onSuccess: () => {
+        setSuccess("Login successful!");
+        setTimeout(() => {
+          router.push("/Dashboard");
+        }, 2000);
+      },
+    });
   };
 
   const buttonClick = () => {
@@ -235,9 +162,9 @@ const page: React.FC = () => {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loginMutation.status === "pending"}
           className={`w-full text-white text-sm font-medium py-2 mt-5 rounded-md transition duration-200 ${
-            loading
+            loginMutation.status === "pending"
               ? "bg-blue-300 cursor-not-allowed"
               : "bg-blue-500 hover:bg-blue-600 cursor-pointer"
           }`}
@@ -245,13 +172,11 @@ const page: React.FC = () => {
         >
           <span className="flex items-center justify-center gap-3">
             <FiLogIn className="w-4 h-4" />
-            {loading ? "Logging in..." : "Login"}
+            {loginMutation.status === "pending" ? "Logging in..." : "Login"}
           </span>
         </button>
 
-        {/* Showing loading spinner */}
-
-        {loading && (
+        {loginMutation.status === "pending" && (
           <div className="mt-4 flex items-center justify-center gap-2 text-sm text-blue-600">
             <svg
               className="animate-spin h-4 w-4 text-blue-600"

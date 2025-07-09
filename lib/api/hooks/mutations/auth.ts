@@ -8,14 +8,22 @@ export const useLogin = () => {
   return useMutation({
     mutationFn: authEndpoints.login,
 
-    onSuccess: (data) => {
-      // Store token
-      localStorage.setItem("auth_token", data.token);
-      if (data.refreshToken) {
-        localStorage.setItem("refresh_token", data.refreshToken);
+    onSuccess: (response) => {
+      const { access_token, refresh_token, role, user_data } =
+        response.data || {};
+
+      if (access_token) {
+        localStorage.setItem("auth_token", access_token);
       }
-      // Cache user data
-      cacheUtils.auth.setUser(data.user);
+      if (refresh_token) {
+        localStorage.setItem("refresh_token", refresh_token);
+      }
+
+      if (role) {
+        localStorage.setItem("user_role", role);
+      }
+
+      cacheUtils.auth.setUser(user_data);
 
       toast.success("welcome back!");
     },

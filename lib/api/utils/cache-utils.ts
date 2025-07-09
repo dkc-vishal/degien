@@ -33,7 +33,7 @@ export const cacheUtils = {
           return {
             ...oldData,
             data: oldData.data.map((user: User) =>
-              user.id === userId ? { ...user, ...userData } : user
+              user.user_id === userId ? { ...user, ...userData } : user
             ),
           };
         }
@@ -54,7 +54,7 @@ export const cacheUtils = {
 
           return {
             ...oldData,
-            data: oldData.data.filter((user: User) => user.id !== userId),
+            data: oldData.data.filter((user: User) => user.user_id !== userId),
             total: oldData.total - 1,
           };
         }

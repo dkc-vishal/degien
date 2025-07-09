@@ -56,7 +56,7 @@ export default function Sidebar({ side }: any) {
 
     try {
       const res = await fetch(
-        "http://shivam-mac.local:8001/api/v1.0/auth/logout/",
+        "http://gulab.local:8000/api/v1.0/auth/logout/",
         {
           method: "POST",
           headers: {

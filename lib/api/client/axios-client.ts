@@ -21,7 +21,7 @@ export class ApiClient {
       (config) => {
         const token = localStorage.getItem("auth_token");
         if (token) {
-          config.headers.Authorization = `Bearer ${token}`; //explain this line
+          config.headers.Authorization = `Bearer ${token}`;
         }
 
         config.metadata = { startTime: new Date() };

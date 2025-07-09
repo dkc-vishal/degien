@@ -1,4 +1,4 @@
-export const BASE_URL = "http://shivam-mac.local:8001/api/v1.0/auth";
+export const BASE_URL = "http://gulab.local:8000/api/v1.0/auth";
 
 export const API_ENDPOINTS = {
   login: {
