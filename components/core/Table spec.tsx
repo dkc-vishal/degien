@@ -1,7 +1,6 @@
 "use client";
 // import ImageEditorModal from "@/components/image-editor/ImageEditorModal";
 import ImageEditorModal from "../image-editor/ImageEditorModal";
-import { toast } from "@/hooks/use-toast";
 import { use, useEffect, useRef } from "react"; // Make sure useRef is imported
 import React, { useState } from "react";
 import { API_ENDPOINTS } from "@/lib/api";
@@ -40,7 +39,7 @@ import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { Button } from "../ui/button";
 import { X } from "lucide-react";
-import { BaseNextResponse } from "next/dist/server/base-http";
+import { toast } from "sonner";
 import axios from "axios";
 function parseFraction(input: string): number {
   input = input.trim();
@@ -59,26 +58,6 @@ function parseFraction(input: string): number {
   // Whole number
   return parseFloat(input);
 }
-
-// Helper to convert decimal to fraction string (up to 1/16 precision)
-// function toFractionString(value: number): string {
-//   if (isNaN(value)) return "";
-//   const whole = Math.floor(value);
-//   let frac = value - whole;
-//   let closest = "";
-//   let minDiff = 1;
-//   for (let d = 2; d <= 16; d++) {
-//     const n = Math.round(frac * d);
-//     const diff = Math.abs(frac - n / d);
-//     if (n > 0 && diff < minDiff) {
-//       closest = `${n}/${d}`;
-//       minDiff = diff;
-//     }
-//   }
-//   if (closest && whole > 0) return `${whole} ${closest}`;
-//   if (closest) return closest;
-//   return `${whole}`;
-// }
 
 function toFractionString(value: number): string {
   if (isNaN(value)) return "";
@@ -321,7 +300,7 @@ export default function Table({
         has_shape: false,
       };
     });
-  };
+  };   
 
 const handleSaveEditedImage = (
   issueId: string,
@@ -352,14 +331,17 @@ const handleSaveEditedImage = (
     return newData;
   });
 
-  toast({
-    title: "Image updated",
-    description: "Your changes have been saved.",
-  });
-
-  handleCloseImageEditor();
-};
-
+    // toast({
+    //   title: "Image updated",
+    //   description: "Your changes have been saved.",
+    // });
+    toast.success("Image Updated", {
+      description: "Your changes have been saved.",
+      position: "top-right",
+      duration: 3000,
+    });
+    handleCloseImageEditor();
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -790,9 +772,16 @@ const handleSaveEditedImage = (
           const xlCol = columnHeaders.indexOf("XL");
 
           if (hasNegativeSize) {
-            alert(
-              "Invalid Size Calculation: Negative size detected. Clearing values."
-            );
+            // alert(
+            //   "Invalid Size Calculation: Negative size detected. Clearing values."
+            // );
+
+            toast.error("Invalid Size Calculation", {
+              description:
+                "The grading rule resulted in negative sizes. All size values and inputs will be cleared.",
+              position: "top-right",
+              duration: 3000,
+            });
 
             [xsCol, sCol, mCol, lCol, xlCol].forEach(
               (c) => c !== -1 && setValue(row, c, "")
@@ -809,6 +798,7 @@ const handleSaveEditedImage = (
               realTimeMeasIdx,
               realTimeIdx,
             ].forEach((c) => c !== -1 && setValue(row, c, ""));
+
           } else {
             if (xsCol !== -1)
               setValue(row, xsCol, toFractionString(sizes.xs).toString());
