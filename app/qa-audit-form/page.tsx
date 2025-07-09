@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Table from "@/components/core/Table spec";
 import Link from "next/link";
 import axios from "axios";
@@ -16,20 +16,62 @@ type ColumnMetadata = {
   width: number;
 };
 export default function TechSpecSheet() {
+  const socket = useRef<WebSocket | null>(null);
   const [columnHeaders, setcolumnHeaders] = useState<ColumnMetadata[]>([]);
   const [tableData, setTableData] = useState({});
-  async function fetchdata() {
+async function fetchdata() {
+  try {
     const res = await axios.get(
       "http://shivam-mac.local:8001/api/v1.0/spreadsheet/580d3753-8487-4d98-909e-c3b52580f21c"
     );
-    const col_metadata: Record<string, ColumnMetadata> = await res.data.data
-      .column_metadata;
-    // console.log(col_metadata);
-    setTableData(res.data.data);
+
+    const data = res?.data?.data;
+
+    if (!data) {
+      throw new Error("No data returned from API");
+    }
+
+    const col_metadata: Record<string, ColumnMetadata> = data.column_metadata || {};
+    
+    setTableData(data);
     setcolumnHeaders(Object.values(col_metadata));
+  } catch (error: any) {
+    console.error("Error fetching data:", error?.message || error);
   }
+}
+
   useEffect(() => {
     fetchdata();
+  }, []);
+
+  useEffect(() => {
+    const ws = new WebSocket("ws://shivam-mac.local:8001/notification/");
+
+    ws.onopen = () => {
+      console.log("WebSocket connected");
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    ws.onclose = (e) => {
+      console.log("WebSocket closed:", e.code, e.reason);
+    };
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("WebSocket message received:", data);
+    };
+    socket.current = ws;
+
+    return () => {
+      if (
+        ws.readyState === WebSocket.OPEN ||
+        ws.readyState === WebSocket.CONNECTING
+      ) {
+        ws.close();
+      }
+    };
   }, []);
 
   return (
@@ -51,9 +93,9 @@ export default function TechSpecSheet() {
 
           <InputForm
             label={[
-              ["Style Name", "Buyer PO Number", "Vendor PO Number"],
-              ["Merchant Name", "Vendor Name", "Spec Valid Till"],
-              ["Tech Name", "Base Size", "QA Name", "Order Quantity"],
+              ["Style Name", "QA Name", "Specs For"],
+              ["Merchant Name", "Vendor Name", "Size"],
+              ["QA Name", "Color"],
             ]}
           />
         </div>

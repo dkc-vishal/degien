@@ -6,7 +6,7 @@ interface InputFormProps {
 
 const InputForm = ({ label }: InputFormProps) => {
   return (
-    <div className="grid grid-cols-3 gap-1">
+    <div className="grid grid-cols-3 gap-y-2 gap-x-4">
       {label.map((row, i) =>
         row.map((label, j) =>
           label ? (

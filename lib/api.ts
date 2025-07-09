@@ -56,5 +56,10 @@ export const API_ENDPOINTS = {
     changeSystemPassword: {
         url: `${BASE_URL}/change-system-password/`, 
         method: 'POST'
-    }
+    },
+    // get cell history 
+    cellHistory: (cellId: string) => ({
+        url: `http://shivam-mac.local:8001/api/v1.0/spreadsheet/cell-history/${cellId}/`,
+        method: 'GET'
+    })
 }

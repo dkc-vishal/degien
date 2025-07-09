@@ -9,9 +9,10 @@ import { TbLogout } from "react-icons/tb";
 import { toast } from "sonner";
 import { API_ENDPOINTS } from "@/lib/api";
 import { IoIosNotifications } from "react-icons/io";
+import { Image } from "lucide-react";
 
-export default function Sidebar({ side }: any) {
-  const Sidebar: any = side;
+export default function Sidebar({ isSidebarOpen }: any) {
+  const isOpen: boolean = isSidebarOpen;
   const router = useRouter();
   const pathname = usePathname();
 
@@ -19,15 +20,35 @@ export default function Sidebar({ side }: any) {
 
   useEffect(() => {
     setUnreadCount(2);
-  }, [])
+  }, []);
 
   const menuItems = [
-    { icon: <MdDashboard size={22} />, label: "Dashboard", path: "/dashboard" },
-    { icon: <FaUserFriends size={22} />, label: "User Management", path: "/user-detail" },
-    { icon: <GiSewingMachine size={22} />, label: "Sampling Styles", path: "/sampling-styles" },
-    { icon: <FaTshirt size={22} />, label: "Production Styles", path: "/production-styles" },
-    { icon: <MdLocalShipping size={22} />, label: "Shipped Styles", path: "/shipped-styles" },
-    { icon: <IoIosNotifications size={22} />, label: "Notifications", path: "/notifications", unread: unreadCount },
+    { icon: <MdDashboard size={22} />, label: "Dashboard", path: "/Dashboard" },
+    {
+      icon: <FaUserFriends size={22} />,
+      label: "User Management",
+      path: "/user-detail",
+    },
+    {
+      icon: <GiSewingMachine size={22} />,
+      label: "Sampling Styles",
+      path: "/sampling-styles",
+    },
+    {
+      icon: <FaTshirt size={22} />,
+      label: "Production Styles",
+      path: "/production-styles",
+    },
+    {
+      icon: <MdLocalShipping size={22} />,
+      label: "Shipped Styles",
+      path: "/shipped-styles",
+    },
+    {
+      icon: <Image size={22} />,
+      label: "Image Editor",
+      path: "/issue-tracker",
+    },
   ];
 
   const profileItems = [
@@ -37,10 +58,10 @@ export default function Sidebar({ side }: any) {
   const handleLogout = async () => {
     const refreshToken = localStorage.getItem("refresh_token");
 
-    if (!refreshToken) {
-      toast.error("No refresh token found.");
-      return;
-    }
+    // if (!refreshToken) {
+    //   toast.error("No refresh token found.");
+    //   return;
+    // }
 
     try {
       const res = await fetch(`${API_ENDPOINTS.logout.url}`, {
@@ -54,11 +75,11 @@ export default function Sidebar({ side }: any) {
       if (!res.ok) {
         const err = await res.json();
         console.error("Logout failed:", err);
-        toast.error("Logout failed.");
+        // toast.error("Logout failed.");
         return;
       }
 
-      // removing localstorage saved infos 
+      // removing localstorage saved infos
 
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
@@ -68,40 +89,47 @@ export default function Sidebar({ side }: any) {
       router.push("/Auth/Login");
     } catch (error) {
       console.error("Logout error:", error);
-      toast.error("Something went wrong during logout.");
+      // toast.error("Something went wrong during logout.");
     }
   };
 
   return (
     <aside
-      style={{ width: Sidebar ? "0%" : "15%" }}
-      className={`transition-all duration-300 fixed h-screen bg-gray-900 text-gray-100 flex flex-col`}
+      className={`transition-all duration-300 fixed h-screen bg-gray-900 text-gray-100 flex flex-col ${
+        isOpen ? "w-[15%]" : "w-0 opacity-0 -z-10"
+      }`}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
-        {!Sidebar && <h2 className="text-xl font-bold tracking-wide">Admin</h2>}
+        <h2 className="text-xl font-bold tracking-wide">Admin</h2>
       </div>
 
       {/* Main Navigation */}
       <nav className="flex flex-col px-2 pt-4 space-y-2 flex-grow">
-        {menuItems.map((item, idx) => {
+        {menuItems.map((item: any, idx) => {
           const isActive = pathname.startsWith(item.path);
           return (
             <button
               key={idx}
               onClick={() => router.push(item.path)}
-              className={`flex items-center justify-between px-4 py-3 rounded-lg text-left transition-all cursor-pointer w-full
-  ${isActive ? "bg-gray-700 text-white font-semibold" : "hover:bg-gray-800 text-gray-300"}`}
+              className={`flex items-center px-4 py-3 rounded-lg text-left transition-all cursor-pointer w-full
+              ${
+                isActive
+                  ? "bg-gray-700 text-white font-semibold"
+                  : "hover:bg-gray-800 text-gray-300"
+              }`}
             >
               <div className="flex items-center">
                 <span className="text-[22px]">{item.icon}</span>
-                {!Sidebar && (
-                  <span className="ml-4 text-[15px] font-medium">{item.label}</span>
+                {isOpen && (
+                  <span className="ml-4 text-[15px] font-medium">
+                    {item.label}
+                  </span>
                 )}
               </div>
 
               {/* Notification badge */}
-              {!Sidebar && item.label === "Notifications" && item.unread > 0 && (
+              {isOpen && item.label === "Notifications" && item.unread > 0 && (
                 <span className="text-xs bg-red-500 text-white px-2 py-[1px] rounded-full font-bold">
                   {item.unread}
                 </span>
@@ -120,10 +148,18 @@ export default function Sidebar({ side }: any) {
               key={idx}
               onClick={() => router.push(item.path)}
               className={`flex items-center px-4 py-3 rounded-lg text-left transition-all cursor-pointer w-full
-              ${isActive ? "bg-gray-700 text-white font-semibold" : "hover:bg-gray-800 text-gray-300"}`}
+              ${
+                isActive
+                  ? "bg-gray-700 text-white font-semibold"
+                  : "hover:bg-gray-800 text-gray-300"
+              }`}
             >
               <span className="text-[22px]">{item.icon}</span>
-              {!Sidebar && <span className="ml-4 text-[15px] font-medium">{item.label}</span>}
+              {isOpen && (
+                <span className="ml-4 text-[15px] font-medium">
+                  {item.label}
+                </span>
+              )}
             </button>
           );
         })}
@@ -135,7 +171,9 @@ export default function Sidebar({ side }: any) {
           className="flex items-center px-4 py-3 rounded-lg text-left transition-all cursor-pointer w-full hover:bg-gray-800 text-gray-300 mb-14"
         >
           <TbLogout size={22} />
-          {!Sidebar && <span className="ml-4 text-[15px] font-medium">Logout</span>}
+          {isOpen && (
+            <span className="ml-4 text-[15px] font-medium">Logout</span>
+          )}
         </button>
       </div>
     </aside>

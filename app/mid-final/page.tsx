@@ -8,14 +8,14 @@ import Link from "next/link";
 import axios from "axios";
 import { FaPrint } from "react-icons/fa";
 type ColumnMetadata = {
-  data_type: string;        
-  header: string;           
+  data_type: string;
+  header: string;
   is_editable: boolean;
   is_frozen: boolean;
   is_hidden: boolean;
 
   is_moveable: boolean;
-  width: string;          
+  width: string;
 };
 const MidReportForm = () => {
   const handlePrint = () => {
@@ -25,10 +25,11 @@ const MidReportForm = () => {
   const [tableData, setTableData] = useState({});
   async function fetchdata() {
     const res = await axios.get(
-      "http://shivam-mac.local:8000/api/v1.0/spreadsheet/32dbb7af-18b7-493f-ab77-0781e34a7957"
+      "http://shivam-mac.local:8001/api/v1.0/spreadsheet/32dbb7af-18b7-493f-ab77-0781e34a7957"
     );
-    const col_metadata: Record<string, ColumnMetadata> = await res.data.data.column_metadata;
-    console.log(res)
+    const col_metadata: Record<string, ColumnMetadata> = await res.data.data
+      .column_metadata;
+    console.log(res);
     setTableData(res.data.data);
 
     setcolumnHeaders(Object.values(col_metadata));
@@ -36,7 +37,6 @@ const MidReportForm = () => {
   useEffect(() => {
     fetchdata();
   }, []);
-
 
   return (
     <>
@@ -195,7 +195,7 @@ const MidReportForm = () => {
           <div className="font-semibold text-base m-2 p-1">RESULT</div>
         </div>
         <div className="print-container">
-          {columnHeaders.length>0 && (
+          {columnHeaders.length > 0 && (
             <Table
               col={12}
               row={20}

@@ -52,7 +52,7 @@ export function useKeyboardShortcuts({
         for (let row = startRow; row <= endRow; row++) {
           const rowData = [];
           for (let col = startCol; col <= endCol; col++) {
-            rowData.push(tableData?.[row]?.[col] ?? "");
+            rowData.push(tableData?.[row]?.[col].value ?? "");
           }
           copiedText += rowData.join("\t") + "\n";
         }
@@ -83,8 +83,8 @@ export function useKeyboardShortcuts({
         for (let row = startRow; row <= endRow; row++) {
           const rowData = [];
           for (let col = startCol; col <= endCol; col++) {
-            rowData.push(updated[row][col]);
-            updated[row][col] = "";
+            rowData.push(updated[row][col].value);
+            updated[row][col].value = "";
           }
           copiedText += rowData.join("\t") + "\n";
         }
@@ -139,7 +139,7 @@ export function useKeyboardShortcuts({
 
         if (e.key === "ArrowUp") newRow = Math.max(0, row - 1);
         else if (e.key === "ArrowDown") newRow = Math.min(maxRow, row + 1);
-        else if (e.key === "ArrowLeft") newCol = Math.max(0, col - 1);
+        else if (e.key === "ArrowLeft") newCol = Math.max(2, col - 1);
         else if (e.key === "ArrowRight") newCol = Math.min(maxCol, col + 1);
         else if (e.key === "Enter") newRow = Math.min(row + 1, maxRow);
         else if (e.key === "Tab") newCol = e.shiftKey ? col - 1 : col + 1;
