@@ -13,51 +13,46 @@ export default function Header({ sidebartoggle }: any) {
   const [isRecording, setIsRecording] = useState(false);
   const toggleSidebar = sidebartoggle;
   const recognitionRef = useRef<any>(null);
-  const handleMicClick = () => {
-    setIsRecording((prev) => !prev);
-    if (!isRecording) {
-      // Start recording
-      if (typeof window !== "undefined") {
-        const SpeechRecognition =
-          (window as any).SpeechRecognition ||
-          (window as any).webkitSpeechRecognition;
+const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+const recordedChunksRef = useRef<Blob[]>([]);
 
-        if (!SpeechRecognition) {
-          alert("Speech Recognition not supported in this browser.");
-          return;
+const handleMicClick = async () => {
+  if (!isRecording) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      recordedChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          recordedChunksRef.current.push(event.data);
         }
+      };
 
-        const recognition = new SpeechRecognition();
-        recognition.lang = "en-US";
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(recordedChunksRef.current, {
+          type: "audio/webm",
+        });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.play();
+        console.log("Audio URL:", audioBlob);
+      };
 
-        recognition.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript;
-          console.log("Transcript:", transcript);
-          alert("You said: " + transcript);
-          // TODO: use transcript in your app logic
-        };
-
-        recognition.onerror = (event: any) => {
-          console.error("Speech recognition error:", event.error);
-        };
-
-        recognition.onend = () => {
-          setIsRecording(false);
-        };
-
-        recognition.start();
-        recognitionRef.current = recognition;
-        setIsRecording(true);
-      }
-    } else {
-      // Stop recording
-      recognitionRef.current?.stop();
-      setIsRecording(false);
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
+      setIsRecording(true);
+      console.log("Started voice recording");
+    } catch (err) {
+      console.error("Microphone access error:", err);
     }
-    console.log(isRecording ? "Stopped Recording" : "Started Recording");
-  };
+  } else {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+    console.log("Stopped voice recording");
+  }
+};
+
 
   return (
     <>

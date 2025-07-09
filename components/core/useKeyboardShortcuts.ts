@@ -52,7 +52,7 @@ export function useKeyboardShortcuts({
         for (let row = startRow; row <= endRow; row++) {
           const rowData = [];
           for (let col = startCol; col <= endCol; col++) {
-            rowData.push(tableData?.[row]?.[col] ?? "");
+            rowData.push(tableData?.[row]?.[col].value ?? "");
           }
           copiedText += rowData.join("\t") + "\n";
         }
@@ -83,8 +83,8 @@ export function useKeyboardShortcuts({
         for (let row = startRow; row <= endRow; row++) {
           const rowData = [];
           for (let col = startCol; col <= endCol; col++) {
-            rowData.push(updated[row][col]);
-            updated[row][col] = "";
+            rowData.push(updated[row][col].value);
+            updated[row][col].value = "";
           }
           copiedText += rowData.join("\t") + "\n";
         }
