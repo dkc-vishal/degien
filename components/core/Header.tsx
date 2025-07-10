@@ -9,9 +9,8 @@ import {
   FaMicrophone,
   FaMicrophoneSlash,
 } from "react-icons/fa";
-export default function Header({ sidebartoggle }: any) {
+export default function Header({ toggleSidebar }: any) {
   const [isRecording, setIsRecording] = useState(false);
-  const toggleSidebar = sidebartoggle;
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);

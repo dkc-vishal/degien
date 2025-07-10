@@ -6,7 +6,13 @@ import FileCard from "@/components/core/FileCard";
 import { folders } from "@/components/core/FolderData";
 
 const SubFolderPage = () => {
-  const { style, vendor, folder, subfolder } = useParams();
+  const {
+    style,
+    vendor,
+    folder,
+    subfolder,
+  }: { style: string; vendor: string; folder: string; subfolder: string } =
+    useParams();
 
   const displayTitle = (text: string | string[]) =>
     (text as string)
@@ -34,7 +40,9 @@ const SubFolderPage = () => {
 
   return (
     <div className="w-full px-6 py-8">
-      <h2 className="text-xl font-bold text-gray-700 mb-10 ml-10 mt-4">{displayPath}</h2>
+      <h2 className="text-xl font-bold text-gray-700 mb-10 ml-10 mt-4">
+        {displayPath}
+      </h2>
 
       {matchingSubfolder && matchingSubfolder.type === "folder" ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-5 gap-6 ml-6">

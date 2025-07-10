@@ -1,65 +1,48 @@
-export const BASE_URL = "http://128.100.10.108:8000/api/v1.0/auth";
+export const BASE_URL = "http://gulab.local:8000/api/v1.0/auth";
 
 export const API_ENDPOINTS = {
-    login: {
-        url: `${BASE_URL}/login/`, 
-        method: 'POST'
-    },
-    logout: {
-        url: `${BASE_URL}/logout/`, 
-        method: 'POST'
-    },
-    departments: {
-        url: `${BASE_URL}/departments/`, 
-        method: 'GET'
-    },
-    activeUsers: {
-        url: `${BASE_URL}/list-users/active`, 
-        method: 'GET'
-    },
-    inActiveUsers: {
-        url: `${BASE_URL}/list-users/inactive`, 
-        method: 'GET'
-    },
-    createUser: {
-        url: `${BASE_URL}/create-user/`, 
-        method: 'POST'
-    },
-    resetPasswordAdmin: {
-        url: `${BASE_URL}/reset-password/admin/`, 
-        method: 'POST'
-    },
-    resetPasswordSelfRequest: {
-        url: `${BASE_URL}/reset-password/self/request/`, 
-        method: 'POST'
-    },
-    resetPasswordSelfChange: {
-        url: `${BASE_URL}/reset-password/self/change/`, 
-        method: 'POST'
-    },
-    userProfile: {
-        url: `${BASE_URL}/user-detail/`, 
-        method: 'GET'
-    },
-    updateUsername: {
-        url: `${BASE_URL}/user-detail/`, 
-        method: 'POST'
-    },
-    updateUserDetailsAdmin: (id: string) => ({
-        url: `${BASE_URL}/update-details/admin/${id}/`, 
-        method: 'POST'
-    }), 
-    changePasswordSelf: {
-        url: `${BASE_URL}/change-password/`, 
-        method: 'POST'
-    },
-    changeSystemPassword: {
-        url: `${BASE_URL}/change-system-password/`, 
-        method: 'POST'
-    },
-    // get cell history 
-    cellHistory: (cellId: string) => ({
-        url: `http://128.100.10.108:8000/api/v1.0/spreadsheet/cell-history/${cellId}/`,
-        method: 'GET'
-    })
-}
+  login: {
+    url: `${BASE_URL}/login/`,
+    method: "POST",
+  },
+  departments: {
+    url: `${BASE_URL}/departments/`,
+    method: "GET",
+  },
+  createUser: {
+    url: `${BASE_URL}/create-user/`,
+    method: "POST",
+  },
+  resetPasswordAdmin: {
+    url: `${BASE_URL}/reset-password/admin/`,
+    method: "POST",
+  },
+  resetPasswordSelfRequest: {
+    url: `${BASE_URL}/reset-password/self/request/`,
+    method: "POST",
+  },
+  resetPasswordSelfChange: {
+    url: `${BASE_URL}/reset-password/self/change`,
+    method: "POST",
+  },
+  userProfile: {
+    url: `${BASE_URL}/user-detail/`,
+    method: "GET",
+  },
+  updateUsername: {
+    url: `${BASE_URL}/user-detail/`,
+    method: "POST",
+  },
+  updateUserDetailsAdmin: (id: string) => ({
+    url: `${BASE_URL}/update-details/admin/${id}/`,
+    method: "POST",
+  }),
+  changePasswordSelf: {
+    url: `${BASE_URL}/change-password/`,
+    method: "POST",
+  },
+  changeSystemPassword: {
+    url: `${BASE_URL}/change-system-password/`,
+    method: "POST",
+  },
+};

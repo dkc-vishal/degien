@@ -3,21 +3,9 @@
 import { usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
-import { useEffect, useState } from "react";
-import React, { useRef } from "react";
-import { toast } from "sonner";
+import { QueryProvider } from "../providers/QueryProvider";
+import { useState,useRef } from "react";
 
-type Notification = {
-  notification_id: string;
-  object_id: string;
-  title: string;
-  message: string;
-  timestamp: string; // assuming ISO format
-  type: string; // assuming these are the only valid options
-};
-
-import NotificationModal from "@/app/notifications/NotificationModal";
-import axios from "axios";
 export default function ClientLayout({
   children,
 }: {
@@ -95,40 +83,29 @@ export default function ClientLayout({
     setIsSidebarOpen((prev) => !prev);
   };
 
-  return isAuthRoute ? (
-    <div className="min-h-screen bg-gray-100">{children}</div>
-  ) : (
-    <div className="flex font-sans min-h-screen bg-gray-100">
-      <div className="no-print">
-        <Sidebar isSidebarOpen={isSidebarOpen} />
-      </div>
-      <div
-        className={` flex-1 flex flex-col ${
-          isSidebarOpen
-            ? "removesidebarspace w-[calc(100vw-30%)] ml-[15%]"
-            : "w-full"
-        } transition-all duration-300`}
-        // style={{ width: "calc(100vw - 30%)" }}
-      >
-        <div className="no-print">
-          <Header sidebartoggle={toggleSidebar} />
-        </div>
-        {children}
-      </div>
-      {notifications_mess.length > 0 && (
-        <div>
-          <NotificationModal
-            key={notifications_mess[0].notification_id}
-            title={notifications_mess[0].title}
-            message={notifications_mess[0].message}
-            timestamp={new Date().toLocaleString()}
-            onConfirm={() => {
-              patchData(notifications_mess[0].notification_id);
-            }}
-            onCancel={handleCloseModal}
-          />
+  return (
+    <QueryProvider>
+      {isAuthRoute ? (
+        <div className="min-h-screen bg-gray-100">{children}</div>
+      ) : (
+        <div className="flex min-h-screen font-sans bg-gray-100">
+          <div className="no-print">
+            <Sidebar isSidebarOpen={isSidebarOpen} />
+          </div>
+          <div
+            className={` flex-1 flex flex-col ${
+              isSidebarOpen
+                ? "removesidebarspace w-[calc(100vw-30%)] ml-[15%]"
+                : "w-full"
+            } transition-all duration-300`}
+          >
+            <div className="no-print">
+              <Header toggleSidebar={toggleSidebar} />
+            </div>
+            {children}
+          </div>
         </div>
       )}
-    </div>
+    </QueryProvider>
   );
 }
