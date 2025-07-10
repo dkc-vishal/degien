@@ -84,7 +84,7 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
 };
 
 
-const handleSubmit = (e: React.FormEvent) => {
+const handleSubmit = async(e: React.FormEvent) => {
   e.preventDefault();
   const errors = validate();
 
@@ -95,7 +95,20 @@ const handleSubmit = (e: React.FormEvent) => {
     setError("Please fill in all required fields.");
     return;
   }
-  
+const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/sampling/master-styles/`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU2NDcwOTY5LCJpYXQiOjE3NTIxNTA5NjksImp0aSI6IjE0ZmUwZTc3MjhiMTQwYzFiNmM0M2NhYjNjYTI5MDk1IiwidXNlcl9pZCI6ImRlYjg2MjA5LWZhMTMtNDVlZC04YzMwLWYxODExMGMzOTVjNiJ9.5bfUalLMF0GWQ-xoZftJa8w4MW4oZlgm5_ODkWKf5wY`, // 👈 Add your access token here
+  },
+  body: JSON.stringify({
+    name: formData.styleName,
+    jc_number: formData.jcNumber,
+    style_number: formData.styleNumber,
+    merchant_name: formData.merchantName,
+  }),
+});
+  console.log(await res.json())
   setFieldErrors({
     styleName: "",
     jcNumber: "",

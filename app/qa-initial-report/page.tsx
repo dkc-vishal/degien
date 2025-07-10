@@ -286,6 +286,7 @@ export default function QaIntialReport() {
                  <Table
                    col={4}
                    row={120}
+                   imagecol={3}
                    tablename="mid-final"
                    columnheaders={columnHeaders}
                    spreadsheet={tableData}

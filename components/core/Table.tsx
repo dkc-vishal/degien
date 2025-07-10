@@ -104,7 +104,7 @@ export default function Table({
   const [columnHeaders, setColumnHeaders] = useState(
     Array.from({ length: col }, (_, colIndex) =>
       colIndex === imagecol || colIndex === imagecol2
-        ? "Measurement Picture"
+        ? "Tag"
         : columnheaders[colIndex].header
     )
   );
@@ -682,7 +682,7 @@ export default function Table({
     setTableData((prev) => {
       const updated = [...prev];
       const currentCell = updated[rowIndex][colIndex].value;
-
+      console.log(currentCell,"vishal")
       // Make sure the value is an array of strings (image URLs)
       const existingUrls: string[] = Array.isArray(currentCell)
         ? currentCell.map((v) => String(v))
@@ -1755,7 +1755,7 @@ export default function Table({
                               {rowIndex + 1}
                             </td>
                           ) : columnHeaders[colIndex] ===
-                            "Measurement Picture" ? (
+                            "Tag" ? (
                             rowIndex === -1 ? (
                               <td>
                                 <textarea
@@ -2021,7 +2021,7 @@ export default function Table({
                                     );
 
                                     if (imageFiles.length > 0) {
-                                      console.log("hello");
+                                      console.log(rowIndex, colIndex,imageFiles);
                                       handleImagePasteOrDrop(
                                         imageFiles,
                                         rowIndex,
@@ -2188,9 +2188,9 @@ export default function Table({
                                     ★
                                   </div>
                                 )}
-                                {Array.isArray(cell) ? (
+                                {Array.isArray(cell.value) ? (
                                   <div className="flex flex-wrap  justify-center">
-                                    {(cell as string[]).map((src, i) => (
+                                    {(cell.value).map((src, i) => (
                                       <div
                                         key={i}
                                         className="relative group"
