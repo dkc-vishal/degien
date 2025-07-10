@@ -15,7 +15,7 @@ const formatDateTime = (isoString: string) => {
   }).format(date);
 };
 
-const NotificationCard = ({ message, timestamp, type, styleId }) => {
+const NotificationCard = ({ message, timestamp, type, styleId, onPreview }) => {
   const router = useRouter();
 
   const handleRedirect = () => {
@@ -45,6 +45,14 @@ const NotificationCard = ({ message, timestamp, type, styleId }) => {
         >
           View Style
         </button>
+
+        <button
+          onClick={onPreview}
+          className="flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 border border-blue-500 hover:bg-blue-50 rounded-md transition cursor-pointer"
+        >
+          Preview
+        </button>
+
       </div>
 
       {/* Timestamp aligned left */}

@@ -101,3 +101,5 @@ https://chatgpt.com/share/68628966-8cb0-8011-8514-b70acdf8f0c1
 
 
 sethistory issue thik karna he
+
+- fit audit (dkc tech -> two parts -> left, right) ; (difference -> two parts -> left, right)

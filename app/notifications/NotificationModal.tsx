@@ -4,7 +4,20 @@ import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const NotificationModal = ({ title, message, timestamp, onConfirm, onCancel }) => {
+
   const [confirmed, setConfirmed] = useState(false);
+
+  const formatDateTime = (isoString: string) => {
+    const date = new Date(isoString);
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: true,
+    }).format(date);
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -15,7 +28,8 @@ const NotificationModal = ({ title, message, timestamp, onConfirm, onCancel }) =
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [onCancel]);
 
-  const handleConfirm = () => {``
+  const handleConfirm = () => {
+    ``
     onConfirm();
     toast.success("Notification acknowledged");
   };
@@ -27,7 +41,7 @@ const NotificationModal = ({ title, message, timestamp, onConfirm, onCancel }) =
 
         <h2 className="text-xl font-bold text-gray-800 text-center mb-5">{title}</h2>
         <p className="text-gray-700 text-sm text-center mb-1">{message}</p>
-        <p className="text-xs text-center text-gray-400 mb-9">{timestamp}</p>
+        <p className="text-xs text-center text-gray-400 mb-9">{formatDateTime(timestamp)}</p>
 
         <label className="flex items-start gap-2 text-sm text-gray-700 mb-8 cursor-pointer">
           <input
@@ -49,11 +63,10 @@ const NotificationModal = ({ title, message, timestamp, onConfirm, onCancel }) =
           <button
             onClick={handleConfirm}
             disabled={!confirmed}
-            className={`px-4 py-2 rounded-md text-white transition ${
-              confirmed
+            className={`px-4 py-2 rounded-md text-white transition ${confirmed
                 ? "bg-blue-500 hover:bg-blue-600 cursor-pointer"
                 : "bg-blue-300 cursor-not-allowed"
-            }`}
+              }`}
           >
             Acknowledge
           </button>

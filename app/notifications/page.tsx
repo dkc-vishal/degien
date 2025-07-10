@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import NotificationCard from "./NotificationCard";
+import NotificationModal from "./NotificationModal";
+import { toast } from "sonner"
 
 const mockNotifications = [
   {
@@ -34,8 +36,28 @@ const mockNotifications = [
 ];
 
 const NotificationsPage = () => {
+
   const [notifications, setNotifications] = useState(mockNotifications);
   const [activeTab, setActiveTab] = useState<"unread" | "read">("unread");
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState(null);
+
+  const handleOpenModal = (notification) => {
+    setSelectedNotification(notification);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedNotification(null);
+  };
+
+  const handleAcknowledge = () => {
+    // Optional: Mark notification as read or send to backend
+    setModalOpen(false);
+    toast.success("Notification acknowledged!");
+  };
 
   const unread = notifications.filter((n) => !n.read);
   const read = notifications.filter((n) => n.read);
@@ -85,6 +107,7 @@ const NotificationsPage = () => {
             read={note.read}
             type={note.type}
             styleId={note.styleId}
+            onPreview={() => handleOpenModal(note)} // Pass the click handler
           />
         ))}
       </div>
@@ -96,6 +119,17 @@ const NotificationsPage = () => {
       {activeTab === "read" && read.length === 0 && (
         <p className="text-gray-500 mt-10 text-center">No read notifications yet.</p>
       )}
+
+      {modalOpen && selectedNotification && (
+        <NotificationModal
+          title={selectedNotification.title}
+          message={selectedNotification.message}
+          timestamp={selectedNotification.timestamp}
+          onConfirm={handleAcknowledge}
+          onCancel={handleCloseModal}
+        />
+      )}
+
     </div>
   );
 };
