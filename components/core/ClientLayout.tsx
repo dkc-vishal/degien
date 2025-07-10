@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { QueryProvider } from "../providers/QueryProvider";
+import { useState } from "react";
 
 export default function ClientLayout({
   children,
@@ -23,16 +24,19 @@ export default function ClientLayout({
       {isAuthRoute ? (
         <div className="min-h-screen bg-gray-100">{children}</div>
       ) : (
-        <div className="flex h-screen font-sans bg-gray-100">
+        <div className="flex min-h-screen font-sans bg-gray-100">
           <div className="no-print">
-            <Sidebar />
+            <Sidebar isSidebarOpen={isSidebarOpen} />
           </div>
           <div
-            className="removesidebarspace flex-1 flex flex-col ml-[15%]"
-            style={{ width: "calc(100vw - 30%)" }}
+            className={` flex-1 flex flex-col ${
+              isSidebarOpen
+                ? "removesidebarspace w-[calc(100vw-30%)] ml-[15%]"
+                : "w-full"
+            } transition-all duration-300`}
           >
             <div className="no-print">
-              <Header />
+              <Header toggleSidebar={toggleSidebar} />
             </div>
             {children}
           </div>

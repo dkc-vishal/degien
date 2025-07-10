@@ -13,7 +13,7 @@ const AddUserForm: React.FC<{
     username: "",
     email: "",
     department: "",
-    userType: "", // 'DKC' or 'Vendor'
+    userType: "",
   });
 
   const [error, setError] = useState("");

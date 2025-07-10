@@ -7,6 +7,7 @@ import { GiSewingMachine } from "react-icons/gi";
 import { CgProfile } from "react-icons/cg";
 import { TbLogout } from "react-icons/tb";
 import { toast } from "sonner";
+import Image from "next/image";
 
 export default function Sidebar({ isSidebarOpen }: any) {
   const isOpen: boolean = isSidebarOpen;
@@ -42,11 +43,6 @@ export default function Sidebar({ isSidebarOpen }: any) {
       label: "Shipped Styles",
       path: "/shipped-styles",
     },
-    {
-      icon: <Image size={22} />,
-      label: "Image Editor",
-      path: "/issue-tracker",
-    },
   ];
 
   const profileItems = [
@@ -62,16 +58,13 @@ export default function Sidebar({ isSidebarOpen }: any) {
     }
 
     try {
-      const res = await fetch(
-        "http://gulab.local:8000/api/v1.0/auth/logout/",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ refresh: refreshToken }),
-        }
-      );
+      const res = await fetch("http://gulab.local:8000/api/v1.0/auth/logout/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refresh: refreshToken }),
+      });
 
       if (!res.ok) {
         const err = await res.json();
@@ -82,7 +75,7 @@ export default function Sidebar({ isSidebarOpen }: any) {
 
       // removing localstorage saved infos
 
-      localStorage.removeItem("access_token");
+      localStorage.removeItem("auth_token");
       localStorage.removeItem("refresh_token");
       toast.success("Logged out successfully.");
       router.push("/Auth/Login");
