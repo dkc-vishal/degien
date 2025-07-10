@@ -36,15 +36,32 @@ const [fieldErrors, setFieldErrors] = useState({
 
   const [error, setError] = useState("");
 
-  const validate = () => {
-    const errors = {
-      styleName: "",
-    };
-    if (!form.styleName.trim()) {
-      errors.styleName = "Style Name is required.";
-    }
-    return errors;
+const validate = () => {
+  const errors = {
+    styleName: "",
+    jcNumber: "",
+    styleNumber: "",
+    merchantName: "",
   };
+
+  if (!formData.styleName.trim()) {
+    errors.styleName = "Style Name is required.";
+  }
+
+  if (!formData.jcNumber.trim()) {
+    errors.jcNumber = "JC Number is required.";
+  }
+
+  if (!formData.styleNumber.trim()) {
+    errors.styleNumber = "Style Number is required.";
+  }
+
+  if (!formData.merchantName.trim()) {
+    errors.merchantName = "Sampling Merchant is required.";
+  }
+
+  return errors;
+};
 
 const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
   console.log(e.target.name, e.target.value);
@@ -67,29 +84,30 @@ const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
 };
 
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const errors = validate();
+const handleSubmit = (e: React.FormEvent) => {
+  e.preventDefault();
+  const errors = validate();
+
+  const hasErrors = Object.values(errors).some((val) => val !== "");
+
+  if (hasErrors) {
     setFieldErrors(errors);
+    setError("Please fill in all required fields.");
+    return;
+  }
+  
+  setFieldErrors({
+    styleName: "",
+    jcNumber: "",
+    styleNumber: "",
+    merchantName: "",
+  });
+  setError("");
 
-    if (Object.values(errors).some(Boolean)) {
-      toast.error("Please fix the errors in the form.");
-      return;
-    }
+  // Proceed with form submission
+  console.log("Submitting form", formData);
+};
 
-    onAddStyle({
-      styleName: form.styleName,
-      image: "",
-    });
-   
-    toast.success("Style added successfully!");
-
-    setForm({ styleName: "" });
-
-    setTimeout(() => {
-      onClose();
-    }, 1000);
-  };
   const GetUser = async() => {
     try{
       const res = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/list-users/active`)

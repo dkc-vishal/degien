@@ -1,15 +1,18 @@
 // hooks/useWebSocket.ts
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 
 type WebSocketCallback = (data: any) => void;
 
-export const useWebSocket = (sheetid: string, onMessage: WebSocketCallback) => {
+export const useWebSocket = (
+  onMessage: WebSocketCallback
+) => {
   const socket = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    if (!sheetid) return;
 
-    const ws = new WebSocket(`ws://128.100.10.108:8000/ws/v1.0/notification/?sheet_id=${sheetid}`);
+    const ws = new WebSocket(
+      `ws://shivam-mac.local:8000/ws/v1/spreadsheet/spreadsheet/822d02cf-e5eb-4ac8-81c1-13e36406c1e6/`
+    );
 
     ws.onopen = () => {
       console.log("WebSocket connected");
@@ -31,9 +34,23 @@ export const useWebSocket = (sheetid: string, onMessage: WebSocketCallback) => {
     socket.current = ws;
 
     return () => {
-      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+      if (
+        ws.readyState === WebSocket.OPEN ||
+        ws.readyState === WebSocket.CONNECTING
+      ) {
         ws.close();
       }
     };
-  }, [sheetid, onMessage]);
+  }, [onMessage]);
+
+  // sendData function to send a message through the socket
+  const sendData = useCallback((data: any) => {
+    if (socket.current && socket.current.readyState === WebSocket.OPEN) {
+      socket.current.send(JSON.stringify(data));
+    } else {
+      console.warn("WebSocket not connected. Cannot send data.");
+    }
+  }, []);
+
+  return { sendData };
 };

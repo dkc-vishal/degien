@@ -17,6 +17,7 @@ export function useKeyboardShortcuts({
   redoStack,
   setRedoStack,
   lastSnapshotRef,
+  saveoncellchange,
 }: {
   tableData: any[][];
   setTableData: (data: any[][]) => void;
@@ -32,6 +33,7 @@ export function useKeyboardShortcuts({
   redoStack: any[][][];
   setRedoStack: React.Dispatch<React.SetStateAction<any[][][]>>;
   lastSnapshotRef: React.MutableRefObject<string>;
+  saveoncellchange: () => void;
 }) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -156,6 +158,7 @@ export function useKeyboardShortcuts({
           setSelectedCell([newRow, newCol]);
           setSelectionAnchor([newRow, newCol]);
           setSelectedRange({ start: [newRow, newCol], end: [newRow, newCol] });
+          saveoncellchange()
         }
       }
 
