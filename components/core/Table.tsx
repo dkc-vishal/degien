@@ -4,6 +4,7 @@ import { toast } from "@/hooks/use-toast";
 import { useEffect, useRef } from "react"; // Make sure useRef is imported
 import React, { useState } from "react";
 import axios from "axios";
+import { useWebSocket } from "@/hooks/useWebSocket"
 export interface Issue {
   id: string;
   // description: string;
@@ -58,7 +59,7 @@ export default function Table({
   spreadsheet,
 }: any) {
   const [frozenColIndices, setFrozenColIndices] = useState<number[]>(
-    spreadsheet.grid_dimensions.frozen_columns || []
+    spreadsheet.frozen_columns || []
   );
   const [selectedHistory, setSelectedHistory] = useState<{
     key: string;
@@ -1003,26 +1004,37 @@ export default function Table({
     });
     const columnMetadata: Record<string, any> = {};
 
-  columnheaders.forEach((col:any, index:number) => {
-    columnMetadata[index] = {
-      width: 200, // default width, adjust as needed
-      header: col.header,
-      data_type: col.data_type,
-      is_editable: col.is_editable,
-      is_frozen: index < 2, // freeze first two columns for example
-      is_hidden: false,
-      is_moveable: false,
-    };
-  });
+    columnheaders.forEach((col: any, index: number) => {
+      columnMetadata[index] = {
+        width: 200, // default width, adjust as needed
+        header: col.header,
+        data_type: col.data_type,
+        is_editable: col.is_editable,
+        is_frozen: index < 2, // freeze first two columns for example
+        is_hidden: false,
+        is_moveable: false,
+      };
+    });
 
-    console.log({"spreadsheet_id":"32dbb7af-18b7-493f-ab77-0781e34a7957","frozen_column":frozenColIndices,"column_metadata":columnMetadata,"cells": cellMap});
-    const res = await axios.post("http://shivam-mac.local:8001/api/v1.0/spreadsheet/update/32dbb7af-18b7-493f-ab77-0781e34a7957/", {
-      spreadsheet_id: "32dbb7af-18b7-493f-ab77-0781e34a7957",
+    console.log({
+      spreadsheet_id: "822d02cf-e5eb-4ac8-81c1-13e36406c1e6",
       frozen_column: frozenColIndices,
       column_metadata: columnMetadata,
-      cells: cellMap
+      cells: cellMap,
     });
-    console.log(res)
+    const res = await axios.post(
+      "http://shivam-mac.local:8001/api/v1.0/spreadsheet/update/822d02cf-e5eb-4ac8-81c1-13e36406c1e6/",
+      {
+        spreadsheet_id: "822d02cf-e5eb-4ac8-81c1-13e36406c1e6",
+        frozen_columns: frozenColIndices,
+        column_metadata: columnMetadata,
+        cells: cellMap,
+        spreadsheet_metadata: {
+          last_edit_time: "2025-07-10T06:41:22.646Z",
+        },
+      }
+    );
+    console.log(res);
   };
   return (
     <>
@@ -2417,7 +2429,7 @@ export default function Table({
           </div>
 
           {/* Buttons */}
-                    <button
+          <button
             onClick={handleSave}
             className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition duration-200"
           >

@@ -11,7 +11,13 @@ type StyleType = {
   image: string;
 };
 
-const StyleCard = ({ styleName, image, onClick }) => (
+type StyleCardProps = {
+  styleName: string;
+  image: string;
+  onClick: () => void;
+};
+
+const StyleCard: React.FC<StyleCardProps> = ({ styleName, image, onClick }) => (
   <div
     onClick={onClick}
     className="flex flex-col bg-white rounded-[2px] shadow-sm border border-gray-100 hover:border-blue-400 hover:shadow-md cursor-pointer w-[340px] h-[370px] mb-1"

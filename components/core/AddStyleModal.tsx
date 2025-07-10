@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+import axios from "axios";
+import React, { use, useEffect, useState } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { toast } from "sonner";
 
@@ -7,16 +8,31 @@ interface AddStyleModalProps {
   onClose: () => void;
   onAddStyle: (newStyle: { styleName: string; image: string }) => void;
 }
+type User = {
+  department: string;
+  email: string;
+  name: string;
+  user_id: string;
+};
 
+const AddStyleModal: React.FC<AddStyleModalProps> = ({
+  onClose,
+  onAddStyle,
+}) => {
+  const [Samplingusers, setSamplingusers] = useState([])
 
-const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose, onAddStyle }) => {
-  const [form, setForm] = useState({
-    styleName: ""
+  const [formData, setFormData] = useState({
+    styleName: "",
+    jcNumber: "",
+    styleNumber: "",
+    merchantName: "",
   });
-
-  const [fieldErrors, setFieldErrors] = useState({
-    styleName: ""
-  });
+const [fieldErrors, setFieldErrors] = useState({
+  styleName: "",
+  jcNumber: "",
+  styleNumber: "",
+  merchantName: "",
+});
 
   const [error, setError] = useState("");
 
@@ -30,16 +46,28 @@ const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose, onAddStyle }) =>
     return errors;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    if (fieldErrors.hasOwnProperty(e.target.name)) {
-      setFieldErrors({ ...fieldErrors, [e.target.name]: "" });
-    }
-    setError("");
-  };
+const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  console.log(e.target.name, e.target.value);
+  const { name, value } = e.target;
+
+  setFormData((prev) => ({
+    ...prev,
+    [name]: value,
+  }));
+
+  // Clear individual field error if any
+  if (fieldErrors.hasOwnProperty(name)) {
+    setFieldErrors((prev) => ({
+      ...prev,
+      [name]: "",
+    }));
+  }
+
+  setError(""); // Clear global error
+};
+
 
   const handleSubmit = (e: React.FormEvent) => {
-
     e.preventDefault();
     const errors = validate();
     setFieldErrors(errors);
@@ -53,7 +81,7 @@ const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose, onAddStyle }) =>
       styleName: form.styleName,
       image: "",
     });
-
+   
     toast.success("Style added successfully!");
 
     setForm({ styleName: "" });
@@ -62,27 +90,25 @@ const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose, onAddStyle }) =>
       onClose();
     }, 1000);
   };
+  const GetUser = async() => {
+    try{
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/list-users/active`)
+    if (res.status === 200) {
+      const userdata = res.data.data;
+      const samplingUsers = userdata.filter((user: User) => user.department === "sampling");
+      setSamplingusers(samplingUsers);
+    } else {
+      toast.error("Failed to fetch users.");
+    }
+  } catch (error) {
+    toast.error("An error occurred while fetching users.");
+  }
+}
+  useEffect(() => {
+    GetUser();
+  }, []);
 
 
-  const renderField = (label: string, name: keyof typeof form, type: string = "text") => (
-    <div className="flex flex-col">
-      <label className="text-sm font-medium text-gray-700 mb-1" htmlFor={name}>
-        {label} <span className="text-red-500">{fieldErrors[name] && "*"}</span>
-      </label>
-      <input
-        type={type}
-        id={name}
-        name={name}
-        value={form[name]}
-        onChange={handleChange}
-        className={`w-full px-4 py-2 border rounded-md text-sm shadow-sm focus:outline-none focus:ring-2 ${fieldErrors[name]
-          ? "border-red-500 focus:ring-red-300"
-          : "border-gray-300 focus:ring-blue-400"
-          }`}
-      />
-      {fieldErrors[name] && <span className="text-xs text-red-500 mt-1">{fieldErrors[name]}</span>}
-    </div>
-  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -97,26 +123,96 @@ const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose, onAddStyle }) =>
 
         {/* Form Content */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <h2 className="text-2xl font-bold text-center text-black">Add New Style</h2>
+  <h2 className="text-2xl font-bold text-center text-black">Add New Style</h2>
 
-          {error && <div className="text-red-600 text-sm text-center font-medium">{error}</div>}
+  {error && (
+    <div className="text-red-600 text-sm text-center font-medium">{error}</div>
+  )}
 
-          <div className="rounded-lg p-4 space-y-5">
-            <div className="grid grid-cols-1 gap-6">
-              {renderField("Style Name", "styleName")}
-            </div>
-          </div>
+  <div className="rounded-lg p-4 space-y-5">
+    <div className="grid grid-cols-1 gap-6">
+      {/* Style Name */}
+      <div className="flex flex-col">
+        <label htmlFor="styleName" className="mb-1 text-sm font-medium text-gray-700">
+          Style Name
+        </label>
+        <input
+          type="text"
+          id="styleName"
+          name="styleName"
+          value={formData.styleName}
+          onChange={handleChange}
+          className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+      </div>
 
-          <button
-            type="submit"
-            className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-all duration-200 shadow-md cursor-pointer"
-          >
-            Add Style
-          </button>
-        </form>
+      {/* JC Number */}
+      <div className="flex flex-col">
+        <label htmlFor="jcNumber" className="mb-1 text-sm font-medium text-gray-700">
+          JC Number
+        </label>
+        <input
+          type="text"
+          id="jcNumber"
+          name="jcNumber"
+          value={formData.jcNumber}
+          onChange={handleChange}
+          className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+      </div>
+
+      {/* Style Number */}
+      <div className="flex flex-col">
+        <label htmlFor="styleNumber" className="mb-1 text-sm font-medium text-gray-700">
+          Style Number
+        </label>
+        <input
+          type="text"
+          id="styleNumber"
+          name="styleNumber"
+          value={formData.styleNumber}
+          onChange={handleChange}
+          className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        />
+      </div>
+
+      {/* Sampling Merchant Name Dropdown */}
+      <div className="flex flex-col">
+        <label htmlFor="merchantName" className="mb-1 text-sm font-medium text-gray-700">
+          Sampling Merchant Name
+        </label>
+        <select
+          id="merchantName"
+          name="merchantName"
+          value={formData.merchantName}
+          onChange={handleChange}
+          className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          required
+        >
+          <option value="">Select a Merchant</option>
+          {Samplingusers.map((user: User) => (
+            <option key={user.user_id} value={user.name}>
+              {user.name}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
+  </div>
 
+  <button
+    type="submit"
+    className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-lg transition-all duration-200 shadow-md cursor-pointer"
+  >
+    Add Style
+  </button>
+</form>
+
+      </div>
+    </div>
   );
 };
 
