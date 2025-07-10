@@ -352,6 +352,12 @@ const handleSaveEditedImage = (
         !tableRef.current.contains(event.target as Node)
       ) {
         setSelectedCell(null);
+        setCopiedImage(null);
+        setimageSeleted({
+          rownumber: 0,
+          colnumber: 0,
+          imgindex: 0,
+        })
         setSelectedRange(null);
         setSelectionAnchor(null);
       }
@@ -2929,6 +2935,11 @@ const handleSaveEditedImage = (
                                   const [row = 0, col = 0] = editingCell ?? [];
                                   const maxRow = tableData.length - 1;
                                   const maxCol = tableData[0].length - 1;
+                                  if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    setEditingCell(null);
+                                    return;
+                                  }
                                   if (!isFocusedEdit) {
                                     if (
                                       e.key === "Delete" // Windows / external keyboards
@@ -2965,119 +2976,8 @@ const handleSaveEditedImage = (
 
                                   if (!editingCell) return;
 
-                                  if (e.key === "Escape") {
-                                    e.preventDefault();
-                                    setEditingCell(null);
-                                    return;
-                                  }
+                                  
 
-                                  // if (e.key === "Enter" && !e.shiftKey) {
-                                  //   e.preventDefault();
-                                  //   const nextRow = Math.min(row + 1, maxRow);
-                                  //   setEditingCell([nextRow, col] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectedCell([nextRow, col] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectionAnchor([nextRow, col] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectedRange({
-                                  //     start: [nextRow, col] as [number, number],
-                                  //     end: [nextRow, col] as [number, number],
-                                  //   });
-                                  //   return;
-                                  // }
-
-                                  // if (e.key === "Tab") {
-                                  //   e.preventDefault();
-                                  //   let nextCol = e.shiftKey
-                                  //     ? col - 1
-                                  //     : col + 1;
-                                  //   let nextRow = row;
-
-                                  //   if (nextCol < 2) {
-                                  //     nextCol = maxCol;
-                                  //     nextRow = Math.max(2, row - 1);
-                                  //   } else if (nextCol > maxCol) {
-                                  //     nextCol = 0;
-                                  //     nextRow = Math.min(maxRow, row + 1);
-                                  //   }
-
-                                  //   setEditingCell([nextRow, nextCol] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectedCell([nextRow, nextCol] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectionAnchor([nextRow, nextCol] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectedRange({
-                                  //     start: [nextRow, nextCol] as [
-                                  //       number,
-                                  //       number
-                                  //     ],
-                                  //     end: [nextRow, nextCol] as [
-                                  //       number,
-                                  //       number
-                                  //     ],
-                                  //   });
-                                  //   return;
-                                  // }
-
-                                  // if (
-                                  //   [
-                                  //     "ArrowUp",
-                                  //     "ArrowDown",
-                                  //     "ArrowLeft",
-                                  //     "ArrowRight",
-                                  //   ].includes(e.key)
-                                  // ) {
-                                  //   e.preventDefault();
-
-                                  //   let nextRow = row;
-                                  //   let nextCol = col;
-
-                                  //   if (e.key === "ArrowUp")
-                                  //     nextRow = Math.max(0, row - 1);
-                                  //   if (e.key === "ArrowDown")
-                                  //     nextRow = Math.min(maxRow, row + 1);
-                                  //   if (e.key === "ArrowLeft")
-                                  //     nextCol = Math.max(0, col - 1);
-                                  //   if (e.key === "ArrowRight")
-                                  //     nextCol = Math.min(maxCol, col + 1);
-
-                                  //   setEditingCell([nextRow, nextCol] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectedCell([nextRow, nextCol] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectionAnchor([nextRow, nextCol] as [
-                                  //     number,
-                                  //     number
-                                  //   ]);
-                                  //   setSelectedRange({
-                                  //     start: [nextRow, nextCol] as [
-                                  //       number,
-                                  //       number
-                                  //     ],
-                                  //     end: [nextRow, nextCol] as [
-                                  //       number,
-                                  //       number
-                                  //     ],
-                                  //   });
-                                  // }
                                 }}
                                 className={`${
                                   rowIndex === 0

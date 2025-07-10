@@ -14,8 +14,16 @@ const formatDateTime = (isoString: string) => {
     hour12: true,
   }).format(date);
 };
+type NotificationPreviewProps = {
+  title: string; // Adjust or restrict more if needed
+  message: string;
+  timestamp: string;
+  type: string; // Adjust or restrict more if needed
+  styleId: string;
+  onPreview: () => void;
+};
 
-const NotificationCard = ({ message, timestamp, type, styleId }) => {
+const NotificationCard = ({ title, message, timestamp, type, styleId, onPreview }: NotificationPreviewProps) => {
   const router = useRouter();
 
   const handleRedirect = () => {
@@ -45,13 +53,21 @@ const NotificationCard = ({ message, timestamp, type, styleId }) => {
         >
           View Style
         </button>
+
+        <button
+          onClick={onPreview}
+          className="flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 border border-blue-500 hover:bg-blue-50 rounded-md transition cursor-pointer"
+        >
+          Preview
+        </button>
+
       </div>
 
       {/* Timestamp aligned left */}
       <div className="flex justify-start items-center">
-        <span className="flex items-center gap-1 bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full mt-1">
+        <span className="flex items-center gap-1 bg-red-200 text-gray-700 text-xs px-2 py-1 rounded-full mt-1">
           <Clock className="w-3.5 h-3.5" />
-          {formatDateTime(timestamp)}
+          {formatDateTime(timestamp)}   Notification Triggered Date
         </span>
       </div>
     </div>

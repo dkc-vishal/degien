@@ -16,7 +16,7 @@ type ColumnMetadata = {
   width: number;
 };
 export default function TechSpecSheet() {
-  const socket = useRef<WebSocket | null>(null);
+ 
   const [columnHeaders, setcolumnHeaders] = useState<ColumnMetadata[]>([]);
   const [tableData, setTableData] = useState({});
 async function fetchdata() {
@@ -44,38 +44,10 @@ async function fetchdata() {
     fetchdata();
   }, []);
 
-  useEffect(() => {
-    const ws = new WebSocket("ws://shivam-mac.local:8001/notification/");
-
-    ws.onopen = () => {
-      console.log("WebSocket connected");
-    };
-
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-
-    ws.onclose = (e) => {
-      console.log("WebSocket closed:", e.code, e.reason);
-    };
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log("WebSocket message received:", data);
-    };
-    socket.current = ws;
-
-    return () => {
-      if (
-        ws.readyState === WebSocket.OPEN ||
-        ws.readyState === WebSocket.CONNECTING
-      ) {
-        ws.close();
-      }
-    };
-  }, []);
 
   return (
     <>
+    
       <div className=" flex-1 flex flex-col p-6">
         {/* Form inputs */}
         <div className="">

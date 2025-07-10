@@ -4,7 +4,15 @@ import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import CreateStyleModal from "@/components/core/CreateStyleModal";
 
-const StyleCard = ({ styleName, image, order, quantity, onClick }) => (
+type StyleCardProps = {
+  styleName: string;
+  image: string;
+  order: number;
+  quantity: number;
+  onClick: () => void;
+};
+
+const StyleCard: React.FC<StyleCardProps> = ({ styleName, image, order, quantity, onClick }) => (
   <div
     onClick={onClick}
     className="flex flex-col bg-white rounded-[2px] shadow-sm border border-gray-100 hover:border-blue-400 hover:shadow-md cursor-pointer w-[340px] h-[370px] mb-1"
@@ -40,7 +48,8 @@ const StyleCard = ({ styleName, image, order, quantity, onClick }) => (
 
 const ProductionStyles = () => {
 
-  const [styles, setStyles] = useState([]);
+  type Style = { styleName: string; image: string; order: number; quantity: number };
+  const [styles, setStyles] = useState<Style[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const router = useRouter();
@@ -66,7 +75,7 @@ const ProductionStyles = () => {
     fetchStyles();
   }, []);
 
-  const handleCreateStyle = (styleName) => {
+  const handleCreateStyle = (styleName: string) => {
     const newStyle = {
       styleName,
       image: "",
@@ -77,7 +86,7 @@ const ProductionStyles = () => {
     setShowCreateModal(false);
   };
 
-  const handleCardClick = (styleName) => {
+  const handleCardClick = (styleName: string) => {
     const kebab = styleName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
     router.push(`/production-styles/${kebab}`);
   };
@@ -98,7 +107,7 @@ const ProductionStyles = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-9 mt-9">
-        {styles.map((style, index) => (
+        {styles.map((style: { styleName: string; image: string; order: number; quantity: number; }, index) => (
           <StyleCard key={index} {...style} onClick={() => handleCardClick(style.styleName)} />
         ))}
       </div>

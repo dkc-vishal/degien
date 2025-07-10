@@ -17,6 +17,7 @@ export function useKeyboardShortcuts({
   redoStack,
   setRedoStack,
   lastSnapshotRef,
+  saveoncellchange,
 }: {
   tableData: any[][];
   setTableData: (data: any[][]) => void;
@@ -32,11 +33,16 @@ export function useKeyboardShortcuts({
   redoStack: any[][][];
   setRedoStack: React.Dispatch<React.SetStateAction<any[][][]>>;
   lastSnapshotRef: React.MutableRefObject<string>;
+  saveoncellchange: () => void;
 }) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isCtrl = e.ctrlKey || e.metaKey;
-
+            if (e.key === "Escape") {
+              e.preventDefault();
+              console.log("Escape key pressed");
+              setEditingCell(null);
+            }
       // Copy
       if (isCtrl && e.key === "c") {
         if (!selectedRange && !selectedCell) return;
@@ -152,15 +158,13 @@ export function useKeyboardShortcuts({
           setSelectedCell([newRow, newCol]);
           setSelectionAnchor([newRow, newCol]);
           setSelectedRange({ start: [newRow, newCol], end: [newRow, newCol] });
+          saveoncellchange()
         }
       }
 
       // Escape
-      if (e.key === "Escape") {
-        e.preventDefault();
-        setEditingCell(null);
-      }
-    };
+
+    };  
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);

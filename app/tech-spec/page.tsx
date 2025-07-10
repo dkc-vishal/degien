@@ -67,7 +67,7 @@ export default function TechSpecSheet() {
             tablename="tech spec"
             columnheaders={columnHeaders}
             spreadsheet={tableData}
-            postapi="http://shivam-mac.local:8001/api/v1.0/spreadsheet/update/580d3753-8487-4d98-909e-c3b52580f21c"
+            postapi="http://128.100.10.108:8000/api/v1.0/spreadsheet/update/580d3753-8487-4d98-909e-c3b52580f21c"
           />
         )}
         {/* Footer */}

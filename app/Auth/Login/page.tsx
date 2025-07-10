@@ -3,17 +3,19 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiLogIn } from "react-icons/fi";
-import { API_ENDPOINTS } from "@/lib/api";
+// import { API_ENDPOINTS } from "@/lib/api";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
+import { useLogin } from "@/lib/api/index";
 
 const page: React.FC = () => {
-
   const router = useRouter();
 
   const [form, setForm] = useState({
     email: "",
     password: "",
   });
+
+  const loginMutation = useLogin();
 
   const [fieldErrors, setFieldErrors] = useState({
     email: "",
@@ -22,9 +24,9 @@ const page: React.FC = () => {
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
+
 
   const validate = () => {
     const errors = { email: "", password: "" };
@@ -55,97 +57,21 @@ const page: React.FC = () => {
       return;
     }
 
-    console.log("Sending login request with: ", form);
+    setSuccess("");
 
-    try {
-      const res = await fetch(API_ENDPOINTS.login.url, {
-        method: API_ENDPOINTS.login.method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(form),
-      });
-
-      const response = await res.json();
-
-      if (!response?.data?.access_token) {
-        console.error("❌ No access_token in response!", response);
-      }
-
-      console.log("🟢 Login response received", res.status);
-      console.log("📦 Parsed response:", response);
-
-      const { access_token, refresh_token } = response.data;
-
-      if (!res.ok) {
-        setError(response?.detail || "Login failed. Please check credentials.");
-        return;
-      }
-
-      localStorage.setItem("access_token", access_token);
-      localStorage.setItem("refresh_token", refresh_token);
-
-      console.log('access_token from response: ', access_token);
-
-      await fetchAndStoreUserProfile(access_token);
-
-      setSuccess("Login successful!");
-      setError("");
-      setLoading(true);
-
-      setTimeout(() => {
-        router.push("/Dashboard");
-      }, 2000);
-
-    } catch (err) {
-      console.error("🧨 Login failed:", err);
-      setError("Something went wrong. Please try again.");
-    }
-  };
-
-  // Fetching logged-in user's profile using token 
-
-  const fetchAndStoreUserProfile = async (accessToken: string) => {
-    console.log("🔐 Using access token:", accessToken);
-
-    if (!accessToken) {
-      console.error("🚨 No access token provided!");
-      return;
-    }
-
-    try {
-      const profileRes = await fetch(API_ENDPOINTS.userProfile.url, {
-        method: API_ENDPOINTS.userProfile.method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      console.log("📨 user-detail fetch response:", profileRes.status);
-
-      if (!profileRes.ok) {
-        const errorText = await profileRes.text();
-        console.error("❌ Failed to fetch user profile:", errorText);
-        throw new Error("Failed to fetch user profile");
-      }
-
-      const userProfile = await profileRes.json();
-      console.log("👤 User Profile:", userProfile);
-
-      // Saving the logged-in user info in localStorage 
-
-      localStorage.setItem("loggedInUser", JSON.stringify(userProfile.data));
-
-      console.log("✅ User profile saved");
-    } catch (error) {
-      console.log("❌ fetchAndStoreUserProfile failed:", error);
-    }
+    loginMutation.mutate(form, {
+      onSuccess: () => {
+        setSuccess("Login successful!");
+        setTimeout(() => {
+          router.push("/Dashboard");
+        }, 2000);
+      },
+    });
   };
 
   const buttonClick = () => {
     console.log("Button clicked");
-  }
+  };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center px-4">
@@ -179,7 +105,9 @@ const page: React.FC = () => {
             value={form.email}
             onChange={handleChange}
             placeholder="e.g. john@example.com"
-            className={`w-full px-4 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldErrors.email ? "border-red-400" : "border-gray-300"}`}
+            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+              fieldErrors.email ? "border-red-400" : "border-gray-300"
+            }`}
           />
           {fieldErrors.email && (
             <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
@@ -197,14 +125,24 @@ const page: React.FC = () => {
             value={form.password}
             onChange={handleChange}
             placeholder="Enter your password"
-            className={`w-full px-4 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldErrors.password ? "border-red-400" : "border-gray-300"}`}
+            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+              fieldErrors.password ? "border-red-400" : "border-gray-300"
+            }`}
           />
+
+          {/* Toggle icon */}
+
           <span
-            className="absolute right-4 top-9 cursor-pointer text-gray-500"
+            className="absolute right-3 top-8.5 cursor-pointer text-gray-500"
             onClick={() => setShowPassword((prev) => !prev)}
           >
-            {showPassword ? <AiFillEyeInvisible size={18} /> : <AiFillEye size={18} />}
+            {showPassword ? (
+              <AiFillEyeInvisible className="w-5 h-5" />
+            ) : (
+              <AiFillEye className="w-5 h-5" />
+            )}
           </span>
+
           {fieldErrors.password && (
             <p className="text-xs text-red-500 mt-1">{fieldErrors.password}</p>
           )}
@@ -213,17 +151,21 @@ const page: React.FC = () => {
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={loading}
-          onClick={buttonClick}
-          className={`w-full flex items-center justify-center gap-2 text-white text-sm font-medium py-2 mt-2 rounded-md transition duration-200 cursor-pointer ${loading ? "bg-blue-300 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"
-            }`}
+          disabled={loginMutation.status === "pending"}
+          className={`w-full text-white text-sm font-medium py-2 mt-5 rounded-md transition duration-200 ${
+            loginMutation.status === "pending"
+              ? "bg-blue-300 cursor-not-allowed"
+              : "bg-blue-500 hover:bg-blue-600 cursor-pointer"
+          }`}
+          onClick={() => buttonClick()}
         >
-          <FiLogIn className="w-5 h-5" />
-          {loading ? "Logging in..." : "Login"}
+          <span className="flex items-center justify-center gap-3">
+            <FiLogIn className="w-4 h-4" />
+            {loginMutation.status === "pending" ? "Logging in..." : "Login"}
+          </span>
         </button>
 
-        {/* Loading Spinner */}
-        {loading && (
+        {loginMutation.status === "pending" && (
           <div className="mt-4 flex items-center justify-center gap-2 text-sm text-blue-600">
             <svg className="animate-spin h-4 w-4 text-blue-600" viewBox="0 0 24 24" fill="none">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -233,11 +175,9 @@ const page: React.FC = () => {
           </div>
         )}
 
-        {/* Footer Links */}
-
-        <div className="mt-6 text-left text-sm text-gray-600 space-y-4">
-          <p>
-            Having System Password?{" "}
+        <div className="mt-3 text-left">
+          <p className="text-sm text-gray-600">
+            First time login?{" "}
             <span
               onClick={() => router.push("/Auth/Change-Password")}
               className="text-blue-600 font-medium hover:underline cursor-pointer"

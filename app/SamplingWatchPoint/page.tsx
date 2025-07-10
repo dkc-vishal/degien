@@ -1,13 +1,12 @@
 "use client";
 import React, { useState } from "react";
-import Table from "@/components/core/Table";
+// import Table from "@/components/core/Table";
 import SheetTitle from "@/components/core/SheetTitle";
 import InputForm from "@/components/core/InputForm";
 import { FaPrint } from "react-icons/fa";
 
 const page = () => {
-  const [sampleName, setSampleName] = useState("");
-  const [quantity, setQuantity] = useState("");
+
 
 
   const handlePrint = () => {
@@ -35,7 +34,7 @@ const page = () => {
         </div>
 
         {/* Page Content */}
-              <Table
+              {/* <Table
                 col={7}
                 row={20}
                 imagecol={4}
@@ -50,7 +49,7 @@ const page = () => {
                   "How to solve",
                   "corrected  picture"
                 ]}
-              />
+              /> */}
       </div>
   );
 };

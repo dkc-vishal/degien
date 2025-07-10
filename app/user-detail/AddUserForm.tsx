@@ -15,7 +15,7 @@ const AddUserForm: React.FC<{
     username: "",
     email: "",
     department: "",
-    userType: "", // 'DKC' or 'Vendor'
+    userType: "",
   });
 
   const [error, setError] = useState("");
@@ -40,7 +40,9 @@ const AddUserForm: React.FC<{
     return errors;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
@@ -130,39 +132,57 @@ const AddUserForm: React.FC<{
         Add New User
       </h2>
 
-      {error && <div className="text-red-600 text-sm text-center font-medium mb-3">{error}</div>}
+      {error && (
+        <div className="text-red-600 text-sm text-center font-medium mb-3">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Username */}
         <div>
-          <label className="block text-sm mb-1">Employee Name <span className="text-red-500">*</span></label>
+          <label className="block text-sm mb-1">
+            Employee Name <span className="text-red-500">*</span>
+          </label>
           <input
             name="username"
             value={form.username}
             onChange={handleChange}
             placeholder="e.g. John Doe"
-            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.username ? "border-red-400" : "border-gray-300"}`}
+            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+              fieldErrors.username ? "border-red-400" : "border-gray-300"
+            }`}
           />
-          {fieldErrors.username && <p className="text-xs text-red-500 mt-1">{fieldErrors.username}</p>}
+          {fieldErrors.username && (
+            <p className="text-xs text-red-500 mt-1">{fieldErrors.username}</p>
+          )}
         </div>
 
         {/* Email */}
         <div>
-          <label className="block text-sm mb-1">Email <span className="text-red-500">*</span></label>
+          <label className="block text-sm mb-1">
+            Email <span className="text-red-500">*</span>
+          </label>
           <input
             name="email"
             type="email"
             value={form.email}
             onChange={handleChange}
             placeholder="e.g. john@example.com"
-            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.email ? "border-red-400" : "border-gray-300"}`}
+            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+              fieldErrors.email ? "border-red-400" : "border-gray-300"
+            }`}
           />
-          {fieldErrors.email && <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>}
+          {fieldErrors.email && (
+            <p className="text-xs text-red-500 mt-1">{fieldErrors.email}</p>
+          )}
         </div>
 
         {/* User Type */}
         <div>
-          <label className="block text-sm mb-2 font-medium">User Type <span className="text-red-500">*</span></label>
+          <label className="block text-sm mb-2 font-medium">
+            User Type <span className="text-red-500">*</span>
+          </label>
           <div className="flex gap-6 text-sm">
             <label className="flex items-center gap-2">
               <input
@@ -185,25 +205,37 @@ const AddUserForm: React.FC<{
               Vendor
             </label>
           </div>
-          {fieldErrors.userType && <p className="text-xs text-red-500 mt-1">{fieldErrors.userType}</p>}
+          {fieldErrors.userType && (
+            <p className="text-xs text-red-500 mt-1">{fieldErrors.userType}</p>
+          )}
         </div>
 
         {/* Department (conditional) */}
         {form.userType === "DKC" && (
           <div>
-            <label className="block text-sm mb-1">Department <span className="text-red-500">*</span></label>
+            <label className="block text-sm mb-1">
+              Department <span className="text-red-500">*</span>
+            </label>
             <select
               name="department"
               value={form.department}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.department ? "border-red-400" : "border-gray-300"}`}
+              className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                fieldErrors.department ? "border-red-400" : "border-gray-300"
+              }`}
             >
               <option value="">Select Department</option>
               {Object.entries(departments).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
+                <option key={key} value={key}>
+                  {label}
+                </option>
               ))}
             </select>
-            {fieldErrors.department && <p className="text-xs text-red-500 mt-1">{fieldErrors.department}</p>}
+            {fieldErrors.department && (
+              <p className="text-xs text-red-500 mt-1">
+                {fieldErrors.department}
+              </p>
+            )}
           </div>
         )}
 

@@ -1,8 +1,8 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import InputForm from "@/components/core/InputForm";
 import SheetTitle from "@/components/core/SheetTitle";
-import Table from "@/components/core/Table";
+// import Table from "@/components/core/Table";
 
 const FeedingSamplingPage = () => {
   return (
@@ -17,9 +17,9 @@ const FeedingSamplingPage = () => {
       </div>
 
       {/* Page Content */}
-      <Table
+      {/* <Table
        col={7} row={8} imagecol={-1} colwidth={[25,25,150,150,150,150,150]}
-      />
+      /> */}
     </div>
   );
 };

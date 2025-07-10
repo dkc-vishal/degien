@@ -1,45 +1,75 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import NotificationCard from "./NotificationCard";
+import NotificationModal from "@/components/core/NotificationModal";
+import { toast } from "sonner"
 
-const mockNotifications = [
-  {
-    id: "1",
-    type: "sampling",
-    styleId: "pixie-cardi",
-    title: "New Sampling Style Created",
-    message: "A new sampling style 'Pixie Cardi' has been added for review.",
-    timestamp: "2025-07-04T10:20:00", // ISO format
-    read: false,
-  },
-  {
-    id: "2",
-    type: "production",
-    styleId: "raya-bandana",
-    title: "Production Style Updated",
-    message: "Updates have been made to the 'Raya Bandana' production style.",
-    timestamp: "2025-07-04T09:10:00",
-    read: false,
-  },
-  {
-    id: "3",
-    type: "production",
-    styleId: "raya-bandana",
-    title: "Production Style Created",
-    message: "'Raya Bandana' has been created in production style.",
-    timestamp: "2025-07-04T09:10:00",
-    read: true,
-  },
-];
+interface Notification {
+  content_type: string | null;
+  created_at: string; // ISO 8601 date string
+  id: string;
+  is_active: boolean;
+  is_read: boolean;
+  message: string;
+  object_id: string;
+  read_at: string | null;
+  read_by: string | null;
+  recipients: string[];
+  sent_at: string;
+  title: string;
+  type: 'both' | 'email' | 'push' | string; // assuming 'both' is one of possible types
+  updated_at: string;
+}
+
 
 const NotificationsPage = () => {
-  const [notifications, setNotifications] = useState(mockNotifications);
+
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const getData = async () => {
+    const response = await fetch(
+      `http://128.100.10.108:8000/api/v1.0/notification/list-notifications/`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU2Mzc4NDQxLCJpYXQiOjE3NTIwNTg0NDEsImp0aSI6IjRhNjU0ZjExMzk4MjRhMjc5ZWIxNGE5NDc3ZTM1NWUxIiwidXNlcl9pZCI6ImRlYjg2MjA5LWZhMTMtNDVlZC04YzMwLWYxODExMGMzOTVjNiJ9.YYLCICofVQr8dtdh2Ut--BwvsAkegqXcceizZ6XN4TU`, // 🔐 Token goes here
+        },
+      }
+    );
+    const data = await response.json();
+    if (data.status === 200) {
+      setNotifications(data.data.data);     
+      console.log(data);
+    }
+  };
+  useEffect(() => {
+    getData();
+  }, []);
+  
   const [activeTab, setActiveTab] = useState<"unread" | "read">("unread");
 
-  const unread = notifications.filter((n) => !n.read);
-  const read = notifications.filter((n) => n.read);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
 
+  const handleOpenModal = (notification: Notification) => {
+    setSelectedNotification(notification);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedNotification(null);
+  };
+
+  const handleAcknowledge = () => {
+    // Optional: Mark notification as read or send to backend
+    setModalOpen(false);
+    toast.success("Notification acknowledged!");
+  };
+
+  const unread = notifications.filter((n) => !n.is_read);
+  const read = notifications.filter((n) => n.is_read);
   return (
     <div className="px-10 py-8 min-h-screen bg-gray-50">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Notifications</h2>
@@ -81,10 +111,10 @@ const NotificationsPage = () => {
             key={note.id}
             title={note.title}
             message={note.message}
-            timestamp={note.timestamp}
-            read={note.read}
+            timestamp={note.created_at}
             type={note.type}
-            styleId={note.styleId}
+            styleId={note.object_id}
+            onPreview={() => handleOpenModal(note)} // Pass the click handler
           />
         ))}
       </div>
@@ -96,6 +126,17 @@ const NotificationsPage = () => {
       {activeTab === "read" && read.length === 0 && (
         <p className="text-gray-500 mt-10 text-center">No read notifications yet.</p>
       )}
+
+      {modalOpen && selectedNotification && (
+        <NotificationModal
+          title={selectedNotification.title}
+          message={selectedNotification.message}
+          timestamp={selectedNotification.created_at}
+          onConfirm={handleAcknowledge}
+          onCancel={handleCloseModal}
+        />
+      )}
+
     </div>
   );
 };

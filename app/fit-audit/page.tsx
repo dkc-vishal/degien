@@ -20,7 +20,7 @@ export default function FitAuditSheet() {
 
         {/* Badges */}
 
-        <div className="mt-3 flex gap-4">
+        <div className="mt-3 flex gap-4 mb-5">
           <span className="inline-flex items-center gap-2 bg-blue-100 text-gray-700 text-xs px-3 py-1 rounded-full">
             <FaUser className="w-3 h-3" />
             Last Edited by: <span className="font-medium">Sonu NM</span>
@@ -33,15 +33,47 @@ export default function FitAuditSheet() {
       </div>
 
       {/* Input Fields */}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 items-end">
         <Input label="Style Name" placeholder="Enter style name" />
         <Input label="Merchant Name" placeholder="Enter merchant name" />
         <Input label="Style Number" placeholder="Enter style number" />
         <Input label="QA/Tech Name" placeholder="Enter QA or Tech name" />
         <Input label="Vendor Name" placeholder="Enter vendor name" />
-        <Input label="Inspection Type" placeholder="Enter inspection type" />
         <Input label="Color" placeholder="Enter color" />
-        <Input label="Size" placeholder="Enter size" />
+
+        {/* Inspection -> Read-Only */}
+
+        <div>
+          <label className="block text-sm text-gray-700 mb-1">
+            Inspection Type
+          </label>
+          <input
+            type="text"
+            value="Inline"
+            disabled 
+            className="w-full px-3 py-1.5 border rounded-md text-sm bg-gray-100 text-gray-500 cursor-not-allowed"
+          />
+        </div>
+
+        {/* Size dropdown */}
+        
+        <div>
+          <label className="block text-sm text-gray-700 mb-1">
+            Size
+          </label>
+          <select
+            className="w-full px-3 py-1.5 border rounded-md text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            defaultValue="XS"
+          >
+            <option value="XS">XS</option>
+            <option value="S">S</option>
+            <option value="M">M</option>
+            <option value="L">L</option>
+            <option value="XL">XL</option>
+          </select>
+        </div>
+        
         <div>
           <label className="block text-sm text-gray-700 mb-1">Date</label>
           <input

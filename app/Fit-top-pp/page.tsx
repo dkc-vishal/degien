@@ -1,9 +1,8 @@
 "use client";
 
 import SheetTitle from "@/components/core/SheetTitle";
-import Table from "@/components/core/Table";
+// import Table from "@/components/core/Table";
 import React from "react";
-import Link from "next/link";
 
 import { FaPrint } from "react-icons/fa";
 const MidReportForm = () => {
@@ -167,7 +166,7 @@ const MidReportForm = () => {
           <div className="font-semibold text-base m-2 p-1">RESULT</div>
         </div>
         <div className="print-container">
-          <Table
+          {/* <Table
             col={12}
             row={20}
             imagecol={3}
@@ -186,7 +185,7 @@ const MidReportForm = () => {
               "MAJOR",
               "MINOR",
             ]}
-          />
+          /> */}
         </div>
       </div>
     </>
