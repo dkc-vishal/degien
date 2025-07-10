@@ -29,7 +29,6 @@ export default function ClientLayout({
         className={` flex-1 flex flex-col ${
           isSidebarOpen ? "removesidebarspace w-[calc(100vw-30%)] ml-[15%]" : "w-full"
         } transition-all duration-300`}
-        // style={{ width: "calc(100vw - 30%)" }}
       >
         <div className="no-print">
           <Header sidebartoggle={toggleSidebar} />

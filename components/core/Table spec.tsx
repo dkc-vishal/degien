@@ -192,7 +192,7 @@ export default function Table({
     Array.from({ length: col }, (_, colIndex) =>
       colIndex === imagecol || colIndex === imagecol2
         ? "MEASUREMENT PICTURE URL"
-        : columnheaders[colIndex].header
+        : columnheaders[colIndex]?.header
     )
   );
   const tableRef = useRef<HTMLDivElement>(null);
@@ -909,6 +909,7 @@ const handleSaveEditedImage = (
     console.log("Calculated sizes:", { xs, s, m, l, xl });
     return { xs, s, m, l, xl };
   }
+
   function handlePasteCellChange(colIndex: number) {
     const column = tableData.map((row) => row[colIndex]);
 
@@ -1097,6 +1098,7 @@ const handleSaveEditedImage = (
   //     return updated;
   //   });
   // };
+  
   const handleImagePasteOrDrop = (
     files: File[],
     rowIndex: number,
@@ -3101,7 +3103,7 @@ const handleSaveEditedImage = (
           {/* Buttons */}
           <button
             onClick={submitbutton}
-            className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition duration-200"
+            className="bg-blue-500 text-white px-4 py-2 m-4 rounded shadow hover:bg-blue-600 transition duration-200"
           >
             save
           </button>

@@ -12,21 +12,12 @@ export interface Issue {
   priority?: string;
   createdDate?: string;
 }
-import {
-  FaBars,
-  FaTachometerAlt,
-  FaClipboardList,
-  FaWrench,
-  FaTools,
-} from "react-icons/fa";
 import { API_ENDPOINTS } from "@/lib/api";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { IssueImage } from "@/types";
 import { Button } from "../ui/button";
 import { X } from "lucide-react";
-import { get } from "http";
-import { set } from "date-fns";
 type AllowedDataType = "str" | "number" | "bool" | string;
 
 type CellData = {
@@ -126,49 +117,9 @@ export default function Table({
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
   const [copiedImage, setCopiedImage] = useState<string | null>(null);
-  // const handleMouseMove = (e: MouseEvent) => {
-  //   if (resizingColIndex.current === null) return;
-
-  //   const thElements = document.querySelectorAll("th");
-  //   const th = thElements[resizingColIndex.current] as HTMLElement;
-
-  //   if (th) {
-  //     const newWidth = e.clientX - th.getBoundingClientRect().left;
-  //     if (newWidth > 20) {
-  //       th.style.width = `${newWidth}px`;
-  //       const updatedWidths = [...colWidths];
-  //       updatedWidths[resizingColIndex.current] = newWidth;
-  //       setColWidths(updatedWidths);
-  //       localStorage.setItem(
-  //         `table_colWidths_${tablename}`,
-  //         JSON.stringify(updatedWidths)
-  //       );
-  //     }
-  //   }
-  // };
-
+ 
   const resizeStartX = useRef(0);
   const resizeStartWidth = useRef(0);
-
-  // const handleMouseMove = (e: MouseEvent) => {
-  //   if (resizingColIndex.current === null) return;
-
-  //   const startX = resizeStartX.current;
-  //   const currentX = e.clientX;
-  //   const delta = currentX - startX;
-
-  //   const updated = [...colWidths];
-  //   const newWidth = resizeStartWidth.current + delta;
-
-  //   if (newWidth > 20 && newWidth < 500) {
-  //     updated[resizingColIndex.current] = newWidth;
-  //     setColWidths(updated);
-  //   }
-  //   localStorage.setItem(
-  //     `table_colWidths_${tablename}`,
-  //     JSON.stringify(updated)
-  //   );
-  // };
 
   const handleMouseMove = (e: MouseEvent) => {
     if (resizingColIndex.current === null) return;
@@ -190,6 +141,7 @@ export default function Table({
       JSON.stringify(updated)
     );
   };
+
   const [selectedHistoryIndex, setSelectedHistoryIndex] = useState(0);
 
   const handleMouseUp = () => {
@@ -207,6 +159,7 @@ export default function Table({
     setIsImageEditorOpen(false);
     setEditingImageInfo(null);
   };
+
   function generateUUID() {
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
       const r = (Math.random() * 16) | 0;
@@ -230,37 +183,36 @@ export default function Table({
       };
     });
   };
-const handleSaveEditedImage = (newImageDataUrl: string) => {
-  const { rownumber, colnumber, imgindex } = imageSeleted;
 
-  setTableData((prevData) => {
-    const newData = [...prevData];
-    const cell = newData[rownumber][colnumber];
+  const handleSaveEditedImage = (newImageDataUrl: string) => {
+    const { rownumber, colnumber, imgindex } = imageSeleted;
 
-    const isSingleImage =
-      cell.data_type === "single_image" ;
+    setTableData((prevData) => {
+      const newData = [...prevData];
+      const cell = newData[rownumber][colnumber];
 
-    if (isSingleImage && Array.isArray(cell.value)) {
-      const updatedImages = [...cell.value];
-      updatedImages[imgindex] = newImageDataUrl;
+      const isSingleImage = cell.data_type === "single_image";
 
-      newData[rownumber][colnumber] = {
-        ...cell,
-        value: updatedImages,
-      };
-    }
+      if (isSingleImage && Array.isArray(cell.value)) {
+        const updatedImages = [...cell.value];
+        updatedImages[imgindex] = newImageDataUrl;
 
-    return newData;
-  });
+        newData[rownumber][colnumber] = {
+          ...cell,
+          value: updatedImages,
+        };
+      }
 
-  toast({
-    title: "Image updated",
-    description: "Your changes have been saved.",
-  });
+      return newData;
+    });
 
-  handleCloseImageEditor();
-};
+    toast({
+      title: "Image updated",
+      description: "Your changes have been saved.",
+    });
 
+    handleCloseImageEditor();
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -280,15 +232,19 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
   const [tableData, setTableData] = useState<TableRow[]>(
     Array.from({ length: row }, () => generateEmptyRow(row))
   );
+
   const [autofillStart, setAutofillStart] = useState<[number, number] | null>(
     null
   );
+
   const [autofillTarget, setAutofillTarget] = useState<[number, number] | null>(
     null
   );
+
   const setCellValue = (celldata: CellData) => {
     if (celldata.data_type === "single_image") {
       celldata.value = []; // Ensure value is an array for single_image type
@@ -301,6 +257,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
       return newData; // update the whole table
     });
   };
+
   useEffect(() => {
     const sheeetdata = spreadsheet.cells;
     for (const [key, cell] of Object.entries(sheeetdata)) {
@@ -308,6 +265,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
       setCellValue(typedCell);
     }
   }, []);
+
   const [contextMenu, setContextMenu] = useState<{
     cellid: string | null;
     visible: boolean;
@@ -330,16 +288,19 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
     col: number;
     isHeader?: boolean;
   } | null>(null);
+
   useEffect(() => {
     if (contextMenu?.visible) {
       // Do something after contextMenu is set and visible
       console.log("Context menu updated:", contextMenu);
     }
   }, [contextMenu]);
+
   useEffect(() => {
     // Do something after contextMenu is set and visible
     console.log("Context menu updated:", selectedHistory);
   }, [selectedHistory]);
+
   const [selectionAnchor, setSelectionAnchor] = useState<
     [number, number] | null
   >(null);
@@ -356,6 +317,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
   const [history, setHistory] = useState<TableRow[][]>([]);
   const [redoStack, setRedoStack] = useState<TableRow[][]>([]);
   const lastSnapshotRef = useRef<string>("");
+
   const handlePaste = (
     e: React.ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>,
     startRow: number,
@@ -424,13 +386,12 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
     pushToHistory(tableData);
     setTableData(updated);
   };
+
   useEffect(() => {
     localStorage.setItem(`table_data_${tablename}`, JSON.stringify(tableData));
   }, [tableData]);
 
   const [searchTerm, setSearchTerm] = useState("");
-
-  // Table: 5 rows x 12 cols, with editable default values
 
   const isCellInRange = (row: number, col: number) => {
     if (!selectedRange) return false;
@@ -453,6 +414,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
     setHistory((prev) => [...prev, JSON.parse(snapshot)]);
     setRedoStack([]); // clear redo on new action
   };
+
   const [editHistoryMap, setEditHistoryMap] = useState<CellHistory[]>([]);
 
   const handleCellChange = (row: number, col: number, value: string) => {
@@ -475,9 +437,11 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
     }
     // el.style.height = "auto"; // Reset height
   };
+
   const [cellColors, setCellColors] = useState<string[][]>(() =>
     tableData.map((row) => row.map(() => ""))
   );
+
   const autoResizeAllTextareas = (e: any) => {
     if (e && e.parentElement) {
       e.parentElement.style.height = "auto"; // Reset height
@@ -493,6 +457,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
     window.addEventListener("mouseup", handleMouseUp);
     return () => window.removeEventListener("mouseup", handleMouseUp);
   }, []);
+
   const getImageAt = (row: number, col: number, index: number) => {
     console.log(tableData[row][col].value[index]);
     return tableData[row][col].value[index]; // Example
@@ -617,6 +582,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
     });
     setTableData(newData);
   };
+
   const handleImagePasteOrDrop = (
     files: File[],
     rowIndex: number,
@@ -647,6 +613,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
       return updated;
     });
   };
+
   const startAutoScroll = () => {
     if (!scrollContainerRef.current) return;
 
@@ -672,6 +639,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
       animationFrameRef.current = null;
     }
   };
+
   useEffect(() => {
     const handleClick = () => {
       setContextMenu(null);
@@ -683,6 +651,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, []);
+
   useEffect(() => {
     const savedColWidths = localStorage.getItem(`table_colWidths_${tablename}`);
     console.log(savedColWidths);
@@ -698,6 +667,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
       )
     );
   }, [tableData]);
+
   useEffect(() => {
     if (!isDragging) return;
 
@@ -720,17 +690,20 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
       stopAutoScroll();
     };
   }, [isDragging]);
+
   useEffect(() => {
     const handleClick = () => setContextMenu1(null);
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, []);
+
   useEffect(() => {
     const savedWidths = localStorage.getItem(`table_colWidths_${tablename}`);
     if (savedWidths) {
       setColWidths(JSON.parse(savedWidths));
     }
   }, []);
+
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
@@ -841,6 +814,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
     }
     return undefined;
   };
+
   const isCellInAutofillRange = (row: number, col: number): boolean => {
     if (!autofillStart || !autofillTarget) return false;
 
@@ -854,6 +828,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
 
     return row >= minRow && row <= maxRow && col >= minCol && col <= maxCol;
   };
+
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.scrollIntoView({
@@ -935,6 +910,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
       document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [autofillStart, autofillTarget, tableData]);
+
   useEffect(() => {
     console.log("first");
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -958,6 +934,7 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [imageSeleted, copiedImage]);
+
   useKeyboardShortcuts({
     tableData,
     setTableData,
@@ -974,12 +951,15 @@ const handleSaveEditedImage = (newImageDataUrl: string) => {
     setRedoStack,
     lastSnapshotRef,
   });
-  const getCellHistory = async (cellid: string, contextMenu: { row: number; col: number; x: number; y: number }) => {
-const res = await axios.get(API_ENDPOINTS.cellHistory(cellid).url);
+  const getCellHistory = async (
+    cellid: string,
+    contextMenu: { row: number; col: number; x: number; y: number }
+  ) => {
+    const res = await axios.get(API_ENDPOINTS.cellHistory(cellid).url);
 
-const updatedMap = { ...editHistoryMap, ...res.data.data };
+    const updatedMap = { ...editHistoryMap, ...res.data.data };
 
-const key = `${contextMenu.row}-${contextMenu.col}`;
+    const key = `${contextMenu.row}-${contextMenu.col}`;
     setSelectedHistory((s) => ({
       ...s,
       key,
@@ -990,14 +970,7 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
       history: updatedMap,
     }));
     setSelectedHistoryIndex(Object.keys(updatedMap).length - 1);
-
-
-
-                
-
-
   };
-
 
   return (
     <>
@@ -1143,7 +1116,7 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
                 if (contextMenu.cellid) {
                   getCellHistory(contextMenu.cellid, contextMenu);
                 }
-               
+
                 setContextMenu(null);
               }}
               className="hover:bg-gray-100 px-4 py-2 cursor-pointer text-blue-600"
@@ -1153,6 +1126,7 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
           </ul>
         </div>
       )}
+      
       {contextMenu2.visible && (
         <div
           style={{
@@ -1190,8 +1164,8 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
           </div>
         </div>
       )}
-      {selectedHistory && (
 
+      {selectedHistory && (
         <div
           className="absolute bg-white border border-gray-300 rounded-lg shadow-lg w-80 z-50"
           style={{
@@ -1220,15 +1194,20 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
               {/* Next Button */}
               <button
                 disabled={
-                  selectedHistoryIndex >= Object.keys(selectedHistory.history).length - 1
+                  selectedHistoryIndex >=
+                  Object.keys(selectedHistory.history).length - 1
                 }
                 onClick={() =>
                   setSelectedHistoryIndex((i) =>
-                    Math.min(i + 1, Object.keys(selectedHistory.history).length - 1)
+                    Math.min(
+                      i + 1,
+                      Object.keys(selectedHistory.history).length - 1
+                    )
                   )
                 }
                 className={`text-lg px-1 transition ${
-                  selectedHistoryIndex >= Object.keys(selectedHistory.history).length - 1
+                  selectedHistoryIndex >=
+                  Object.keys(selectedHistory.history).length - 1
                     ? "text-gray-300"
                     : "text-gray-500 hover:text-gray-800"
                 }`}
@@ -1237,7 +1216,7 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
               </button>
             </div>
           </div>
-                <div className="p-4">
+          <div className="p-4">
             {(() => {
               const entry = selectedHistory.history[selectedHistoryIndex];
               return (
@@ -2030,7 +2009,7 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
                                   </div>
                                 )}
                                 {Array.isArray(cell) ? (
-                                  <div className="flex flex-wrap  justify-center">
+                                  <div className="flex flex-wrap justify-center">
                                     {(cell as string[]).map((src, i) => (
                                       <div
                                         key={i}
@@ -2119,45 +2098,44 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
                                         <div className="absolute top-1 right-1 lg:opacity-0  lg:group-hover:opacity-100 transition-opacity duration-200 flex flex-col gap-1 z-10">
                                           <Button
                                             onClick={(e) => {
-                                                setTableData((prev) => {
-                                                  const updated = [...prev];
-                                                  const cell =
-                                                    updated[rowIndex][colIndex];
+                                              setTableData((prev) => {
+                                                const updated = [...prev];
+                                                const cell =
+                                                  updated[rowIndex][colIndex];
 
-                                                  const isSingleImage =
-                                                    cell.data_type ===
-                                                      "single_image" ||
-                                                    (Array.isArray(
-                                                      cell.data_type
-                                                    ) &&
-                                                      cell.data_type.includes(
-                                                        "single_image"
-                                                      ));
+                                                const isSingleImage =
+                                                  cell.data_type ===
+                                                    "single_image" ||
+                                                  (Array.isArray(
+                                                    cell.data_type
+                                                  ) &&
+                                                    cell.data_type.includes(
+                                                      "single_image"
+                                                    ));
 
-                                                  if (
-                                                    isSingleImage &&
-                                                    Array.isArray(cell.value)
-                                                  ) {
-                                                    const newImages = [
-                                                      ...cell.value,
-                                                    ];
-                                                    newImages.splice(i, 1);
+                                                if (
+                                                  isSingleImage &&
+                                                  Array.isArray(cell.value)
+                                                ) {
+                                                  const newImages = [
+                                                    ...cell.value,
+                                                  ];
+                                                  newImages.splice(i, 1);
 
-                                                    updated[rowIndex][
-                                                      colIndex
-                                                    ] = {
+                                                  updated[rowIndex][colIndex] =
+                                                    {
                                                       ...cell,
                                                       value: newImages,
                                                     };
-                                                  }
+                                                }
 
-                                                  return updated;
-                                                });
+                                                return updated;
+                                              });
 
-                                                setTimeout(() => {
-                                                  autoResizeAllTextareas(e);
-                                                }, 0);
-                                              }}
+                                              setTimeout(() => {
+                                                autoResizeAllTextareas(e);
+                                              }, 0);
+                                            }}
                                             variant="destructive"
                                             size="icon"
                                             className="h-6 w-6"
@@ -2267,10 +2245,6 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
                                 )}
 
                               <textarea
-                                style={{
-                                  backgroundColor:
-                                    cellColors?.[rowIndex]?.[colIndex] || "",
-                                }}
                                 value={cell.value}
                                 data-cell={`${rowIndex}-${colIndex}`}
                                 ref={
@@ -2483,8 +2457,11 @@ const key = `${contextMenu.row}-${contextMenu.col}`;
                                   rowIndex === 0
                                     ? "text-black p-3! text-[15px]!"
                                     : "p-3!"
-                                } className="w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top"
-`}
+                                } w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top`}
+                                style={{
+                                  backgroundColor:
+                                    cellColors?.[rowIndex]?.[colIndex] || "",
+                                }}
                                 rows={1}
                               />
                             </td>

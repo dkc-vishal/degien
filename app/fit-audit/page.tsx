@@ -57,14 +57,25 @@ export default function FitAuditSheet() {
           value={status}
           onChange={(e) => setStatus(e.target.value)}
           className={`px-3 py-1.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500
-            ${status === "pass"
-              ? "bg-green-100 text-green-700 border border-green-300"
-              : "bg-red-100 text-red-700 border border-red-300"
+            ${
+              status === "pass"
+                ? "bg-green-100 text-green-700 border border-green-300"
+                : "bg-red-100 text-red-700 border border-red-300"
             }`}
           style={{ width: "100px" }}
         >
-          <option value="fail">Fail</option>
-          <option value="pass">Pass</option>
+          <option
+            value="fail"
+            className="bg-red-100 text-red-700 border-red-300"
+          >
+            Fail
+          </option>
+          <option
+            value="pass"
+            className="bg-green-100 text-green-700 border-green-300"
+          >
+            Pass
+          </option>
         </select>
       </div>
 
@@ -101,7 +112,13 @@ export default function FitAuditSheet() {
   );
 }
 
-const Input = ({ label, placeholder }: { label: string; placeholder: string }) => (
+const Input = ({
+  label,
+  placeholder,
+}: {
+  label: string;
+  placeholder: string;
+}) => (
   <div>
     <label className="block text-sm text-gray-700 mb-1">{label}</label>
     <input
