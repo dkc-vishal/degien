@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import Table from "@/components/core/Table";
+// import Table from "@/components/core/Table";
 import InputForm from "@/components/core/InputForm";
 import SheetTitle from "@/components/core/SheetTitle";
 
@@ -19,7 +19,7 @@ const page = () => {
         </div>
 
         {/* Page Content */}
-        <Table col={10} row={10} imagecol={5} colwidth={[25,25,25,25,45,25,25,25,25]}/>
+        {/* <Table col={10} row={10} imagecol={5} colwidth={[25,25,25,25,45,25,25,25,25]}/> */}
       </div>
   );
 };

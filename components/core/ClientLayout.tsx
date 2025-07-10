@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { QueryProvider } from "../providers/QueryProvider";
-import { useState,useRef } from "react";
+import { useState,useRef,useEffect } from "react";
 
 export default function ClientLayout({
   children,
