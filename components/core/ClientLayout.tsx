@@ -4,45 +4,18 @@ import { usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { QueryProvider } from "../providers/QueryProvider";
-import { useState,useRef,useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function ClientLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [modalOpen, setModalOpen] = useState(false);
-  const [selectedNotification, setSelectedNotification] = useState(null);
   const socket = useRef<WebSocket | null>(null);
   const [notifications_mess, setNotifications_mess] = useState<Notification[]>(
     []
   );
-  const handleCloseModal = () => {
-    setNotifications_mess((prevItems) => prevItems.slice(1));
-  };
-  const patchData = async (notificationId: string) => {
-    const response = await fetch(
-      `http://128.100.10.108:8000/api/v1.0/notification/read-notification/${notificationId}/`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU2Mzc4NDQxLCJpYXQiOjE3NTIwNTg0NDEsImp0aSI6IjRhNjU0ZjExMzk4MjRhMjc5ZWIxNGE5NDc3ZTM1NWUxIiwidXNlcl9pZCI6ImRlYjg2MjA5LWZhMTMtNDVlZC04YzMwLWYxODExMGMzOTVjNiJ9.YYLCICofVQr8dtdh2Ut--BwvsAkegqXcceizZ6XN4TU`, // 🔐 Token goes here
-        },
-      }
-    );
-    const data = await response.json();
-    if (data.status === 200) {
-      setNotifications_mess((prevItems) => prevItems.slice(1));      
-      console.log(data);
-    }
-  };
-  // const handleAcknowledge = async(notificationId: string) => {
-  //   const res = await axios.patch(`http://128.100.10.108:8000/api/v1.0/notification/read-notification/${notificationId}/`)
-  //   console.log(res)
-  //   // setNotifications_mess((prevItems) => prevItems.filter(item => item.notification_id !== notificationId));
-  //   toast.success("Notification acknowledged!");
-  // };
+
   useEffect(() => {
     const ws = new WebSocket(
       "ws://128.100.10.108:8000/ws/v1.0/notification/?user_id=deb86209-fa13-45ed-8c30-f18110c395c6"
@@ -76,7 +49,7 @@ export default function ClientLayout({
     };
   }, []);
   const pathname = usePathname();
-  const isAuthRoute = pathname === "/" || pathname.startsWith("/Auth"); // lowercase!
+  const isAuthRoute = pathname === "/" || pathname.startsWith("/Auth");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const toggleSidebar = () => {

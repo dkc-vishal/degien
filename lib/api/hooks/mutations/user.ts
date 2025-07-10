@@ -1,8 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { userEndPoints } from "../../endpoints/index";
-import { queryKeys } from "../../utils/query-keys";
-import type { CreateUserRequest, UpdateUserRequest } from "../../types/index";
+import type { UpdateUserRequest } from "../../types/index";
 import { cacheUtils } from "../../utils";
 
 //check this function is work correct or not
@@ -37,7 +36,6 @@ export const useUpdateUser = () => {
 };
 
 export const useDeleteUser = () => {
-  const queryClient = useQueryClient();
   return useMutation({
     // mutationFn: (id: string) => userEndPoints.deleteUser(id),
     mutationFn: userEndPoints.deleteUser,

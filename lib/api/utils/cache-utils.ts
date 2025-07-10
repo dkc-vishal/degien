@@ -10,7 +10,6 @@ export const cacheUtils = {
     },
 
     clearUser: () => {
-      // check if this is needed
       // queryClient.removeQueries({ queryKey: queryKeys.auth.all });
       queryClient.removeQueries({ queryKey: queryKeys.auth.profile() });
     },
@@ -23,6 +22,21 @@ export const cacheUtils = {
   users: {
     invalidateList: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+    },
+
+    addUserToList: (newUser: User) => {
+      queryClient.setQueriesData(
+        { queryKey: queryKeys.users.lists() },
+        (oldData: any) => {
+          if (!oldData) return oldData;
+
+          return {
+            ...oldData,
+            data: [newUser, ...oldData.data],
+            total: oldData.total + 1,
+          };
+        }
+      );
     },
 
     updateUserInList: (userId: string, userData: User) => {
@@ -61,21 +75,6 @@ export const cacheUtils = {
       );
 
       queryClient.removeQueries({ queryKey: queryKeys.users.detail(userId) });
-    },
-
-    addUserToList: (newUser: User) => {
-      queryClient.setQueriesData(
-        { queryKey: queryKeys.users.lists() },
-        (oldData: any) => {
-          if (!oldData) return oldData;
-
-          return {
-            ...oldData,
-            data: [newUser, ...oldData.data],
-            total: oldData.total + 1,
-          };
-        }
-      );
     },
   },
 
