@@ -2,31 +2,35 @@
 
 import SheetTitle from "@/components/core/SheetTitle";
 import Table from "../../components/core/Table";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { FaPrint } from "react-icons/fa";
 type ColumnMetadata = {
-  data_type: string;        
-  header: string;           
+  data_type: string;
+  header: string;
   is_editable: boolean;
   is_frozen: boolean;
   is_hidden: boolean;
   is_moveable: boolean;
-  width: string;          
+  width: string;
 };
 export default function QaIntialReport() {
-    const [columnHeaders, setcolumnHeaders] = useState<ColumnMetadata[]>([]);
-    const [tableData, setTableData] = useState({});
+
+  const [columnHeaders, setcolumnHeaders] = useState<ColumnMetadata[]>([]);
+  const [tableData, setTableData] = useState({});
   const [poNumber, setPoNumber] = useState<string[]>([]);
+  
   const [colorValues, setColorValues] = useState<string[][]>([
     Array(6).fill(Array(6).fill("")),
   ]);
+  
   const handlePrint = () => {
     window.print();
   };
-    async function fetchdata() {
+
+  async function fetchdata() {
     const res = await axios.get(
-      "http://gulab.local:8000/api/v1.0/spreadsheet/54b51923-ecd6-4c00-811d-10e7511e5bb4/"
+      "http://gulab.local:8000/api/v1.0/spreadsheet/b20c7d94-e11e-46f9-96d3-44aad3d2bb31/"
     );
     const col_metadata: Record<string, ColumnMetadata> = await res.data.data.column_metadata;
     console.log(res)
@@ -37,6 +41,7 @@ export default function QaIntialReport() {
   useEffect(() => {
     fetchdata();
   }, []);
+  
   const handlePoNumberChange = (index: number, value: string) => {
     const newPoNumber = [...poNumber];
     newPoNumber[index] = value;
@@ -136,18 +141,16 @@ export default function QaIntialReport() {
             {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className={`${
-                  i === 5 ? "" : "border-r"
-                } col-span-1 border-black `}
+                className={`${i === 5 ? "" : "border-r"
+                  } col-span-1 border-black `}
               >
                 Color {i + 1}
                 <div
                   key={i}
-                  className={`${
-                    !poNumber.some((num) => num && num.trim() !== "")
+                  className={`${!poNumber.some((num) => num && num.trim() !== "")
                       ? "border-2 border-red-500"
                       : "border-r border-black"
-                  }`}
+                    }`}
                 >
                   <input
                     key={i}
@@ -167,11 +170,10 @@ export default function QaIntialReport() {
               className="grid grid-cols-7 border border-t-0 border-black"
             >
               <div
-                className={`${
-                  !poNumber.some((num) => num && num.trim() !== "")
+                className={`${!poNumber.some((num) => num && num.trim() !== "")
                     ? "border-2 border-red-500"
                     : "border-r border-black"
-                }`}
+                  }`}
               >
                 <input
                   className={`outline-none p-1`}
@@ -183,14 +185,13 @@ export default function QaIntialReport() {
               {[...Array(6)].map((_, j) => (
                 <input
                   key={i * j}
-                  className={`${j === 5 ? "" : "border-r"} outline-none p-1 ${
-                    !poNumber.some((num) => num && num.trim() !== "")
+                  className={`${j === 5 ? "" : "border-r"} outline-none p-1 ${!poNumber.some((num) => num && num.trim() !== "")
                       ? "border-2 border-red-500"
                       : "border-r border-black"
-                  }`}
+                    }`}
                   placeholder="MERCHANT TO FILL"
-                  // value={colorValues[i]?.[j]}
-                  // onChange={(e) => handleColorChange(i, j, e.target.value)}
+                // value={colorValues[i]?.[j]}
+                // onChange={(e) => handleColorChange(i, j, e.target.value)}
                 />
               ))}
             </div>
@@ -285,17 +286,18 @@ export default function QaIntialReport() {
             </div>
           </div>
         </div>
-        <div style={{marginTop:"75px"}} className="print-container">
-               {columnHeaders.length>0 && (
-                 <Table
-                   col={12}
-                   row={120}
-                   imagecol={5}
-                   tablename="mid-final"
-                   columnheaders={columnHeaders}
-                   spreadsheet={tableData}
-                 />
-               )}
+        <div style={{ marginTop: "75px" }} className="print-container">
+          {columnHeaders.length > 0 && (
+            <Table
+              col={8}
+              row={50}
+              imagecol={5}
+              imagecol2={7}
+              tablename="mid-final"
+              columnheaders={columnHeaders}
+              spreadsheet={tableData}
+            />
+          )}
         </div>
       </div>
     </>

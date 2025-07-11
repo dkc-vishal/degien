@@ -1,8 +1,8 @@
 "use client";
 import ImageEditorModal from "@/components/image-editor/ImageEditorModal";
-import { toast } from "@/hooks/use-toast";
 import { useEffect, useRef } from "react"; // Make sure useRef is imported
 import React, { useState } from "react";
+import { toast } from "sonner";
 
 export interface Issue {
   id: string;
@@ -54,11 +54,15 @@ export default function Table({
   const [draggedColIndex, setDraggedColIndex] = useState<number | null>(null);
   const draggedImageSource = useRef<string | null>(null);
   const draggedImageOrigin = useRef<[number, number] | null>(null);
+
   // State for Image Editor Modal
+
   const [editingImageInfo, setEditingImageInfo] = useState<{
     issueId: string;
     image: string;
+    filename?: string;
   } | null>(null);
+
   const [imageSeleted, setimageSeleted] = useState({
     rownumber: 0,
     colnumber: 0,
@@ -80,7 +84,7 @@ export default function Table({
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollDirectionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const animationFrameRef = useRef<number | null>(null);
-  
+
   const [columnHeaders, setColumnHeaders] = useState(
     Array.from({ length: col }, (_, colIndex) =>
       colIndex === imagecol || colIndex === imagecol2
@@ -97,7 +101,7 @@ export default function Table({
     }
   }, []);
   const [colWidths, setColWidths] = useState(
-    Array.from({ length: columnheaders.length }, (_,i) => columnheaders[i]) // Default width of 100 if not specified
+    Array.from({ length: columnheaders.length }, (_, i) => columnheaders[i]) // Default width of 100 if not specified
   );
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
@@ -175,17 +179,32 @@ export default function Table({
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
   };
-  const handleOpenImageEditor = (issueId: string, image: string) => {
-    setEditingImageInfo({ issueId, image });
+
+  const handleOpenImageEditor = (issueId: string, imageUrl: string) => {
+    const filename = imageUrl.split('/').pop() || '';
+    setEditingImageInfo({
+      issueId,
+      image: {
+        url: imageUrl,
+        name: filename
+      }
+    });
     setIsImageEditorOpen(true);
   };
+
   const handleCloseImageEditor = () => {
     setIsImageEditorOpen(false);
     setEditingImageInfo(null);
   };
 
-  const handleSaveEditedImage = (newImageDataUrl: string) => {
+  const handleSaveEditedImage = async (newImageDataUrl: string) => {
+
     const { rownumber, colnumber, imgindex } = imageSeleted;
+
+    toast.success("handle save edited image");
+
+    // replacing the old image with the new URL 
+
     setTableData((prevData) => {
       const newData = [...prevData];
       const row = [...newData[rownumber]];
@@ -197,10 +216,8 @@ export default function Table({
 
       return newData;
     });
-    toast({
-      title: "Image updated",
-      description: "Your changes have been saved.",
-    });
+
+    toast("Image updated. Your changes have been saved.");
     handleCloseImageEditor();
   };
 
@@ -600,7 +617,7 @@ export default function Table({
   // ]);
 
   const insertRow = (index: number) => {
-     pushToHistory(tableData); // ✅ Store before editing
+    pushToHistory(tableData); // ✅ Store before editing
     const newRow = new Array(tableData[0].length).fill("");
     const updated = [
       ...tableData.slice(0, index),
@@ -611,7 +628,7 @@ export default function Table({
   };
 
   const insertCol = (index: number) => {
-     pushToHistory(tableData); // ✅ Store before editing
+    pushToHistory(tableData); // ✅ Store before editing
     // Update column headers
     const newHeaders = [...columnHeaders];
     newHeaders.splice(index, 0, "");
@@ -619,7 +636,7 @@ export default function Table({
 
     // Update table data
     const newData = tableData.map((row) => {
-       pushToHistory(tableData); // ✅ Store before editing
+      pushToHistory(tableData); // ✅ Store before editing
       const newRow = [...row];
       newRow.splice(index, 0, "");
       return newRow;
@@ -633,7 +650,7 @@ export default function Table({
   };
 
   const deleteRow = (index: number) => {
-     pushToHistory(tableData); // ✅ Store before editing
+    pushToHistory(tableData); // ✅ Store before editing
     if (tableData.length <= 1) return;
     const updated = [
       ...tableData.slice(0, index),
@@ -643,7 +660,7 @@ export default function Table({
   };
 
   const deleteCol = (deleteIndex: number) => {
-     pushToHistory(tableData); // ✅ Store before editing
+    pushToHistory(tableData); // ✅ Store before editing
     // Guard clause: don't allow deleting if there's only 1 column left
     if (columnHeaders.length <= 1) return;
 
@@ -672,31 +689,31 @@ export default function Table({
     if (imageFiles.length === 0) return;
 
     const uploadPromises = imageFiles.map(async (file) => {
-      const formData = new FormData() ; 
-      formData.append("image", file) ; 
+      const formData = new FormData();
+      formData.append("image", file);
 
-      try{
+      try {
         const response = await fetch(API_ENDPOINTS.imageUpload.url, {
-          method: API_ENDPOINTS.imageUpload.method, 
-          body: formData, 
-        }) ; 
+          method: API_ENDPOINTS.imageUpload.method,
+          body: formData,
+        });
 
-        if(!response.ok) throw new Error("Upload failed.") ; 
+        if (!response.ok) throw new Error("Upload failed.");
 
-        const data = await response.json() ; 
+        const data = await response.json();
 
-        console.log("image url: ", data) ; 
+        console.log("image url: ", data);
 
-        return data.data?.image || "" ; 
-      }catch(error){  
-        console.error("Image upload error: ", error) ; 
-        return "" ; 
+        return data.data?.image || "";
+      } catch (error) {
+        console.error("Image upload error: ", error);
+        return "";
       }
     });
-    
+
     const backendUrls = (
       await Promise.all(uploadPromises)
-    ).filter(Boolean) ; 
+    ).filter(Boolean);
 
     setTableData((prev) => {
       const updated = [...prev];
@@ -713,7 +730,7 @@ export default function Table({
   };
 
   useEffect(() => {
-    console.log("Updated tableData: ", tableData) ; 
+    console.log("Updated tableData: ", tableData);
   }, [tableData])
 
   const startAutoScroll = () => {
@@ -776,7 +793,7 @@ export default function Table({
         clientX: e.clientX,
         clientY: e.clientY,
         // @ts-ignore
-        preventDefault: () => {},
+        preventDefault: () => { },
       });
     };
 
@@ -872,7 +889,7 @@ export default function Table({
   }
 
   const highlightRow = (rowIndex: number, color = "#fff3cd") => {
-     pushToHistory(tableData); // ✅ Store before editing
+    pushToHistory(tableData); // ✅ Store before editing
     setCellColors((prev) => {
       const updated = [...prev];
       updated[rowIndex] = updated[rowIndex].map(() => color);
@@ -880,7 +897,7 @@ export default function Table({
     });
   };
   const unhighlightRow = (rowIndex: number) => {
-     pushToHistory(tableData); // ✅ Store before editing
+    pushToHistory(tableData); // ✅ Store before editing
     setCellColors((prev) => {
       const updated = [...prev];
       updated[rowIndex] = updated[rowIndex].map(() => "");
@@ -1221,11 +1238,10 @@ export default function Table({
                 onClick={() =>
                   setSelectedHistoryIndex((i) => Math.max(i - 1, 0))
                 }
-                className={`text-lg px-1 transition ${
-                  selectedHistoryIndex <= 0
-                    ? "text-gray-300"
-                    : "text-green-700 hover:text-green-900"
-                }`}
+                className={`text-lg px-1 transition ${selectedHistoryIndex <= 0
+                  ? "text-gray-300"
+                  : "text-green-700 hover:text-green-900"
+                  }`}
               >
                 ❮
               </button>
@@ -1240,11 +1256,10 @@ export default function Table({
                     Math.min(i + 1, selectedHistory.history.length - 1)
                   )
                 }
-                className={`text-lg px-1 transition ${
-                  selectedHistoryIndex >= selectedHistory.history.length - 1
-                    ? "text-gray-300"
-                    : "text-gray-500 hover:text-gray-800"
-                }`}
+                className={`text-lg px-1 transition ${selectedHistoryIndex >= selectedHistory.history.length - 1
+                  ? "text-gray-300"
+                  : "text-gray-500 hover:text-gray-800"
+                  }`}
               >
                 ❯
               </button>
@@ -1388,9 +1403,8 @@ export default function Table({
                             setDraggedColIndex(null);
                           }}
                           onDragOver={(e) => e.preventDefault()}
-                          className={`border   ${
-                            isDragging ? "cursor-move" : "cursor-pointer"
-                          } ${i === 0 ? "" : ""}`}
+                          className={`border   ${isDragging ? "cursor-move" : "cursor-pointer"
+                            } ${i === 0 ? "" : ""}`}
                         >
                           {getColumnLetter(i)}
 
@@ -1494,9 +1508,8 @@ export default function Table({
                           }}
                           onDragOver={(e) => e.preventDefault()}
                           className={`border  
-                          }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${
-                            i === 0 ? "" : ""
-                          }`}
+                          }  ${isDragging ? "cursor-move" : "cursor-pointer"} ${i === 0 ? "" : ""
+                            }`}
                         >
                           {columnHeaders[i]}
 
@@ -1564,11 +1577,10 @@ export default function Table({
                                 zIndex: true ? 9 : undefined,
                               }}
                               key={colIndex}
-                              className={` border bg-slate-200 ${
-                                draggedRowIndex
-                                  ? "cursor-grabbing"
-                                  : "cursor-grab"
-                              }`}
+                              className={` border bg-slate-200 ${draggedRowIndex
+                                ? "cursor-grabbing"
+                                : "cursor-grab"
+                                }`}
                               draggable
                               onDragStart={() => setDraggedRowIndex(rowIndex)}
                               onDragOver={(e) => e.preventDefault()}
@@ -1725,13 +1737,12 @@ export default function Table({
                                       setSelectionAnchor(null);
                                     }
                                   }}
-                                  className={` ${
-                                    cellColors?.[rowIndex]?.[colIndex]
-                                      ? cellColors?.[rowIndex]?.[colIndex]
-                                      : frozenColIndices.includes(colIndex)
+                                  className={` ${cellColors?.[rowIndex]?.[colIndex]
+                                    ? cellColors?.[rowIndex]?.[colIndex]
+                                    : frozenColIndices.includes(colIndex)
                                       ? "bg-slate-200"
                                       : ""
-                                  }
+                                    }
                                      w-full h-auto  m-0 border   outline-none resize-none overflow-hidden whitespace-pre-wrap break-words`}
                                   rows={1}
                                 />
@@ -1754,23 +1765,20 @@ export default function Table({
                                     ? 9
                                     : undefined,
                                 }}
-                                className={` border-2 border-black p-2 min-h-[80px] ${
-                                  selectedCell?.[0] === rowIndex &&
+                                className={` border-2 border-black p-2 min-h-[80px] ${selectedCell?.[0] === rowIndex &&
                                   selectedCell?.[1] === colIndex
-                                    ? "border-blue-500 ring-2 ring-blue-400 border-3"
-                                    : "border-gray-300"
-                                }
-                                  ${
-                                    isCellInRange(rowIndex, colIndex)
-                                      ? " bg-blue-100"
-                                      : ""
-                                  } ${
-                                  cellColors?.[rowIndex]?.[colIndex]
+                                  ? "border-blue-500 ring-2 ring-blue-400 border-3"
+                                  : "border-gray-300"
+                                  }
+                                  ${isCellInRange(rowIndex, colIndex)
+                                    ? " bg-blue-100"
+                                    : ""
+                                  } ${cellColors?.[rowIndex]?.[colIndex]
                                     ? cellColors?.[rowIndex]?.[colIndex]
                                     : frozenColIndices.includes(colIndex)
-                                    ? "bg-slate-200"
-                                    : ""
-                                }`}
+                                      ? "bg-slate-200"
+                                      : ""
+                                  }`}
                                 onClick={(e) => {
                                   // e.stopPropagation();
                                   setEditingCell([rowIndex, colIndex]);
@@ -2025,13 +2033,13 @@ export default function Table({
                               >
                                 {cellShapes[`${rowIndex}-${colIndex}`] ===
                                   "star" && (
-                                  <div
-                                    className="absolute top-1 right-1 text-yellow-500 text-xl pointer-events-none"
-                                    title="Star"
-                                  >
-                                    ★
-                                  </div>
-                                )}
+                                    <div
+                                      className="absolute top-1 right-1 text-yellow-500 text-xl pointer-events-none"
+                                      title="Star"
+                                    >
+                                      ★
+                                    </div>
+                                  )}
                                 {Array.isArray(cell) ? (
                                   <div className="flex flex-wrap  justify-center">
                                     {(cell as string[]).map((src, i) => (
@@ -2061,7 +2069,18 @@ export default function Table({
                                             });
                                           }}
                                           onDoubleClick={(e) => {
-                                            handleOpenImageEditor(src, src);
+                                            e.stopPropagation();
+                                            const freshSrc = tableData[rowIndex][colIndex][i]; 
+                                            const filename = freshSrc.split('/').pop() || '';
+
+                                            console.log("opening imageditormodal with: ", { freshSrc, filename });
+
+                                            setEditingImageInfo({
+                                              issueId: '...', // actual issueId
+                                              image: freshSrc,
+                                              filename,
+                                            });
+                                            setIsImageEditorOpen(true);
                                           }}
                                           style={{
                                             width: "100%",
@@ -2070,11 +2089,11 @@ export default function Table({
                                             objectFit: "contain",
                                             border:
                                               imageSeleted &&
-                                              imageSeleted.rownumber ===
+                                                imageSeleted.rownumber ===
                                                 rowIndex &&
-                                              imageSeleted.colnumber ===
+                                                imageSeleted.colnumber ===
                                                 colIndex &&
-                                              imageSeleted.imgindex === i
+                                                imageSeleted.imgindex === i
                                                 ? "2px solid purple"
                                                 : "none",
                                           }}
@@ -2099,7 +2118,7 @@ export default function Table({
                                               src
                                             );
                                           }}
-                                          src={src}
+                                          src={tableData[rowIndex][colIndex][i]}
                                         />
 
                                         {/* Delete button visible only on hover */}
@@ -2112,7 +2131,7 @@ export default function Table({
                                                 const updated = [...tableData];
                                                 (
                                                   updated[rowIndex][
-                                                    colIndex
+                                                  colIndex
                                                   ] as string[]
                                                 ).splice(i, 1);
                                                 setTableData(updated);
@@ -2194,40 +2213,36 @@ export default function Table({
                                 setEditingCell([rowIndex, colIndex]);
                                 setIsFocusedEdit(true); // Free edit mode
                               }}
-                              className={` border  ${
-                                cellColors?.[rowIndex]?.[colIndex]
-                                  ? cellColors?.[rowIndex]?.[colIndex]
-                                  : frozenColIndices.includes(colIndex)
+                              className={` border  ${cellColors?.[rowIndex]?.[colIndex]
+                                ? cellColors?.[rowIndex]?.[colIndex]
+                                : frozenColIndices.includes(colIndex)
                                   ? "bg-slate-200"
                                   : ""
-                              } ${
-                                selectedCell?.[0] === rowIndex &&
-                                selectedCell?.[1] === colIndex
+                                } ${selectedCell?.[0] === rowIndex &&
+                                  selectedCell?.[1] === colIndex
                                   ? "border-blue-500 ring-2 ring-blue-400 border-3"
                                   : "border-gray-300"
-                              }
-                                  ${
-                                    isCellInRange(rowIndex, colIndex)
-                                      ? "bg-blue-100"
-                                      : ""
-                                  }
-                                   ${
-                                     isCellInAutofillRange(rowIndex, colIndex)
-                                       ? "bg-green-200 border-2 border-green-400"
-                                       : ""
-                                   }
+                                }
+                                  ${isCellInRange(rowIndex, colIndex)
+                                  ? "bg-blue-100"
+                                  : ""
+                                }
+                                   ${isCellInAutofillRange(rowIndex, colIndex)
+                                  ? "bg-green-200 border-2 border-green-400"
+                                  : ""
+                                }
                                    
                                   `}
                             >
                               {cellShapes[`${rowIndex}-${colIndex}`] ===
                                 "star" && (
-                                <div
-                                  className="absolute top-1 right-1 text-yellow-500 text-xl pointer-events-none"
-                                  title="Star"
-                                >
-                                  ★
-                                </div>
-                              )}
+                                  <div
+                                    className="absolute top-1 right-1 text-yellow-500 text-xl pointer-events-none"
+                                    title="Star"
+                                  >
+                                    ★
+                                  </div>
+                                )}
                               {selectedCell?.[0] === rowIndex &&
                                 selectedCell?.[1] === colIndex && (
                                   <div
@@ -2240,15 +2255,15 @@ export default function Table({
                                 )}
 
                               <textarea
-                              style={{
-                                backgroundColor:
-                                  cellColors?.[rowIndex]?.[colIndex] || "",
-                              }}
+                                style={{
+                                  backgroundColor:
+                                    cellColors?.[rowIndex]?.[colIndex] || "",
+                                }}
                                 value={cell}
                                 data-cell={`${rowIndex}-${colIndex}`}
                                 ref={
                                   editingCell?.[0] === rowIndex &&
-                                  editingCell?.[1] === colIndex
+                                    editingCell?.[1] === colIndex
                                     ? inputRef
                                     : null
                                 }
@@ -2342,7 +2357,7 @@ export default function Table({
                                     setEditingCell(null);
                                     return;
                                   }
-                                  
+
                                   // if (e.key === "Enter" && !e.shiftKey) {
                                   //   e.preventDefault();
                                   //   const nextRow = Math.min(row + 1, maxRow);
@@ -2451,11 +2466,10 @@ export default function Table({
                                   //   });
                                   // }
                                 }}
-                                className={`${
-                                  rowIndex === 0
-                                    ? "text-black p-3! text-[15px]!"
-                                    : "p-3!"
-                                } className="w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top"
+                                className={`${rowIndex === 0
+                                  ? "text-black p-3! text-[15px]!"
+                                  : "p-3!"
+                                  } className="w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top"
 `}
                                 rows={1}
                               />
@@ -2476,7 +2490,10 @@ export default function Table({
         <ImageEditorModal
           isOpen={isImageEditorOpen}
           onClose={handleCloseImageEditor}
-          image={editingImageInfo.image}
+          image={{
+            url: editingImageInfo.image,
+            name: editingImageInfo.filename
+          }}
           onSave={(newImageDataUrl) => handleSaveEditedImage(newImageDataUrl)}
         />
       )}

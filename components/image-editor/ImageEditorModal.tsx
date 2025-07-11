@@ -4,7 +4,7 @@ import type { IssueImage } from "@/types";
 import type { KonvaArrow } from "./ArrowKonva";
 import type { KonvaCircleShape } from "./KonvaCircle";
 import type { KonvaTextShape } from "./TextEditor";
-
+import { toast } from "sonner";
 import { GrClear } from "react-icons/gr";
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
@@ -80,6 +80,7 @@ import { TbArrowCurveRight } from "react-icons/tb";
 import { useHistoryManager } from "@/hooks/useHistoryManager";
 import { DrawingAction } from "@/types/history";
 import { ActionCreators } from "@/utils/actionCreators";
+import { API_ENDPOINTS } from "@/lib/api";
 
 interface ImageEditorModalProps {
   isOpen: boolean;
@@ -1594,7 +1595,10 @@ export default function ImageEditorModal({
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+
+    toast.success("handle save")
+
     if (cropArea) {
       // Don't save while cropping
       return;
@@ -1621,6 +1625,7 @@ export default function ImageEditorModal({
     if (!baseCanvas || !drawingCanvas) return;
 
     // Create a temporary canvas to combine the layers
+
     const tempCanvas = document.createElement("canvas");
     tempCanvas.width = baseCanvas.width;
     tempCanvas.height = baseCanvas.height;
@@ -1628,12 +1633,52 @@ export default function ImageEditorModal({
     if (!tempCtx) return;
 
     // Draw both layers
+
     tempCtx.drawImage(baseCanvas, 0, 0);
     tempCtx.drawImage(drawingCanvas, 0, 0);
 
-    // Get the combined result
+    // Converting final merged image into Blob 
+
     const dataUrl = tempCanvas.toDataURL("image/png");
-    onSave(dataUrl);
+
+    const blob = await (
+      await fetch(dataUrl)
+    ).blob();
+
+    const originalName = image?.name || "edited-image.png" ;
+    
+    const file = new File(
+      [blob], 
+      originalName, 
+      {
+        type: blob.type 
+      }
+    )
+
+    const formData = new FormData();
+    formData.append("image", file);
+
+    try {
+      const response = await fetch(API_ENDPOINTS.imageUpload.url, {
+        method: API_ENDPOINTS.imageUpload.method,
+        body: formData
+      })
+
+      if (!response.ok) throw new Error("Upload failed");
+
+      const data = await response.json();
+      const uploadedUrl = data.data?.image;
+
+      if (!uploadedUrl) throw new Error("No image URL returned");
+
+      toast.success("Image successfully edited and updated.")
+
+      onSave(uploadedUrl);
+    } catch (error) {
+      console.error("Upload failed", error);
+      toast.error("Failed to upload edited image.")
+    }
+
   };
 
   const applyCrop = useCallback(() => {
@@ -1800,7 +1845,10 @@ export default function ImageEditorModal({
         onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader className="p-4 border-b hidden sm:block">
-          <DialogTitle>Edit Image: {image.name}</DialogTitle>
+          <DialogTitle>
+            Edit Image: <span className="text-sm font-normal text-muted-foreground">{image.name}</span>
+          </DialogTitle>
+
         </DialogHeader>
 
         {/* Main content area: Controls on left (responsive), Canvas on right */}
@@ -2295,10 +2343,10 @@ export default function ImageEditorModal({
                     activeTool === "text"
                       ? "text"
                       : activeTool === null
-                      ? "default"
-                      : activeTool === "eraser"
-                      ? "none"
-                      : "crosshair",
+                        ? "default"
+                        : activeTool === "eraser"
+                          ? "none"
+                          : "crosshair",
                 }}
               />
 
@@ -2655,11 +2703,10 @@ export default function ImageEditorModal({
               {showTrashIcon && (
                 <div
                   id="trash-zone"
-                  className={`fixed bottom-56 right-6 p-3 rounded-full shadow-lg border-2 transition-all duration-200 text-white ${
-                    isDraggedOverTrash
-                      ? "bg-red-600 border-red-700 scale-125"
-                      : "bg-red-500 border-red-600 hover:bg-red-600 hover:scale-110"
-                  }`}
+                  className={`fixed bottom-56 right-6 p-3 rounded-full shadow-lg border-2 transition-all duration-200 text-white ${isDraggedOverTrash
+                    ? "bg-red-600 border-red-700 scale-125"
+                    : "bg-red-500 border-red-600 hover:bg-red-600 hover:scale-110"
+                    }`}
                   style={{
                     background: isDraggedOverTrash
                       ? "linear-gradient(135deg, #dc2626, #b91c1c)"
@@ -2672,9 +2719,8 @@ export default function ImageEditorModal({
                   }}
                 >
                   <Trash2
-                    className={`h-6 w-6 transition-transform duration-200 ${
-                      isDraggedOverTrash ? "scale-110" : ""
-                    }`}
+                    className={`h-6 w-6 transition-transform duration-200 ${isDraggedOverTrash ? "scale-110" : ""
+                      }`}
                   />
 
                   {/* Tooltip */}
