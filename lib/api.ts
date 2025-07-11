@@ -47,4 +47,8 @@ export const API_ENDPOINTS = {
     url: `${BASE_URL}v1.0/auth/change-system-password/`,
     method: "POST",
   },
+  imageUpload: {
+    url: `${BASE_URL}v1.0/image/image/`, 
+    method: "POST"
+  }
 };

@@ -16,18 +16,24 @@ type ColumnMetadata = {
   width: number;
 };
 export default function TechSpecSheet() {
+
   const [columnHeaders, setcolumnHeaders] = useState<ColumnMetadata[]>([]);
+  
   const [tableData, setTableData] = useState({});
+  
   async function fetchdata() {
+  
     const res = await axios.get(
-      "http://shivam-mac.local:8001/api/v1.0/spreadsheet/580d3753-8487-4d98-909e-c3b52580f21c"
+      "http://gulab.local:8000/api/v1.0/spreadsheet/54b51923-ecd6-4c00-811d-10e7511e5bb4"
     );
+  
     const col_metadata: Record<string, ColumnMetadata> = await res.data.data
       .column_metadata;
     // console.log(col_metadata);
     setTableData(res.data.data);
     setcolumnHeaders(Object.values(col_metadata));
   }
+
   useEffect(() => {
     fetchdata();
   }, []);

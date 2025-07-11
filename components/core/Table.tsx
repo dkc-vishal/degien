@@ -21,6 +21,7 @@ import {
 } from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
+import { API_ENDPOINTS } from "@/lib/api";
 export default function Table({
   tablename,
   col,
@@ -660,7 +661,7 @@ export default function Table({
     setTableData(newData);
   };
 
-  const handleImagePasteOrDrop = (
+  const handleImagePasteOrDrop = async (
     files: File[],
     rowIndex: number,
     colIndex: number
@@ -670,14 +671,39 @@ export default function Table({
     );
     if (imageFiles.length === 0) return;
 
-    const imageUrls = imageFiles.map((file) => URL.createObjectURL(file));
+    const uploadPromises = imageFiles.map(async (file) => {
+      const formData = new FormData() ; 
+      formData.append("image", file) ; 
+
+      try{
+        const response = await fetch(API_ENDPOINTS.imageUpload.url, {
+          method: API_ENDPOINTS.imageUpload.method, 
+          body: formData, 
+        }) ; 
+
+        if(!response.ok) throw new Error("Upload failed.") ; 
+
+        const data = await response.json() ; 
+
+        console.log("image url: ", data) ; 
+
+        return data.data?.image || "" ; 
+      }catch(error){  
+        console.error("Image upload error: ", error) ; 
+        return "" ; 
+      }
+    });
+    
+    const backendUrls = (
+      await Promise.all(uploadPromises)
+    ).filter(Boolean) ; 
 
     setTableData((prev) => {
       const updated = [...prev];
       const current = updated[rowIndex][colIndex];
 
       const existingUrls = Array.isArray(current) ? current : [];
-      const newUniqueUrls = imageUrls.filter(
+      const newUniqueUrls = backendUrls.filter(
         (url) => !existingUrls.includes(url)
       );
 
@@ -685,6 +711,11 @@ export default function Table({
       return updated;
     });
   };
+
+  useEffect(() => {
+    console.log("Updated tableData: ", tableData) ; 
+  }, [tableData])
+
   const startAutoScroll = () => {
     if (!scrollContainerRef.current) return;
 
