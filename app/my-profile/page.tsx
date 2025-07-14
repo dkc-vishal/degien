@@ -58,8 +58,6 @@ const MyProfilePage = () => {
     }
   }, [user, isLoading, userDetails]);
 
-  console.log("User", user);
-
   // Handle password change
   const handlePasswordChange = (data: {
     oldPassword: string;

@@ -8,9 +8,9 @@ import { cacheUtils } from "../../utils";
 export const useCreateUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    // mutationFn: (data: CreateUserRequest) => userEndPoints.createUser(data),
+    mutationFn: (data: CreateUserRequest) => userEndPoints.createUser(data),
     //check this function is work correct or not
-    mutationFn: userEndPoints.createUser,
+    // mutationFn: userEndPoints.createUser,
     onSuccess: (newUser) => {
       cacheUtils.users.addUserToList(newUser);
       queryClient.invalidateQueries({ queryKey: ["users"] });

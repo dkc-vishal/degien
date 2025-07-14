@@ -1,4 +1,5 @@
 "use client";
+import { cacheUtils } from "@/lib/api/utils";
 import React, { useState, useRef } from "react";
 import {
   FaBars,
@@ -14,6 +15,8 @@ export default function Header({ toggleSidebar }: any) {
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
+
+  const { getUser } = cacheUtils.auth;
 
   const handleMicClick = async () => {
     if (!isRecording) {
@@ -100,7 +103,9 @@ export default function Header({ toggleSidebar }: any) {
             alt="User Avatar"
             className="w-8 h-8 rounded-full"
           />
-          <span className="text-sm font-medium">Welcome, Vishal</span>
+          <span className="text-sm font-medium">
+            Welcome, {getUser()?.name ?? "Guest"}
+          </span>
         </div>
         {/* </div> */}
       </header>
