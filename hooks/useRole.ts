@@ -23,8 +23,8 @@ export const useRole = () => {
     userRole,
     isLoading,
     isAuthenticated,
-    isAdmin: userRole === "ADMIN",
-    isSopManager: userRole === "SOP_MANAGER",
+    isAdmin: userRole === "admin",
+    isSopManager: userRole === "sop_manager",
     isAdminOrSopManager: roleUtils.isAdminOrSopManager(userRole),
     hasRole: (roles: UserRole[]) => roleUtils.hasAnyRole(userRole, roles),
   };

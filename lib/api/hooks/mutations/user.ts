@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { userEndPoints } from "../../endpoints/index";
 import type { CreateUserRequest, UpdateUserRequest } from "../../types/index";
@@ -40,6 +40,7 @@ export const useUpdateUser = () => {
 };
 
 export const useDeleteUser = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => userEndPoints.deleteUser(id),
     // mutationFn: userEndPoints.deleteUser,

@@ -53,7 +53,7 @@ export const roleUtils = {
    * Check if user is admin or SOP manager
    */
   isAdminOrSopManager(userRole: UserRole | null): boolean {
-    return userRole === "ADMIN" || userRole === "SOP_MANAGER";
+    return userRole === "admin" || userRole === "sop_manager";
   },
 
   /**

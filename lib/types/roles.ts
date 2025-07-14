@@ -1,10 +1,10 @@
 export type UserRole =
-  | "VENDOR"
-  | "MERCHANT"
-  | "SOP_MANAGER"
-  | "ADMIN"
-  | "TECH"
-  | "SAMPLING";
+  | "vendor"
+  | "merchant"
+  | "sop_manager"
+  | "admin"
+  | "tech"
+  | "sampling";
 
 export interface RoutePermission {
   path: string;
@@ -15,12 +15,12 @@ export interface RoutePermission {
 export const ROUTE_PERMISSIONS: RoutePermission[] = [
   {
     path: "/user-detail",
-    allowedRoles: ["ADMIN", "SOP_MANAGER"],
+    allowedRoles: ["admin", "sop_manager"],
     redirectTo: "/dashboard",
   },
   {
     path: "/users",
-    allowedRoles: ["ADMIN", "SOP_MANAGER"],
+    allowedRoles: ["admin", "sop_manager"],
     redirectTo: "/dashboard",
   },
   // Add more restricted routes here as needed
