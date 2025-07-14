@@ -5,9 +5,11 @@ import { CSSProperties } from "react";
 import { FaPrint } from "react-icons/fa";
 
 export default function PrintPage() {
+
   const handlePrint = () => {
     window.print();
   };
+
   const measurements = [
     {
       sno: 1,
@@ -110,6 +112,7 @@ export default function PrintPage() {
       s: "5",
     },
   ];
+
   const headers = [
     { label: "S No", rowspan: 2, width: "20px" },
     { label: "Header", rowspan: 2, width: "50px" },
@@ -159,9 +162,10 @@ export default function PrintPage() {
   };
 
   const pages = paginate(measurements);
+
   const PrintHeader = () => (
     <>
-          <div className="pt-5"></div>
+      <div className="pt-5"></div>
 
       <div style={{ marginBottom: 5, fontSize: 12, fontFamily: "Arial" }}>
         <div
@@ -300,7 +304,7 @@ export default function PrintPage() {
                           backgroundColor: "#f0f0f0",
                           fontSize: "11px",
                           minWidth: 10,
-                          width: h.width  || "auto",
+                          width: h.width || "auto",
                           textAlign: "center",
                         }}
                       >
@@ -314,21 +318,21 @@ export default function PrintPage() {
                     {headers.map((h, i) =>
                       h.children
                         ? h.children.map((child, j) => (
-                            <th
-                              key={`${i}-${j}`}
-                              style={{
-                                border: "1px solid #000",
-                                // padding: "4px",
-                                backgroundColor: "#f9f9f9",
-                                fontSize: "11px",
-                                minWidth: "10px",
-                                width: child.width || "auto",
-                                textAlign: "center",
-                              }}
-                            >
-                              {child.label}
-                            </th>
-                          ))
+                          <th
+                            key={`${i}-${j}`}
+                            style={{
+                              border: "1px solid #000",
+                              // padding: "4px",
+                              backgroundColor: "#f9f9f9",
+                              fontSize: "11px",
+                              minWidth: "10px",
+                              width: child.width || "auto",
+                              textAlign: "center",
+                            }}
+                          >
+                            {child.label}
+                          </th>
+                        ))
                         : null
                     )}
                   </tr>
@@ -359,7 +363,7 @@ export default function PrintPage() {
                             }}
                           >
                             <img
-                               src={`images/${idx}.jpg`}
+                              src={`images/${idx}.jpg`}
                               alt="Measurement"
                               style={{
                                 width: "100%",
@@ -376,7 +380,7 @@ export default function PrintPage() {
                             border: "1px solid #000",
                             textAlign: "center",
                             padding: "0px",
-                            
+
                             width: "150px",
                             height: "200px",
                           }}

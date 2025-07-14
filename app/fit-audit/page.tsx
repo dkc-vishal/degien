@@ -7,10 +7,15 @@ import { toast } from "sonner";
 import TooltipLabel from "@/components/core/TooltipLabel";
 import { FaTimes } from "react-icons/fa";
 import { MdPrint } from "react-icons/md";
+import { useRouter } from "next/navigation";
 
 export default function FitAuditSheet() {
+
   const [status, setStatus] = useState("fail");
   const [editMode, setEditMode] = useState(false);
+
+  const router = useRouter();
+
   const [formData, setFormData] = useState({
     styleName: "",
     merchantName: "",
@@ -32,23 +37,29 @@ export default function FitAuditSheet() {
     setEditMode(false);
   };
 
+  const handlePrint = () => {
+    router.push("/print/fit-audit")
+  }
+
   return (
     <div className="flex-1 flex flex-col p-6 bg-gray-50 min-h-screen">
 
       {/* Title and Meta */}
 
       <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-800">Fit Audit Sheet</h1>
-              <span className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-300 px-3 py-1.5 rounded-full shadow-sm">
-                <MdPrint className="w-5 h-5 text-gray-600" />
-                Print Only
-              </span>
-            </div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-bold text-gray-800">Fit Audit Sheet</h1>
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-2 px-3 py-1.5 bg-gray-700 text-white text-xs rounded-md shadow-sm hover:bg-gray-800 cursor-pointer"
+            >
+              <MdPrint className="w-4 h-4" />
+              Print View
+            </button>
           </div>
-          <div className="text-right text-sm text-gray-600">
+
+          <div className="flex flex-col items-end gap-1 text-sm text-gray-600">
             <div className="font-semibold">Version v1.4</div>
             <div className="text-xs">July 4, 2025</div>
           </div>
@@ -56,15 +67,17 @@ export default function FitAuditSheet() {
 
         {/* Badges */}
 
-        <div className="mt-3 flex gap-4 mb-4 justify-end">
-          <span className="inline-flex items-center gap-2 bg-blue-100 text-gray-700 text-xs px-3 py-1 rounded-full">
-            <FaUser className="w-3 h-3" />
-            Last Edited by: <span className="font-medium">Sonu NM</span>
-          </span>
-          <span className="inline-flex items-center gap-2 bg-blue-100 text-gray-700 text-xs px-3 py-1 rounded-full">
-            <FaClock className="w-3 h-3" />
-            Last Edited at: <span className="font-medium">Jul 4, 4:25 PM</span>
-          </span>
+        <div className="mt-3 mb-4 flex justify-end items-center">
+          <div className="flex gap-4">
+            <span className="inline-flex items-center gap-2 bg-blue-100 text-gray-700 text-xs px-3 py-1 rounded-full">
+              <FaUser className="w-3 h-3" />
+              Last Edited by: <span className="font-medium">Sonu NM</span>
+            </span>
+            <span className="inline-flex items-center gap-2 bg-blue-100 text-gray-700 text-xs px-3 py-1 rounded-full">
+              <FaClock className="w-3 h-3" />
+              Last Edited at: <span className="font-medium">Jul 4, 4:25 PM</span>
+            </span>
+          </div>
         </div>
 
         {/* Edit Mode Buttons */}
@@ -256,8 +269,6 @@ export default function FitAuditSheet() {
           </tbody>
         </table>
       </div>
-
-
     </div>
   );
 }

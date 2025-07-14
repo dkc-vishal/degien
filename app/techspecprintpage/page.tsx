@@ -155,6 +155,7 @@ export default function PrintPage() {
     "L",
     "XL",
   ];
+
   const tdStyle: CSSProperties = {
     border: "1px solid #000",
     textAlign: "center",
@@ -163,6 +164,7 @@ export default function PrintPage() {
     fontSize: "12px",
     minWidth: "60px",
   };
+
   const tdStyleHeaderRotated: CSSProperties = {
     ...tdStyle,
     writingMode: "vertical-rl",
@@ -170,6 +172,7 @@ export default function PrintPage() {
     padding: "0",
     verticalAlign: "middle",
   };
+  
   const paginate = (data: any[]) => {
     const pages = [];
     pages.push(data.slice(0, 4));

@@ -425,4 +425,24 @@ th .resize-handle {
   padding: 8px;
 }
 
+                                  /* Print-Specific Styles */
+
+
+@media print{
+  .no-print{
+    display: none !important;
+  }
+  .only-print{
+    display: block !important;
+  }
+  body{
+    margin: 0;
+    padding: 1rem;
+    background-color: white;
+  }
+  .page-break{
+    page-break-after: always;
+  }
+}
+
 

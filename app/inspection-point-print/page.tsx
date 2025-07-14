@@ -7,10 +7,12 @@ import { toast } from "sonner";
 import TooltipLabel from "@/components/core/TooltipLabel";
 import { FaTimes } from "react-icons/fa";
 import { MdPrint } from "react-icons/md";
+import { useRouter } from "next/navigation";
 
 const FT_COLUMNS = Array.from({ length: 10 }, (_, i) => `FT No ${i + 1}`);
 
 export default function InspectionPointPrint() {
+
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({
     styleName: "",
@@ -19,6 +21,12 @@ export default function InspectionPointPrint() {
     vendorName: "",
     qaName: "",
   });
+
+  const router = useRouter();
+
+  const handlePrintRedirect = () => {
+    router.push("/print/inspection-point-print")
+  }
 
   const handleChange = (key: keyof typeof formData, value: string) => {
     if (!editMode) return;
@@ -38,10 +46,6 @@ export default function InspectionPointPrint() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-800">Inspection Point Print</h1>
-            <span className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-300 px-3 py-1.5 rounded-full shadow-sm">
-              <MdPrint className="w-5 h-5 text-gray-600" />
-              Print Only
-            </span>
           </div>
           <div className="text-right text-sm text-gray-600">
             <div className="font-semibold">Version v1.4</div>
@@ -51,15 +55,30 @@ export default function InspectionPointPrint() {
 
         {/* Meta Badges */}
 
-        <div className="mt-3 flex gap-4 mb-5 justify-end">
-          <span className="inline-flex items-center gap-2 bg-blue-100 text-gray-700 text-xs px-3 py-1 rounded-full">
-            <FaUser className="w-3 h-3" />
-            Last Edited by:<span className="font-medium">Sonu NM</span>
-          </span>
-          <span className="inline-flex items-center gap-2 bg-blue-100 text-gray-700 text-xs px-3 py-1 rounded-full">
-            <FaClock className="w-3 h-3" />
-            Last Edited at:<span className="font-medium">Jul 9, 10:00 AM</span>
-          </span>
+        <div className="mt-3 mb-5 flex items-center justify-between">
+
+          {/* Print button: left-aligned */}
+
+          <button
+            onClick={handlePrintRedirect}
+            className="flex items-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-800 text-white cursor-pointer text-xs rounded-md shadow-sm"
+          >
+            <MdPrint className="w-4 h-4" />
+            Print
+          </button>
+
+          {/* Last edited badges (right-aligned) */}
+
+          <div className="flex gap-4">
+            <span className="inline-flex items-center gap-2 bg-blue-100 text-gray-700 text-xs px-3 py-1 rounded-full">
+              <FaUser className="w-3 h-3" />
+              Last Edited by: <span className="font-medium">Sonu NM</span>
+            </span>
+            <span className="inline-flex items-center gap-2 bg-blue-100 text-gray-700 text-xs px-3 py-1 rounded-full">
+              <FaClock className="w-3 h-3" />
+              Last Edited at: <span className="font-medium">July 9, 10:00 AM</span>
+            </span>
+          </div>
         </div>
 
         {/* Edit Mode Buttons */}
@@ -191,9 +210,8 @@ const Input = ({
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
       placeholder={placeholder}
-      className={`w-full px-3 py-1.5 border rounded-md text-sm ${
-        disabled ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "bg-white"
-      } focus:outline-none focus:ring-2 focus:ring-blue-500`}
+      className={`w-full px-3 py-1.5 border rounded-md text-sm ${disabled ? "bg-gray-100 text-gray-500 cursor-not-allowed" : "bg-white"
+        } focus:outline-none focus:ring-2 focus:ring-blue-500`}
     />
   </div>
 );
