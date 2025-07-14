@@ -12,7 +12,7 @@ export default function Home(){
         const refreshToken = localStorage.getItem("refresh_token") ; 
 
         if(accessToken && refreshToken){
-            router.replace("/Dashboard") ; 
+            router.replace("/dashboard") ; 
         }
         else{
             router.replace("/Auth/Login") ; 

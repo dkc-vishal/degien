@@ -3,8 +3,9 @@ import React, { useEffect, useState } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { toast } from "sonner";
 import { API_ENDPOINTS } from "@/lib/api";
-import { User } from "./UserDetailsPage";
 import { MdEditDocument } from "react-icons/md";
+import { User } from "@/lib/api/types";
+import { useDepartments, useUpdateUser } from "@/lib/api/hooks";
 
 interface Props {
   user: User;
@@ -13,9 +14,9 @@ interface Props {
 }
 
 const UpdateUserModal: React.FC<Props> = ({ user, onCancel, onUpdate }) => {
-  const [departments, setDepartments] = useState<{ [key: string]: string }>({});
+  // const [departments, setDepartments] = useState<{ [key: string]: string }>({});
   const [form, setForm] = useState({
-    username: user.username,
+    username: user.name,
     department: user.department || "",
   });
 
@@ -24,27 +25,26 @@ const UpdateUserModal: React.FC<Props> = ({ user, onCancel, onUpdate }) => {
     department: "",
   });
 
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        const res = await fetch(API_ENDPOINTS.departments.url);
-        const data = await res.json();
-        setDepartments(data.data);
-      } catch (err) {
-        console.error("Failed to fetch departments", err);
-      }
-    };
-    fetchDepartments();
-  }, []);
+  const {
+    data: departments,
+    isLoading,
+    isError,
+    error: apiError,
+  } = useDepartments();
+
+  const UpdateUserMutation = useUpdateUser();
 
   const validate = () => {
     const errors = { username: "", department: "" };
     if (!form.username) errors.username = "Username is required.";
-    if (!user.is_vendor && !form.department) errors.department = "Department is required.";
+    if (!user.is_vendor && !form.department)
+      errors.department = "Department is required.";
     return errors;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setForm((prev) => ({
       ...prev,
@@ -62,36 +62,23 @@ const UpdateUserModal: React.FC<Props> = ({ user, onCancel, onUpdate }) => {
     if (Object.values(errors).some(Boolean)) return;
 
     const payload = {
-      user_id: user.id,
-      name: form.username,
-      department: user.is_vendor ? "" : form.department,
+      id: user.user_id,
+      data: {
+        name: form.username,
+        department: user.is_vendor ? "" : form.department,
+      },
     };
 
-    try {
-      const res = await fetch(API_ENDPOINTS.updateUser.url, {
-        method: API_ENDPOINTS.updateUser.method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        toast.error(err.message || "Update failed.");
-        return;
-      }
-
-      toast.success("User updated successfully.");
-      onUpdate({
-        ...user,
-        username: form.username,
-        department: form.department,
-      });
-    } catch (err) {
-      console.error("Update error", err);
-      toast.error("Something went wrong.");
-    }
+    UpdateUserMutation.mutate(payload, {
+      onSuccess: (updatedUser) => {
+        onUpdate({
+          ...user,
+          name: updatedUser.name,
+          department: updatedUser.department,
+        });
+        toast.success("User updated successfully.");
+      },
+    });
   };
 
   return (
@@ -110,34 +97,51 @@ const UpdateUserModal: React.FC<Props> = ({ user, onCancel, onUpdate }) => {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Name <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium mb-1">
+              Name <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               name="username"
               value={form.username}
               onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.username ? "border-red-400" : "border-gray-300"
-                }`}
+              className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                fieldErrors.username ? "border-red-400" : "border-gray-300"
+              }`}
             />
-            {fieldErrors.username && <p className="text-xs text-red-500 mt-1">{fieldErrors.username}</p>}
+            {fieldErrors.username && (
+              <p className="text-xs text-red-500 mt-1">
+                {fieldErrors.username}
+              </p>
+            )}
           </div>
 
           {!user.is_vendor && (
             <div>
-              <label className="block text-sm font-medium mb-1">Department <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium mb-1">
+                Department <span className="text-red-500">*</span>
+              </label>
               <select
                 name="department"
                 value={form.department}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.department ? "border-red-400" : "border-gray-300"
-                  }`}
+                className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                  fieldErrors.department ? "border-red-400" : "border-gray-300"
+                }`}
               >
                 <option value="">Select Department</option>
-                {Object.entries(departments).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
+                {departments?.data &&
+                  Object.entries(departments.data).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
               </select>
-              {fieldErrors.department && <p className="text-xs text-red-500 mt-1">{fieldErrors.department}</p>}
+              {fieldErrors.department && (
+                <p className="text-xs text-red-500 mt-1">
+                  {fieldErrors.department}
+                </p>
+              )}
             </div>
           )}
 
@@ -148,7 +152,6 @@ const UpdateUserModal: React.FC<Props> = ({ user, onCancel, onUpdate }) => {
             <MdEditDocument className="w-5 h-5" />
             <span>Update</span>
           </button>
-
         </div>
       </div>
     </div>

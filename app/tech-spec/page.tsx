@@ -15,12 +15,15 @@ type ColumnMetadata = {
   is_moveable: boolean;
   width: number;
 };
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function TechSpecSheet() {
   const [columnHeaders, setcolumnHeaders] = useState<ColumnMetadata[]>([]);
   const [tableData, setTableData] = useState({});
   async function fetchdata() {
     const res = await axios.get(
-      "http://shivam-mac.local:8001/api/v1.0/spreadsheet/580d3753-8487-4d98-909e-c3b52580f21c"
+      `${BASE_URL}/spreadsheet/580d3753-8487-4d98-909e-c3b52580f21c`
     );
     const col_metadata: Record<string, ColumnMetadata> = await res.data.data
       .column_metadata;

@@ -1,26 +1,31 @@
-import { UserRole } from "./auth";
+import { TypeOfUser, UserRole } from "./auth";
 import { QueryParams } from "./comman";
 
 export interface CreateUserRequest {
   email: string;
-  firstName: string;
-  lastName: string;
-  password: string;
-  role: UserRole;
-  departmentId?: string;
+  name: string;
+  department: string;
+  type_of_user: TypeOfUser;
+}
+
+export interface CreateUserResponse {
+  user_id: string;
+  email: string;
+  name: string;
+  department: string;
+  system_generated_password: string;
+  type_of_user: TypeOfUser;
 }
 
 export interface UpdateUserRequest {
-  firstName?: string;
-  lastName?: string;
-  role?: UserRole;
-  departmentId?: string;
-  isActive?: boolean;
+  name?: string;
+  department?: string;
+  is_active?: boolean;
 }
 
 export interface UserFilter extends QueryParams {
   search?: string;
   role?: UserRole;
   departmentId?: string;
-  isActive?: boolean;
+  is_active?: boolean;
 }

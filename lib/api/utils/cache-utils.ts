@@ -1,5 +1,5 @@
 import { queryClient } from "../client/query-client";
-import { User } from "../types";
+import { CreateUserResponse, User } from "../types";
 import { queryKeys } from "./query-keys";
 
 export const cacheUtils = {
@@ -9,8 +9,8 @@ export const cacheUtils = {
       queryClient.setQueryData(queryKeys.auth.profile(), user);
     },
 
-    getUser: (): User | undefined => {
-      return queryClient.getQueryData<User>(queryKeys.auth.profile());
+    getUser: (): User | null | undefined => {
+      return queryClient.getQueryData(queryKeys.auth.profile());
     },
 
     clearUser: () => {
@@ -80,6 +80,7 @@ export const cacheUtils = {
 
       queryClient.removeQueries({ queryKey: queryKeys.users.detail(userId) });
     },
+
   },
 
   //global cache management
