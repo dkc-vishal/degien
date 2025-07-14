@@ -6,14 +6,13 @@ import { toast } from "sonner";
 import { API_ENDPOINTS } from "@/lib/api";
 
 interface Props {
-  username: string;
+  name: string;
   onUpdate: (newName: string) => void;
   onClose: () => void;
 }
 
-const UpdateProfileModal: React.FC<Props> = ({ username, onUpdate, onClose }) => {
-
-  const [name, setName] = useState(username);
+const UpdateProfileModal: React.FC<Props> = ({ name, onUpdate, onClose }) => {
+  const [username, setUsername] = useState(name);
   const [loading, setLoading] = useState(false);
 
   const handleUpdate = async () => {
@@ -34,7 +33,7 @@ const UpdateProfileModal: React.FC<Props> = ({ username, onUpdate, onClose }) =>
           Authorization: `Bearer ${token}`, // ✅ Attach token here
         },
         body: JSON.stringify({
-          username: name,
+          name: name,
         }),
       });
 
@@ -61,7 +60,6 @@ const UpdateProfileModal: React.FC<Props> = ({ username, onUpdate, onClose }) =>
   return (
     <div className="fixed inset-0 z-50 bg-[rgba(0,0,0,0.6)] flex items-center justify-center px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 relative">
-
         {/* Close Button */}
 
         <button
@@ -73,16 +71,20 @@ const UpdateProfileModal: React.FC<Props> = ({ username, onUpdate, onClose }) =>
 
         {/* Title */}
 
-        <h3 className="text-xl font-semibold text-center text-gray-800 mb-4">Update Your Info</h3>
+        <h3 className="text-xl font-semibold text-center text-gray-800 mb-4">
+          Update Your Info
+        </h3>
 
         {/* Input Field */}
 
         <div className="mb-6">
-          <label className="block text-sm text-gray-600 mb-2">Employee Name</label>
+          <label className="block text-sm text-gray-600 mb-2">
+            Employee Name
+          </label>
           <input
             type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             className="w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
@@ -99,8 +101,9 @@ const UpdateProfileModal: React.FC<Props> = ({ username, onUpdate, onClose }) =>
           </button>
           <button
             onClick={() => handleUpdate()}
-            className={`px-4 py-2 text-white rounded-md ${loading ? "bg-blue-300" : "bg-blue-500 hover:bg-blue-600 "
-              }`}
+            className={`px-4 py-2 text-white rounded-md ${
+              loading ? "bg-blue-300" : "bg-blue-500 hover:bg-blue-600 "
+            }`}
             disabled={loading}
           >
             {loading ? "Updating..." : "Update"}

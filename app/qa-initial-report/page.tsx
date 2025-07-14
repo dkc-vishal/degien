@@ -5,12 +5,16 @@ import Table from "../../components/core/Table";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { FaPrint } from "react-icons/fa";
+
 type ColumnMetadata = {
   header: string;
   is_hidden: boolean;
   is_moveable: boolean;
   width: number;
 };
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function QaIntialReport() {
   const [columnHeaders, setcolumnHeaders] = useState<ColumnMetadata[]>([]);
   const [tableData, setTableData] = useState({});
@@ -21,9 +25,10 @@ export default function QaIntialReport() {
   const handlePrint = () => {
     window.print();
   };
+
   async function fetchdata() {
     const res = await axios.get(
-      "http://shivam-mac.local:8001/api/v1.0/spreadsheet/822d02cf-e5eb-4ac8-81c1-13e36406c1e6/"
+      `${BASE_URL}/spreadsheet/822d02cf-e5eb-4ac8-81c1-13e36406c1e6/`
     );
     const col_metadata: Record<string, ColumnMetadata> = await res.data.data
       .column_metadata;
@@ -281,16 +286,16 @@ export default function QaIntialReport() {
             </div>
           </div>
         </div>
-        <div style={{marginTop:"75px"}} className="print-container">
-               {columnHeaders.length > 0 && (
-                 <Table
-                   col={4}
-                   row={120}
-                   tablename="mid-final"
-                   columnheaders={columnHeaders}
-                   spreadsheet={tableData}
-                 />
-               )}
+        <div style={{ marginTop: "75px" }} className="print-container">
+          {columnHeaders.length > 0 && (
+            <Table
+              col={4}
+              row={120}
+              tablename="mid-final"
+              columnheaders={columnHeaders}
+              spreadsheet={tableData}
+            />
+          )}
         </div>
       </div>
     </>

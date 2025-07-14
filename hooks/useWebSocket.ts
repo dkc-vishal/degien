@@ -3,15 +3,14 @@ import { useEffect, useRef, useCallback } from "react";
 
 type WebSocketCallback = (data: any) => void;
 
-export const useWebSocket = (
-  onMessage: WebSocketCallback
-) => {
+const BASE_WS_URL = process.env.NEXT_PUBLIC_WS_BASE_URL;
+
+export const useWebSocket = (onMessage: WebSocketCallback) => {
   const socket = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-
     const ws = new WebSocket(
-      `ws://shivam-mac.local:8000/ws/v1/spreadsheet/spreadsheet/822d02cf-e5eb-4ac8-81c1-13e36406c1e6/`
+      `${BASE_WS_URL}/spreadsheet/spreadsheet/822d02cf-e5eb-4ac8-81c1-13e36406c1e6/`
     );
 
     ws.onopen = () => {

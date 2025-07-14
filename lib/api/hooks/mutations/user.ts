@@ -1,18 +1,19 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { userEndPoints } from "../../endpoints/index";
-import { queryKeys } from "../../utils/query-keys";
 import type { CreateUserRequest, UpdateUserRequest } from "../../types/index";
 import { cacheUtils } from "../../utils";
 
 //check this function is work correct or not
 export const useCreateUser = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     // mutationFn: (data: CreateUserRequest) => userEndPoints.createUser(data),
     //check this function is work correct or not
     mutationFn: userEndPoints.createUser,
     onSuccess: (newUser) => {
       cacheUtils.users.addUserToList(newUser);
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       toast.success("User created successfully");
     },
     onError: (error: any) => {
@@ -23,15 +24,17 @@ export const useCreateUser = () => {
 };
 
 export const useUpdateUser = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: UpdateUserRequest }) =>
       userEndPoints.updateUser(id, data),
     onSuccess: (updatedUser, variable) => {
       cacheUtils.users.updateUserInList(variable.id, updatedUser);
-      toast.success("User updated successfully");
+
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
-    onError: () => {
-      toast.error("Failed to update user");
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to update user");
     },
   });
 };
@@ -42,7 +45,7 @@ export const useDeleteUser = () => {
     // mutationFn: (id: string) => userEndPoints.deleteUser(id),
     mutationFn: userEndPoints.deleteUser,
     onSuccess: (_, deletedUserId) => {
-      // queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       cacheUtils.users.removeUserFromList(deletedUserId);
       toast.success("User deleted successfully");
     },

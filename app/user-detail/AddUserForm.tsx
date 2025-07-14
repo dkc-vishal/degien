@@ -4,13 +4,16 @@ import { IoMdPersonAdd } from "react-icons/io";
 import { toast } from "sonner";
 import { RxCross2 } from "react-icons/rx";
 import { API_ENDPOINTS } from "@/lib/api";
+import { useCreateUser, useDepartments } from "@/lib/api/hooks";
+import { useRouter } from "next/navigation";
+import { User } from "@/lib/api/types";
 
 const AddUserForm: React.FC<{
   onClose: () => void;
   onSuccess: (user: any) => void;
-  existingUsers: any[];
+  existingUsers: User[];
 }> = ({ onClose, onSuccess, existingUsers }) => {
-  const [departments, setDepartments] = useState<{ [key: string]: string }>({});
+  // const [departments, setDepartments] = useState<{ [key: string]: string }>({});
   const [form, setForm] = useState({
     username: "",
     email: "",
@@ -19,12 +22,22 @@ const AddUserForm: React.FC<{
   });
 
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [fieldErrors, setFieldErrors] = useState({
     username: "",
     email: "",
     department: "",
     userType: "",
   });
+
+  const createUserMutation = useCreateUser();
+  const {
+    data: departments,
+    isLoading,
+    isError,
+    error: apiError,
+  } = useDepartments();
+  const router = useRouter();
 
   const validate = () => {
     const errors = { username: "", email: "", department: "", userType: "" };
@@ -71,53 +84,30 @@ const AddUserForm: React.FC<{
     const payload = {
       email: form.email,
       name: form.username,
-      department: form.userType === "DKC" ? form.department : "",
-      type_of_user: form.userType === "DKC" ? "staff" : "vendor",
+      department: form.userType === "staff" ? form.department : "",
+      type_of_user:
+        form.userType === "staff" ? "staff" as const : "vendor" as const,
     };
 
-    try {
-      const res = await fetch(`${API_ENDPOINTS.createUser.url}`, {
-        method: API_ENDPOINTS.createUser.method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        toast.error(errData?.message || "Failed to create user.");
-        return;
-      }
-
-      const data = await res.json();
-      onSuccess({
-        id: data.data.user_id,
-        username: form.username,
-        email: form.email,
-        department: data.data.department,
-        generated_password: data.data.system_generated_password || "-",
-        type_of_user: payload.type_of_user,
-      });
-
-      toast.success("User created successfully!");
-      onClose();
-    } catch (error) {
-      console.error("Network error: ", error);
-      toast.error("Something went wrong. Try again.");
-    }
+    createUserMutation.mutate(payload, {
+      onSuccess: (newUser) => {
+        setSuccess("User created successfully!");
+        onSuccess({
+          id: newUser.user_id,
+          username: newUser.name,
+          email: newUser.email,
+          department: newUser.department,
+          generated_password: newUser.system_generated_password || "-",
+          type_of_user: newUser.type_of_user,
+        });
+        setTimeout(() => {
+          onClose();
+        }, 1000);
+      },
+    });
   };
 
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        const res = await fetch(`${API_ENDPOINTS.departments.url}`);
-        const data = await res.json();
-        setDepartments(data.data);
-      } catch (err) {
-        console.error("Failed to fetch departments", err);
-      }
-    };
-    fetchDepartments();
-  }, []);
+  console.log({ departments });
 
   return (
     <div>
@@ -188,8 +178,8 @@ const AddUserForm: React.FC<{
               <input
                 type="radio"
                 name="userType"
-                value="DKC"
-                checked={form.userType === "DKC"}
+                value="staff"
+                checked={form.userType === "staff"}
                 onChange={handleChange}
               />
               DKC Employee
@@ -198,8 +188,8 @@ const AddUserForm: React.FC<{
               <input
                 type="radio"
                 name="userType"
-                value="Vendor"
-                checked={form.userType === "Vendor"}
+                value="vendor"
+                checked={form.userType === "vendor"}
                 onChange={handleChange}
               />
               Vendor
@@ -211,7 +201,7 @@ const AddUserForm: React.FC<{
         </div>
 
         {/* Department (conditional) */}
-        {form.userType === "DKC" && (
+        {form.userType === "staff" && (
           <div>
             <label className="block text-sm mb-1">
               Department <span className="text-red-500">*</span>
@@ -225,7 +215,7 @@ const AddUserForm: React.FC<{
               }`}
             >
               <option value="">Select Department</option>
-              {Object.entries(departments).map(([key, label]) => (
+              {departments?.data && Object.entries(departments.data).map(([key, label]) => (
                 <option key={key} value={key}>
                   {label}
                 </option>

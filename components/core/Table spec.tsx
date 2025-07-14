@@ -1451,6 +1451,7 @@ const handleSaveEditedImage = (
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [imageSeleted, copiedImage]);
+  
   useKeyboardShortcuts({
     tableData,
     setTableData,

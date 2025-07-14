@@ -21,6 +21,7 @@ import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { IssueImage } from "@/types";
 import { Button } from "../ui/button";
 import { X } from "lucide-react";
+import CellHistoryModal from "./HistoryModal";
 type AllowedDataType = "str" | "number" | "bool" | string;
 
 type CellData = {
@@ -42,6 +43,9 @@ type CellHistory = {
   new_value: string;
   old_value: string;
 };
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function Table({
   tablename,
   col,
@@ -94,6 +98,11 @@ export default function Table({
     targetImage: null,
   });
 
+  const [activeHistoryCell, setActiveHistoryCell] = useState<{
+    cellId: string;
+    element: HTMLElement;
+  } | null>(null);
+
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollDirectionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -120,7 +129,7 @@ export default function Table({
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
   const [copiedImage, setCopiedImage] = useState<string | null>(null);
- 
+
   const resizeStartX = useRef(0);
   const resizeStartWidth = useRef(0);
 
@@ -1071,26 +1080,28 @@ export default function Table({
     lastSnapshotRef,
     saveoncellchange,
   });
-  const getCellHistory = async (
-    cellid: string,
-    contextMenu: { row: number; col: number; x: number; y: number }
-  ) => {
-    const res = await axios.get(API_ENDPOINTS.cellHistory(cellid).url);
 
-    const updatedMap = { ...editHistoryMap, ...res.data.data };
+  // const getCellHistory = async (
+  //   cellid: string,
+  //   contextMenu: { row: number; col: number; x: number; y: number }
+  // ) => {
+  //   const res = await axios.get(API_ENDPOINTS.cellHistory(cellid).url);
 
-    const key = `${contextMenu.row}-${contextMenu.col}`;
-    setSelectedHistory((s) => ({
-      ...s,
-      key,
-      row: contextMenu.row,
-      col: contextMenu.col,
-      x: contextMenu.x,
-      y: contextMenu.y,
-      history: updatedMap,
-    }));
-    setSelectedHistoryIndex(Object.keys(updatedMap).length - 1);
-  };
+  //   const updatedMap = { ...editHistoryMap, ...res.data.data };
+
+  //   const key = `${contextMenu.row}-${contextMenu.col}`;
+  //   setSelectedHistory((s) => ({
+  //     ...s,
+  //     key,
+  //     row: contextMenu.row,
+  //     col: contextMenu.col,
+  //     x: contextMenu.x,
+  //     y: contextMenu.y,
+  //     history: updatedMap,
+  //   }));
+  //   setSelectedHistoryIndex(Object.keys(updatedMap).length - 1);
+  // };
+
   const handleSave = async () => {
     const cellMap: Record<string, CellData> = {};
 
@@ -1121,7 +1132,7 @@ export default function Table({
       cells: cellMap,
     });
     const res = await axios.post(
-      "http://shivam-mac.local:8001/api/v1.0/spreadsheet/update/822d02cf-e5eb-4ac8-81c1-13e36406c1e6/",
+      `${BASE_URL}/spreadsheet/update/822d02cf-e5eb-4ac8-81c1-13e36406c1e6/`,
       {
         spreadsheet_id: "822d02cf-e5eb-4ac8-81c1-13e36406c1e6",
         frozen_columns: frozenColIndices,
@@ -1277,9 +1288,18 @@ export default function Table({
             <li
               onClick={() => {
                 if (contextMenu.cellid) {
-                  getCellHistory(contextMenu.cellid, contextMenu);
-                }
+                  // Find the cell element
+                  const cellElement = document.querySelector(
+                    `[data-row="${contextMenu.row}"][data-col="${contextMenu.col}"]`
+                  ) as HTMLElement;
 
+                  if (cellElement) {
+                    setActiveHistoryCell({
+                      cellId: contextMenu.cellid,
+                      element: cellElement,
+                    });
+                  }
+                }
                 setContextMenu(null);
               }}
               className="hover:bg-gray-100 px-4 py-2 cursor-pointer text-blue-600"
@@ -1289,7 +1309,7 @@ export default function Table({
           </ul>
         </div>
       )}
-      
+
       {contextMenu2.visible && (
         <div
           style={{
@@ -1328,7 +1348,7 @@ export default function Table({
         </div>
       )}
 
-      {selectedHistory && (
+      {/* {selectedHistory && (
         <div
           className="absolute bg-white border border-gray-300 rounded-lg shadow-lg w-80 z-50"
           style={{
@@ -1340,7 +1360,7 @@ export default function Table({
             <span>Edit history</span>
             <div className="flex items-center space-x-2">
               {/* Previous Button */}
-              <button
+      {/* <button
                 disabled={selectedHistoryIndex <= 0}
                 onClick={() =>
                   setSelectedHistoryIndex((i) => Math.max(i - 1, 0))
@@ -1355,7 +1375,7 @@ export default function Table({
               </button>
 
               {/* Next Button */}
-              <button
+      {/* <button
                 disabled={
                   selectedHistoryIndex >=
                   Object.keys(selectedHistory.history).length - 1
@@ -1427,7 +1447,7 @@ export default function Table({
             </button>
           </div>
         </div>
-      )}
+      )} */}
 
       <main className="mt-4">
         <div className=" rounded-xl shadow" ref={tableRef}>
@@ -1439,10 +1459,10 @@ export default function Table({
             onMouseMove={handleMouseMoveForScroll}
           >
             <div
-              className="removeminheight overflow-auto max-h-[800px] border rounded"
+              className="removeminheight overflow-auto max-h-[800px] border rounded relative"
               style={{ width: "100%", overflow: "scroll" }}
             >
-              <table className="table-fixed w-full text-sm border-content border-collapse">
+              <table className="table-fixed w-full text-sm border-content border-collapse relative">
                 <colgroup>
                   {colWidths.map((w, i) => (
                     <col key={i} style={{ width: w.width }} />
@@ -2383,7 +2403,14 @@ export default function Table({
                                      isCellInAutofillRange(rowIndex, colIndex)
                                        ? "bg-green-200 border-2 border-green-400"
                                        : ""
-                                   }
+                                   } ${
+                                activeHistoryCell?.element ===
+                                document.querySelector(
+                                  `[data-row="${rowIndex}"][data-col="${colIndex}"]`
+                                )
+                                  ? "ring-4 ring-purple-500 bg-purple-50 border-purple-500"
+                                  : ""
+                              }
                                    
                                   `}
                             >
@@ -2422,7 +2449,8 @@ export default function Table({
                                   // Always store the cell ref by cell_id
                                   if (
                                     editingCell?.[0] === rowIndex &&
-                                    editingCell?.[1] === colIndex && el
+                                    editingCell?.[1] === colIndex &&
+                                    el
                                   ) {
                                     selectedCellRef.current = el;
                                   }
@@ -2536,6 +2564,14 @@ export default function Table({
                     ))}
                 </tbody>
               </table>
+              {activeHistoryCell && (
+                <CellHistoryModal
+                  cellId={activeHistoryCell.cellId}
+                  isVisible={!!activeHistoryCell}
+                  onClose={() => setActiveHistoryCell(null)}
+                  triggerElement={activeHistoryCell.element}
+                />
+              )}
             </div>
           </div>
 
@@ -2547,6 +2583,7 @@ export default function Table({
             save
           </button>
         </div>
+
         {isImageEditorOpen && editingImageInfo && (
           <ImageEditorModal
             isOpen={isImageEditorOpen}

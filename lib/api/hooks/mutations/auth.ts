@@ -23,7 +23,14 @@ export const useLogin = () => {
         localStorage.setItem("user_role", role);
       }
 
-      cacheUtils.auth.setUser(user_data);
+      if (user_data) {
+        const transformedUserData = {
+          ...user_data,
+          department: user_data.department ?? null,
+          designation: user_data.designation ?? null,
+        };
+        cacheUtils.auth.setUser(transformedUserData);
+      }
 
       toast.success("welcome back!");
     },
@@ -58,6 +65,18 @@ export const useChangePassword = () => {
     },
     onError: () => {
       toast.error("Failed to update password");
+    },
+  });
+};
+
+export const useResetPassword = () => {
+  return useMutation({
+    mutationFn: authEndpoints.resetPassword,
+    onSuccess: () => {
+      toast.success("Password reset email sent successfully");
+    },
+    onError: () => {
+      toast.error("Failed to send password reset email");
     },
   });
 };

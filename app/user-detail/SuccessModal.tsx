@@ -4,14 +4,10 @@ import { RxCross2 } from "react-icons/rx";
 import { FaCheckCircle } from "react-icons/fa";
 import { FiCopy } from "react-icons/fi";
 import { toast } from "sonner";
+import { CreateUserResponse } from "@/lib/api/types";
 
 interface SuccessModalProps {
-  user: {
-    name: string;
-    email: string;
-    department: string;
-    generated_password: string;
-  };
+  user: CreateUserResponse;
   onClose: () => void;
 }
 
@@ -19,8 +15,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ user, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(0,0,0,0.7)] px-4">
       <div className="w-full max-w-xl rounded-2xl shadow-2xl p-6 sm:p-8 relative text-center bg-white">
-
-        {/* ❌ Close Button with smooth hover & scale */}
+        {/* Close Button with smooth hover & scale */}
         <button
           onClick={onClose}
           className="absolute top-4 right-6 text-red-500 hover:text-red-600 text-xl 
@@ -30,17 +25,17 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ user, onClose }) => {
           <RxCross2 />
         </button>
 
-        {/* ✅ Success Icon */}
+        {/* Success Icon */}
         <div className="text-green-500 mb-4">
           <FaCheckCircle className="mx-auto w-16 h-16" />
         </div>
 
-        {/* ✅ Modal Title */}
+        {/* Modal Title */}
         <h3 className="text-xl font-semibold text-gray-800 mb-6">
           Account Created Successfully!
         </h3>
 
-        {/* ✅ Structured details using grid layout */}
+        {/* Structured details using grid layout */}
 
         <div className="grid grid-cols-2 gap-3 text-sm text-gray-700 text-left">
           <div className="font-semibold">Employee Name:</div>
@@ -49,24 +44,24 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ user, onClose }) => {
           <div className="font-semibold">Email:</div>
           <div>{user.email}</div>
 
-          {
-            user.department && (
-              <>
-                <div className="font-semibold">Department:</div>
-                <div>{user.department || "—"}</div>
-              </>
-            )
-          }
+          {user.department && (
+            <>
+              <div className="font-semibold">Department:</div>
+              <div>{user.department || "—"}</div>
+            </>
+          )}
 
           <div className="font-semibold">System Password:</div>
 
-          {/* ✅ Password and copy button side by side */}
+          {/* Password and copy button side by side */}
           <div className="flex items-center justify-between gap-2">
-            <span className="font-mono text-gray-900">{user.generated_password || "N/A"}</span>
+            <span className="font-mono text-gray-900">
+              {user.system_generated_password || "N/A"}
+            </span>
             <button
               onClick={() => {
                 navigator.clipboard
-                  .writeText(user.generated_password)
+                  .writeText(user.system_generated_password || "")
                   .then(() => toast.success("Password copied to clipboard!"))
                   .catch(() => toast.error("Failed to copy password."));
               }}
@@ -80,7 +75,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ user, onClose }) => {
           </div>
         </div>
       </div>
-    </div >
+    </div>
   );
 };
 
