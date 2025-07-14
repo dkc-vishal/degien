@@ -43,9 +43,6 @@ type CellHistory = {
   new_value: string;
   old_value: string;
 };
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 export default function Table({
   tablename,
   col,
@@ -54,6 +51,7 @@ export default function Table({
   imagecol2,
   columnheaders,
   spreadsheet,
+  getapi,
 }: any) {
   const [frozenColIndices, setFrozenColIndices] = useState<number[]>(
     spreadsheet.frozen_columns || []
@@ -97,12 +95,10 @@ export default function Table({
     y: 0,
     targetImage: null,
   });
-
   const [activeHistoryCell, setActiveHistoryCell] = useState<{
     cellId: string;
     element: HTMLElement;
   } | null>(null);
-
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollDirectionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -111,7 +107,7 @@ export default function Table({
   const [columnHeaders, setColumnHeaders] = useState(
     Array.from({ length: col }, (_, colIndex) =>
       colIndex === imagecol || colIndex === imagecol2
-        ? "Measurement Picture"
+        ? "Issue Picture"
         : columnheaders[colIndex].header
     )
   );
@@ -126,12 +122,26 @@ export default function Table({
   const [colWidths, setColWidths] = useState(
     Array.from({ length: columnheaders.length }, (_, i) => columnheaders[i]) // Default width of 100 if not specified
   );
+  const updateColWidth = (index: number, newWidth: object) => {
+    setColWidths((prevWidths) => {
+      const updated = [...prevWidths];
+      updated[index] = {
+        ...updated[index],
+        ...newWidth,
+      };
+      return updated;
+    });
+  };
+
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
   const [copiedImage, setCopiedImage] = useState<string | null>(null);
 
+
   const resizeStartX = useRef(0);
   const resizeStartWidth = useRef(0);
+
+ 
 
   const handleMouseMove = (e: MouseEvent) => {
     if (resizingColIndex.current === null) return;
@@ -148,12 +158,7 @@ export default function Table({
       updated[resizingColIndex.current].width = newWidth;
       setColWidths(updated);
     }
-    localStorage.setItem(
-      `table_colWidths_${tablename}`,
-      JSON.stringify(updated)
-    );
   };
-
   const [selectedHistoryIndex, setSelectedHistoryIndex] = useState(0);
 
   const handleMouseUp = () => {
@@ -171,7 +176,6 @@ export default function Table({
     setIsImageEditorOpen(false);
     setEditingImageInfo(null);
   };
-
   function generateUUID() {
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
       const r = (Math.random() * 16) | 0;
@@ -243,19 +247,15 @@ export default function Table({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
   const [tableData, setTableData] = useState<TableRow[]>(
     Array.from({ length: row }, () => generateEmptyRow(row))
   );
-
   const [autofillStart, setAutofillStart] = useState<[number, number] | null>(
     null
   );
-
   const [autofillTarget, setAutofillTarget] = useState<[number, number] | null>(
     null
   );
-
   const setCellValue = (celldata: CellData) => {
     if (celldata.data_type === "single_image") {
       celldata.value = []; // Ensure value is an array for single_image type
@@ -297,19 +297,16 @@ export default function Table({
     col: number;
     isHeader?: boolean;
   } | null>(null);
-
   useEffect(() => {
     if (contextMenu?.visible) {
       // Do something after contextMenu is set and visible
       console.log("Context menu updated:", contextMenu);
     }
   }, [contextMenu]);
-
   useEffect(() => {
     // Do something after contextMenu is set and visible
     console.log("Context menu updated:", selectedHistory);
   }, [selectedHistory]);
-
   const [selectionAnchor, setSelectionAnchor] = useState<
     [number, number] | null
   >(null);
@@ -326,7 +323,6 @@ export default function Table({
   const [history, setHistory] = useState<TableRow[][]>([]);
   const [redoStack, setRedoStack] = useState<TableRow[][]>([]);
   const lastSnapshotRef = useRef<string>("");
-
   const handlePaste = (
     e: React.ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>,
     startRow: number,
@@ -406,7 +402,10 @@ export default function Table({
       }
 
       console.log("Debounced data:", data);
-
+      for (const [key, column] of Object.entries(data.column_metadata)) {
+        updateColWidth(Number(key), column);
+      }
+      console.log(colWidths);
       for (const [key, cell] of Object.entries(
         data.cells || data.updated_cells
       )) {
@@ -416,9 +415,37 @@ export default function Table({
     }, 500), // 300ms debounce delay
     []
   );
+  const sendData = useWebSocket(getapi, handleMessage);
+  const saveoncellchangeupdate = (update: TableRow[], colWidths1: any) => {
+    console.log(colWidths);
+    const cellMap: Record<string, CellData> = {};
 
-  const { sendData } = useWebSocket(handleMessage);
+    update.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        const key = `${rowIndex}-${colIndex}`;
+        cellMap[key] = cell;
+      });
+    });
+    const columnMetadata: Record<string, any> = {};
 
+    colWidths1.forEach((col: any, index: number) => {
+      columnMetadata[index] = {
+        width: col.width, // default width, adjust as needed
+        header: col.header,
+        is_hidden: false,
+        is_moveable: false,
+      };
+    });
+    sendData({
+      spreadsheet_id: getapi,
+      frozen_columns: frozenColIndices,
+      column_metadata: columnMetadata,
+      cells: cellMap,
+      spreadsheet_metadata: {
+        last_edit_time: "2025-07-10T06:41:22.646Z",
+      },
+    });
+  };
   const saveoncellchange = () => {
     const cellMap: Record<string, CellData> = {};
 
@@ -442,7 +469,7 @@ export default function Table({
       };
     });
     sendData({
-      spreadsheet_id: "822d02cf-e5eb-4ac8-81c1-13e36406c1e6",
+      spreadsheet_id: getapi,
       frozen_columns: frozenColIndices,
       column_metadata: columnMetadata,
       cells: cellMap,
@@ -456,6 +483,8 @@ export default function Table({
   }, [tableData]);
 
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Table: 5 rows x 12 cols, with editable default values
 
   const isCellInRange = (row: number, col: number) => {
     if (!selectedRange) return false;
@@ -478,7 +507,6 @@ export default function Table({
     setHistory((prev) => [...prev, JSON.parse(snapshot)]);
     setRedoStack([]); // clear redo on new action
   };
-
   const [editHistoryMap, setEditHistoryMap] = useState<CellHistory[]>([]);
 
   const handleCellChange = (row: number, col: number, value: string) => {
@@ -501,11 +529,9 @@ export default function Table({
     }
     // el.style.height = "auto"; // Reset height
   };
-
   const [cellColors, setCellColors] = useState<string[][]>(() =>
     tableData.map((row) => row.map(() => ""))
   );
-
   const autoResizeAllTextareas = (e: any) => {
     if (e && e.parentElement) {
       e.parentElement.style.height = "auto"; // Reset height
@@ -521,7 +547,6 @@ export default function Table({
     window.addEventListener("mouseup", handleMouseUp);
     return () => window.removeEventListener("mouseup", handleMouseUp);
   }, []);
-
   const getImageAt = (row: number, col: number, index: number) => {
     console.log(tableData[row][col].value[index]);
     return tableData[row][col].value[index]; // Example
@@ -647,7 +672,7 @@ export default function Table({
     setTableData(newData);
   };
 
-  const handleImagePasteOrDrop = (
+  const handleImagePasteOrDrop = async (
     files: File[],
     rowIndex: number,
     colIndex: number
@@ -656,23 +681,31 @@ export default function Table({
       file.type.startsWith("image/")
     );
     if (imageFiles.length === 0) return;
+    const uploadPromises = imageFiles.map(async (file) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      try {
+        const response = await fetch(API_ENDPOINTS.imageUpload.url, {
+          method: API_ENDPOINTS.imageUpload.method,
+          body: formData,
+        });
+        if (!response.ok) throw new Error("Upload failed.");
+        const data = await response.json();
+        console.log("image url: ", data);
+        return data.data?.image || "";
+      } catch (error) {
+        console.error("Image upload error: ", error);
+        return "";
+      }
+    });
 
-    const imageUrls = imageFiles.map((file) => URL.createObjectURL(file));
-    console.log(imageUrls);
+    const backendUrls = (await Promise.all(uploadPromises)).filter(Boolean);
     setTableData((prev) => {
       const updated = [...prev];
-      const currentCell = updated[rowIndex][colIndex].value;
+      const current = updated[rowIndex][colIndex].value;
+      const existingUrls = Array.isArray(current) ? current : [];
 
-      // Make sure the value is an array of strings (image URLs)
-      const existingUrls: string[] = Array.isArray(currentCell)
-        ? currentCell.map((v) => String(v))
-        : [];
-
-      const newUniqueUrls = imageUrls.filter(
-        (url) => !existingUrls.includes(url)
-      );
-
-      updated[rowIndex][colIndex].value = [...existingUrls, ...newUniqueUrls];
+      updated[rowIndex][colIndex].value = [...existingUrls, ...backendUrls];
 
       return updated;
     });
@@ -703,7 +736,6 @@ export default function Table({
       animationFrameRef.current = null;
     }
   };
-
   useEffect(() => {
     const handleClick = () => {
       setContextMenu(null);
@@ -715,14 +747,13 @@ export default function Table({
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, []);
-
-  useEffect(() => {
-    const savedColWidths = localStorage.getItem(`table_colWidths_${tablename}`);
-    // console.log(savedColWidths);
-    if (savedColWidths) {
-      setColWidths(JSON.parse(savedColWidths));
-    }
-  }, []);
+  // useEffect(() => {
+  //   const savedColWidths = localStorage.getItem(`table_colWidths_${tablename}`);
+  //   // console.log(savedColWidths);
+  //   if (savedColWidths) {
+  //     setColWidths(JSON.parse(savedColWidths));
+  //   }
+  // }, []);
 
   useEffect(() => {
     setCellColors((prevColors) =>
@@ -731,7 +762,6 @@ export default function Table({
       )
     );
   }, [tableData]);
-
   useEffect(() => {
     if (!isDragging) return;
 
@@ -754,18 +784,10 @@ export default function Table({
       stopAutoScroll();
     };
   }, [isDragging]);
-
   useEffect(() => {
     const handleClick = () => setContextMenu1(null);
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
-  }, []);
-
-  useEffect(() => {
-    const savedWidths = localStorage.getItem(`table_colWidths_${tablename}`);
-    if (savedWidths) {
-      setColWidths(JSON.parse(savedWidths));
-    }
   }, []);
 
   useEffect(() => {
@@ -775,46 +797,6 @@ export default function Table({
     }
   }, [editingCell]);
 
-  // const clearSelectedCells = () => {
-  //   pushToHistory(tableData); // ✅ Store before editing
-
-  //   if (!selectedRange) return;
-
-  //   const { start, end } = selectedRange;
-
-  //   const [startRow, startCol] = start;
-
-  //   const [endRow, endCol] = end;
-
-  //   const newData = [...tableData];
-
-  //   console.log(newData);
-
-  //   for (
-  //     let row = Math.min(startRow, endRow);
-  //     row <= Math.max(startRow, endRow);
-  //     row++
-  //   ) {
-  //     for (
-  //       let col = Math.min(startCol, endCol);
-  //       col <= Math.max(startCol, endCol);
-  //       col++
-  //     ) {
-  //       newData[row][col] = {
-  //         cell_id: self.crypto?.randomUUID?.() || generateUUID(),
-  //         row: row,
-  //         column: col,
-  //         value: "",
-  //         data_type: "str",
-  //         is_editable: true,
-  //         is_header: false,
-  //         has_shape: false,
-  //       }; // Clear cell content
-  //     }
-  //   }
-
-  //   setTableData(newData);
-  // };
   const clearSelectedCells = () => {
     pushToHistory(tableData); // ✅ Store before editing
 
@@ -846,9 +828,20 @@ export default function Table({
         }
       }
     }
-
     setTableData(newData);
   };
+
+  // ...existing code...
+  const debouncedSave = useCallback(
+    debounce((data: TableRow[], colWidths: any) => {
+      saveoncellchangeupdate(data, colWidths);
+    }, 1000),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSave(tableData, colWidths);
+  }, [tableData, colWidths, debouncedSave]);
 
   const handleMouseMoveForScroll = (e: {
     clientX: number;
@@ -912,7 +905,6 @@ export default function Table({
     }
     return undefined;
   };
-
   const isCellInAutofillRange = (row: number, col: number): boolean => {
     if (!autofillStart || !autofillTarget) return false;
 
@@ -926,7 +918,6 @@ export default function Table({
 
     return row >= minRow && row <= maxRow && col >= minCol && col <= maxCol;
   };
-
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.scrollIntoView({
@@ -970,7 +961,7 @@ export default function Table({
         const isVertical = Math.abs(deltaRow) >= Math.abs(deltaCol);
         const fillDirection = isVertical ? "vertical" : "horizontal";
 
-        const sourceValue = updated[startRow][startCol];
+        const sourceValue = updated[startRow][startCol].value;
 
         {
           // Not numeric → fill with same value
@@ -979,14 +970,14 @@ export default function Table({
             const max = Math.max(startRow, endRow);
 
             for (let r = min; r <= max; r++) {
-              updated[r][startCol] = sourceValue;
+              updated[r][startCol].value = sourceValue;
             }
           } else {
             const min = Math.min(startCol, endCol);
             const max = Math.max(startCol, endCol);
 
             for (let c = min; c <= max; c++) {
-              updated[startRow][c] = sourceValue;
+              updated[startRow][c].value = sourceValue;
             }
           }
         }
@@ -1008,7 +999,6 @@ export default function Table({
       document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [autofillStart, autofillTarget, tableData]);
-
   useEffect(() => {
     console.log("first");
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1080,28 +1070,26 @@ export default function Table({
     lastSnapshotRef,
     saveoncellchange,
   });
+  const getCellHistory = async (
+    cellid: string,
+    contextMenu: { row: number; col: number; x: number; y: number }
+  ) => {
+    const res = await axios.get(API_ENDPOINTS.cellHistory(cellid).url);
 
-  // const getCellHistory = async (
-  //   cellid: string,
-  //   contextMenu: { row: number; col: number; x: number; y: number }
-  // ) => {
-  //   const res = await axios.get(API_ENDPOINTS.cellHistory(cellid).url);
+    const updatedMap = { ...editHistoryMap, ...res.data.data };
 
-  //   const updatedMap = { ...editHistoryMap, ...res.data.data };
-
-  //   const key = `${contextMenu.row}-${contextMenu.col}`;
-  //   setSelectedHistory((s) => ({
-  //     ...s,
-  //     key,
-  //     row: contextMenu.row,
-  //     col: contextMenu.col,
-  //     x: contextMenu.x,
-  //     y: contextMenu.y,
-  //     history: updatedMap,
-  //   }));
-  //   setSelectedHistoryIndex(Object.keys(updatedMap).length - 1);
-  // };
-
+    const key = `${contextMenu.row}-${contextMenu.col}`;
+    setSelectedHistory((s) => ({
+      ...s,
+      key,
+      row: contextMenu.row,
+      col: contextMenu.col,
+      x: contextMenu.x,
+      y: contextMenu.y,
+      history: updatedMap,
+    }));
+    setSelectedHistoryIndex(Object.keys(updatedMap).length - 1);
+  };
   const handleSave = async () => {
     const cellMap: Record<string, CellData> = {};
 
@@ -1132,9 +1120,9 @@ export default function Table({
       cells: cellMap,
     });
     const res = await axios.post(
-      `${BASE_URL}/spreadsheet/update/822d02cf-e5eb-4ac8-81c1-13e36406c1e6/`,
+      "http://gulab.local:8000/api/v1.0/spreadsheet/update/b20c7d94-e11e-46f9-96d3-44aad3d2bb31/",
       {
-        spreadsheet_id: "822d02cf-e5eb-4ac8-81c1-13e36406c1e6",
+        spreadsheet_id: "b20c7d94-e11e-46f9-96d3-44aad3d2bb31",
         frozen_columns: frozenColIndices,
         column_metadata: columnMetadata,
         cells: cellMap,
@@ -1285,7 +1273,7 @@ export default function Table({
             >
               Delete Column
             </li> */}
-            <li
+<li
               onClick={() => {
                 if (contextMenu.cellid) {
                   // Find the cell element
@@ -1309,7 +1297,6 @@ export default function Table({
           </ul>
         </div>
       )}
-
       {contextMenu2.visible && (
         <div
           style={{
@@ -1347,107 +1334,7 @@ export default function Table({
           </div>
         </div>
       )}
-
-      {/* {selectedHistory && (
-        <div
-          className="absolute bg-white border border-gray-300 rounded-lg shadow-lg w-80 z-50"
-          style={{
-            top: selectedHistory.y,
-            left: selectedHistory.x,
-          }}
-        >
-          <div className="border-b px-4 py-2 font-semibold text-gray-800 flex justify-between items-center">
-            <span>Edit history</span>
-            <div className="flex items-center space-x-2">
-              {/* Previous Button */}
-      {/* <button
-                disabled={selectedHistoryIndex <= 0}
-                onClick={() =>
-                  setSelectedHistoryIndex((i) => Math.max(i - 1, 0))
-                }
-                className={`text-lg px-1 transition ${
-                  selectedHistoryIndex <= 0
-                    ? "text-gray-300"
-                    : "text-green-700 hover:text-green-900"
-                }`}
-              >
-                ❮
-              </button>
-
-              {/* Next Button */}
-      {/* <button
-                disabled={
-                  selectedHistoryIndex >=
-                  Object.keys(selectedHistory.history).length - 1
-                }
-                onClick={() =>
-                  setSelectedHistoryIndex((i) =>
-                    Math.min(
-                      i + 1,
-                      Object.keys(selectedHistory.history).length - 1
-                    )
-                  )
-                }
-                className={`text-lg px-1 transition ${
-                  selectedHistoryIndex >=
-                  Object.keys(selectedHistory.history).length - 1
-                    ? "text-gray-300"
-                    : "text-gray-500 hover:text-gray-800"
-                }`}
-              >
-                ❯
-              </button>
-            </div>
-          </div>
-          <div className="p-4">
-            {(() => {
-              const entry = selectedHistory.history[selectedHistoryIndex];
-              return (
-                <div className="flex gap-3 items-start">
-                  <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white font-semibold">
-                    {entry.edited_by.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm text-gray-800">
-                      {entry.edited_by}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {new Date(entry.created_at).toLocaleString()}
-                    </div>
-                    <div className="mt-1 text-sm text-gray-700">
-                      Previous_value:{" "}
-                      <span className="italic text-red-500">
-                        "{entry.old_value}"
-                      </span>{" "}
-                      <br />
-                      New_Value:
-                      <span className="italic text-green-600">
-                        "{entry.new_value}"
-                      </span>
-                      <br />
-                      has_shape:
-                      <br />
-                      isHighlighted:
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-
-          <div className="border-t text-right px-4 py-2">
-            <button
-              onClick={() => {
-                setSelectedHistory(null);
-                setSelectedHistoryIndex(0);
-              }}
-              className="text-sm text-blue-500 hover:underline"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )} */}
+    
 
       <main className="mt-4">
         <div className=" rounded-xl shadow" ref={tableRef}>
@@ -1459,10 +1346,10 @@ export default function Table({
             onMouseMove={handleMouseMoveForScroll}
           >
             <div
-              className="removeminheight overflow-auto max-h-[800px] border rounded relative"
+              className="removeminheight overflow-auto max-h-[800px] border rounded"
               style={{ width: "100%", overflow: "scroll" }}
             >
-              <table className="table-fixed w-full text-sm border-content border-collapse relative">
+              <table className="table-fixed w-full text-sm border-content border-collapse">
                 <colgroup>
                   {colWidths.map((w, i) => (
                     <col key={i} style={{ width: w.width }} />
@@ -1757,8 +1644,7 @@ export default function Table({
                             >
                               {rowIndex + 1}
                             </td>
-                          ) : columnHeaders[colIndex] ===
-                            "Measurement Picture" ? (
+                          ) : columnHeaders[colIndex] === "Issue Picture" ? (
                             rowIndex === -1 ? (
                               <td>
                                 <textarea
@@ -2024,7 +1910,11 @@ export default function Table({
                                     );
 
                                     if (imageFiles.length > 0) {
-                                      console.log("hello");
+                                      console.log(
+                                        rowIndex,
+                                        colIndex,
+                                        imageFiles
+                                      );
                                       handleImagePasteOrDrop(
                                         imageFiles,
                                         rowIndex,
@@ -2191,9 +2081,9 @@ export default function Table({
                                     ★
                                   </div>
                                 )}
-                                {Array.isArray(cell) ? (
-                                  <div className="flex flex-wrap justify-center">
-                                    {(cell as string[]).map((src, i) => (
+                                {Array.isArray(cell.value) ? (
+                                  <div className="flex flex-wrap  justify-center">
+                                    {cell.value.map((src, i) => (
                                       <div
                                         key={i}
                                         className="relative group"
@@ -2288,12 +2178,12 @@ export default function Table({
 
                                                 const isSingleImage =
                                                   cell.data_type ===
-                                                    "single_image" ||
+                                                    "multiple_image" ||
                                                   (Array.isArray(
                                                     cell.data_type
                                                   ) &&
                                                     cell.data_type.includes(
-                                                      "single_image"
+                                                      "multiple_image"
                                                     ));
 
                                                 if (
@@ -2399,7 +2289,7 @@ export default function Table({
                                       ? "bg-blue-100"
                                       : ""
                                   }
-                                   ${
+                                    ${
                                      isCellInAutofillRange(rowIndex, colIndex)
                                        ? "bg-green-200 border-2 border-green-400"
                                        : ""
@@ -2435,6 +2325,10 @@ export default function Table({
                                 )}
 
                               <textarea
+                                style={{
+                                  backgroundColor:
+                                    cellColors?.[rowIndex]?.[colIndex] || "",
+                                }}
                                 value={cell.value}
                                 data-cell={`${rowIndex}-${colIndex}`}
                                 ref={(el) => {
@@ -2550,11 +2444,9 @@ export default function Table({
                                   rowIndex === 0
                                     ? "text-black p-3! text-[15px]!"
                                     : "p-3!"
-                                } w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top`}
-                                style={{
-                                  backgroundColor:
-                                    cellColors?.[rowIndex]?.[colIndex] || "",
-                                }}
+                                } className="w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top"
+`}
+
                                 rows={1}
                               />
                             </td>
@@ -2583,7 +2475,6 @@ export default function Table({
             save
           </button>
         </div>
-
         {isImageEditorOpen && editingImageInfo && (
           <ImageEditorModal
             isOpen={isImageEditorOpen}

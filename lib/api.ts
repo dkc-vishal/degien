@@ -51,6 +51,10 @@ export const API_ENDPOINTS = {
     url: `${BASE_URL}/spreadsheet/cell-history/${cellid}`,
     method: "GET",
   }),
+  imageUpload: {
+    url: `${BASE_URL}v1.0/image/image/`,
+    method: "POST"
+  },
   activeUsers: {
     url: `${BASE_URL}/auth/list-users/active`,
     method: "GET",

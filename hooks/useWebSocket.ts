@@ -4,13 +4,15 @@ import { useEffect, useRef, useCallback } from "react";
 type WebSocketCallback = (data: any) => void;
 
 const BASE_WS_URL = process.env.NEXT_PUBLIC_WS_BASE_URL;
-
-export const useWebSocket = (onMessage: WebSocketCallback) => {
+export const useWebSocket = (
+  id: string,
+  onMessage: WebSocketCallback
+) => {
   const socket = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     const ws = new WebSocket(
-      `${BASE_WS_URL}/spreadsheet/spreadsheet/822d02cf-e5eb-4ac8-81c1-13e36406c1e6/`
+      `ws://128.100.10.108:8000/ws/v1/spreadsheet/spreadsheet/${id}/`
     );
 
     ws.onopen = () => {
@@ -40,7 +42,7 @@ export const useWebSocket = (onMessage: WebSocketCallback) => {
         ws.close();
       }
     };
-  }, [onMessage]);
+  }, [id, onMessage]);
 
   // sendData function to send a message through the socket
   const sendData = useCallback((data: any) => {
@@ -51,5 +53,5 @@ export const useWebSocket = (onMessage: WebSocketCallback) => {
     }
   }, []);
 
-  return { sendData };
+  return sendData ;
 };

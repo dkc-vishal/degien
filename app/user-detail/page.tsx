@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { FaUserPlus } from "react-icons/fa6";
 import ResetPasswordModal from "./ResetPasswordModal";
 import { API_ENDPOINTS } from "@/lib/api";
+import { RoleGuard } from "@/components/Protected_Route";
 import { useUpdateUser, useUsers } from "@/lib/api/hooks";
 import { User } from "@/lib/api/types";
 

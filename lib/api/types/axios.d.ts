@@ -5,5 +5,6 @@ declare module "axios" {
     metadata?: {
       startTime: Date;
     };
+    _retry?: boolean;
   }
 }

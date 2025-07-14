@@ -42,8 +42,8 @@ export const useUpdateUser = () => {
 export const useDeleteUser = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    // mutationFn: (id: string) => userEndPoints.deleteUser(id),
-    mutationFn: userEndPoints.deleteUser,
+    mutationFn: (id: string) => userEndPoints.deleteUser(id),
+    // mutationFn: userEndPoints.deleteUser,
     onSuccess: (_, deletedUserId) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       cacheUtils.users.removeUserFromList(deletedUserId);

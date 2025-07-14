@@ -8,6 +8,7 @@ import { CgProfile } from "react-icons/cg";
 import { TbLogout } from "react-icons/tb";
 import { toast } from "sonner";
 import Image from "next/image";
+import { cacheUtils } from "@/lib/api/utils";
 
 export default function Sidebar({ isSidebarOpen }: any) {
   const isOpen: boolean = isSidebarOpen;
@@ -76,6 +77,8 @@ export default function Sidebar({ isSidebarOpen }: any) {
 
       localStorage.removeItem("auth_token");
       localStorage.removeItem("refresh_token");
+      localStorage.removeItem("user_role");
+      cacheUtils.global.clearAll();
       toast.success("Logged out successfully.");
       router.push("/Auth/Login");
     } catch (error) {

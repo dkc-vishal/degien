@@ -5,34 +5,33 @@ import { Plus } from "lucide-react";
 import AddStyleModal from "@/components/core/AddStyleModal";
 import { useRouter } from "next/navigation";
 import PageHeader from "@/components/core/PageHeader";
-
-type StyleType = {
-  styleName: string;
-  image: string;
-};
+import { SamplingStyleEndPoints } from "@/lib/api/endpoints/sampling";
+import {
+  SamplingStyle,
+  GetSamplingStyleResponse,
+} from "@/lib/api/types/sampling";
 
 type StyleCardProps = {
-  styleName: string;
-  image: string;
+  style: SamplingStyle;
   onClick: () => void;
 };
 
-const StyleCard: React.FC<StyleCardProps> = ({ styleName, image, onClick }) => (
+const StyleCard: React.FC<StyleCardProps> = ({ style, onClick }) => (
   <div
     onClick={onClick}
     className="flex flex-col bg-white rounded-[2px] shadow-sm border border-gray-100 hover:border-blue-400 hover:shadow-md cursor-pointer w-[340px] h-[370px] mb-1"
   >
     {/* Style Name */}
     <div className="px-3 pt-2 pb-1 text-[20px] font-extrabold text-gray-800 border-b border-gray-100 h-[60px] flex items-center justify-center leading-tight overflow-hidden whitespace-nowrap truncate line-clamp-1">
-      {styleName}
+      {style.name}
     </div>
 
     {/* Image or No Image Placeholder */}
     <div className="w-[270px] h-[210px] mx-auto mt-4 flex items-center justify-center">
-      {image ? (
+      {style.style_image ? (
         <img
-          src={image}
-          alt={styleName}
+          src={style.style_image}
+          alt={style.name}
           className="w-full h-full object-cover rounded-[2px]"
         />
       ) : (
@@ -46,13 +45,18 @@ const StyleCard: React.FC<StyleCardProps> = ({ styleName, image, onClick }) => (
 
 const SamplingStyles: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
-  const [styles, setStyles] = useState<StyleType[]>([]);
+  const [styles, setStyles] = useState<SamplingStyle[]>([]);
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
 
-  const handleCardClick = (styleName: string) => {
-    const kebab = styleName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const handleCardClick = (styleId: string, styleName: string) => {
+    // console.log(styleId)
+    const kebab = (styleName+"@"+styleId)
+      .toLowerCase()
+      .replace(/[^a-z0-9@]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    // console.log(kebab)
     router.push(`/sampling-styles/${kebab}`);
   };
 
@@ -60,19 +64,12 @@ const SamplingStyles: React.FC = () => {
     // simulate API call
     const fetchStyles = async () => {
       setLoading(true);
-      const mockData = [
-        { styleName: "Raya Bandana", image: "/images/raya-bandana.webp" },
-        { styleName: "Blake Thermal", image: "/images/blake-thermal.jpg" },
-        { styleName: "Pixie Cardi", image: "/images/Pixie_Cardi.webp" },
-        { styleName: "Brynn Maxi Skirt", image: "/images/Brynn_Maxi_Skirt.webp" },
-        { styleName: "Cedar Jacket", image: "/images/Cedar_Jacket.avif" },
-        { styleName: "Kaiden Pant", image: "/images/kaiden-pant.webp" },
-        { styleName: "Luna Cardi", image: "/images/Luna_Cardi.webp" }
-      ];
-      setTimeout(() => {
-        setStyles(mockData);
+      const res: GetSamplingStyleResponse =
+        await SamplingStyleEndPoints.getAllSamplingStyles();
+      if (res.status === 200) {
+        setStyles(res.data);
         setLoading(false);
-      }, 500);
+      }
     };
 
     fetchStyles();
@@ -111,8 +108,8 @@ const SamplingStyles: React.FC = () => {
           {styles.map((style, index) => (
             <StyleCard
               key={index}
-              {...style}
-              onClick={() => handleCardClick(style.styleName)}
+              style={style}
+              onClick={() => handleCardClick(style.sampling_watchpoint_spreedsheet_id,style.name)}
             />
           ))}
         </div>

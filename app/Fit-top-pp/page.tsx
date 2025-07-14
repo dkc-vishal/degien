@@ -101,7 +101,7 @@ const MidReportForm = () => {
                   ))}
                 </div>
               ))}
-
+    
               {/* Total Row */}
               <div className="grid grid-cols-7 border-b border-black font-medium text-center">
                 <div className="border-r border-black p-1">Total</div>
