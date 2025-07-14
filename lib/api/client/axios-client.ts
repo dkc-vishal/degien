@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from "axios";
 import { handleApiError } from "../utils/error-handler";
+import { tokenRefreshManager } from "../utils/token-refresh";
 export class ApiClient {
   private client: AxiosInstance;
 
@@ -51,9 +52,31 @@ export class ApiClient {
         return response;
       },
 
-      (error) => {
-        handleApiError(error);
+      async (error) => {
+        const originalRequest = error.config;
 
+        // Check if error is 401 and we haven't already tried to refresh
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
+
+          try {
+            // Try to refresh the token
+            const newToken = await tokenRefreshManager.handleTokenRefresh();
+
+            // Update the authorization header with new token
+            originalRequest.headers.Authorization = `Bearer ${newToken}`;
+
+            // Retry the original request
+            return this.client(originalRequest);
+          } catch (refreshError) {
+            // If refresh fails, handle the error and redirect to login
+            handleApiError(error);
+            return Promise.reject(refreshError);
+          }
+        }
+
+        // Handle other errors normally
+        handleApiError(error);
         return Promise.reject(error);
       }
     );

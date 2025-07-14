@@ -1,0 +1,10 @@
+Protected Route 
+VENDOR
+MERCHANT
+SOP MANAGER
+ADMIN
+TECH 
+SAMPLING
+Show options…
+USER Management page - only show to admin and SOP manager
+And apart from that everything else will be visible to everyone.

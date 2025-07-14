@@ -9,6 +9,10 @@ export const cacheUtils = {
       queryClient.setQueryData(queryKeys.auth.profile(), user);
     },
 
+    getUser: (): User | undefined => {
+      return queryClient.getQueryData<User>(queryKeys.auth.profile());
+    },
+
     clearUser: () => {
       // queryClient.removeQueries({ queryKey: queryKeys.auth.all });
       queryClient.removeQueries({ queryKey: queryKeys.auth.profile() });

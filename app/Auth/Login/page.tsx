@@ -3,11 +3,15 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiLogIn } from "react-icons/fi";
-// import { API_ENDPOINTS } from "@/lib/api";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import { useLogin } from "@/lib/api/index";
 
 const page: React.FC = () => {
+  const token = localStorage.getItem("auth_token");
+  if (token) {
+    window.location.href = "/Dashboard";
+  }
+
   const router = useRouter();
 
   const [form, setForm] = useState({

@@ -7,7 +7,7 @@ export const useUsers = (filters?: UserFilter) => {
   return useQuery({
     queryKey: queryKeys.users.list(JSON.stringify(filters || {})),
     queryFn: () => userEndPoints.getUsers(filters),
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 2 * 60 * 1000,
   });
 };
 

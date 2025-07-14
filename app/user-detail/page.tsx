@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { FaUserPlus } from "react-icons/fa6";
 import ResetPasswordModal from "./ResetPasswordModal";
 import { API_ENDPOINTS } from "@/lib/api";
+import { RoleGuard } from "@/components/Protected_Route";
 
 export interface User {
   id: number;
@@ -18,9 +19,8 @@ export interface User {
 }
 
 const UserDetailsPage: React.FC = () => {
-  
-  const [users, setUsers] = useState<User[]>([]) ; 
-  const [inActiveUsers, setInActiveUsers] = useState<User[]>([]) ; 
+  const [users, setUsers] = useState<User[]>([]);
+  const [inActiveUsers, setInActiveUsers] = useState<User[]>([]);
 
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -32,44 +32,45 @@ const UserDetailsPage: React.FC = () => {
 
   useEffect(() => {
     const fetchUsers = async () => {
-      try{
-        const token = localStorage.getItem("access_token") ; 
+      try {
+        const token = localStorage.getItem("access_token");
 
-        if(!token){
-          throw new Error("No access token found.") ; 
+        if (!token) {
+          throw new Error("No access token found.");
         }
 
-        const endpoint = activeTab === "all" ? API_ENDPOINTS.activeUsers.url : API_ENDPOINTS.inActiveUsers.url ; 
+        const endpoint =
+          activeTab === "all"
+            ? API_ENDPOINTS.activeUsers.url
+            : API_ENDPOINTS.inActiveUsers.url;
 
         const res = await fetch(endpoint, {
           headers: {
-            "Content-Type": "application/json", 
-            Authorization: `Bearer ${token}`
-          }
-        })
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-        if(!res.ok){
-          throw new Error("Failed to fetch users.")
+        if (!res.ok) {
+          throw new Error("Failed to fetch users.");
         }
 
-        const data = await res.json() ;
+        const data = await res.json();
 
-        if(activeTab === "all"){
-          setUsers(data.data) ; 
+        if (activeTab === "all") {
+          setUsers(data.data);
+        } else {
+          setInActiveUsers(data.data);
         }
-        else{
-          setInActiveUsers(data.data) ; 
-        }
+      } catch (error) {
+        console.error("Error fetching users: ", error);
 
-      }catch(error){
-        console.error("Error fetching users: ", error) ; 
-
-        toast.error("Error fetching users.") ; 
+        toast.error("Error fetching users.");
       }
-    }
+    };
 
-    fetchUsers() ; 
-  }, [activeTab])
+    fetchUsers();
+  }, [activeTab]);
 
   const handleUpdate = (user: User) => {
     setSelectedUser(user);
@@ -82,13 +83,15 @@ const UserDetailsPage: React.FC = () => {
   };
 
   const handleUserUpdate = (updatedUser: User) => {
-    setUsers((prev) => prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
+    setUsers((prev) =>
+      prev.map((u) => (u.id === updatedUser.id ? updatedUser : u))
+    );
     setShowUpdateModal(false);
   };
 
   const handleInactive = () => {
-    toast.success("Will be handled later.")
-  }
+    toast.success("Will be handled later.");
+  };
 
   const displayedUsers = activeTab === "all" ? users : inActiveUsers;
 
@@ -96,7 +99,9 @@ const UserDetailsPage: React.FC = () => {
     <main className="flex-1 p-4 sm:p-6 bg-gray-50 min-h-screen w-full">
       <div className="max-w-7xl mx-auto w-full">
         <div className="flex items-center justify-between mt-6 mb-4 gap-4 flex-wrap">
-          <h2 className="text-2xl font-semibold text-gray-800">User Management</h2>
+          <h2 className="text-2xl font-semibold text-gray-800">
+            User Management
+          </h2>
           <a
             className="inline-flex items-center gap-2 rounded-lg bg-blue-400 px-4 py-2 text-lg font-semibold text-white shadow-sm hover:bg-white hover:text-blue-400 transition-colors duration-200 border border-transparent hover:border-blue-400 cursor-pointer"
             onClick={() => setShowAddUserModal(true)}
@@ -109,13 +114,21 @@ const UserDetailsPage: React.FC = () => {
         <div className="flex gap-4 mb-9">
           <button
             onClick={() => setActiveTab("all")}
-            className={`px-3 py-2 rounded-lg font-medium ${activeTab === "all" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700 cursor-pointer"}`}
+            className={`px-3 py-2 rounded-lg font-medium ${
+              activeTab === "all"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-gray-700 cursor-pointer"
+            }`}
           >
             Active Users
           </button>
           <button
             onClick={() => setActiveTab("inactive")}
-            className={`px-4 py-2 rounded-lg font-medium ${activeTab === "inactive" ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700"} cursor-pointer`}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              activeTab === "inactive"
+                ? "bg-blue-500 text-white"
+                : "bg-gray-200 text-gray-700"
+            } cursor-pointer`}
           >
             Inactive Users
           </button>
@@ -132,22 +145,44 @@ const UserDetailsPage: React.FC = () => {
                   <th className="px-2 py-3">Employee Name</th>
                   <th className="px-2 py-3">Email</th>
                   <th className="px-2 py-3">Department</th>
-                  {activeTab === "all" && <th className="px-4 py-3">Actions</th>}
+                  {activeTab === "all" && (
+                    <th className="px-4 py-3">Actions</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {displayedUsers.map((user, index) => (
-                  <tr key={user.id} className="hover:bg-gray-50 transition border-b border-gray-200">
+                  <tr
+                    key={user.id}
+                    className="hover:bg-gray-50 transition border-b border-gray-200"
+                  >
                     <td className="px-2 py-2">{index + 1}</td>
                     <td className="px-4 py-2">{user.username}</td>
                     <td className="px-4 py-2">{user.email}</td>
-                    <td className="px-4 py-2">{user.is_vendor ? "-" : user.department}</td>
+                    <td className="px-4 py-2">
+                      {user.is_vendor ? "-" : user.department}
+                    </td>
                     {activeTab === "all" && (
                       <td className="px-4 py-4">
                         <div className="flex justify-center gap-3">
-                          <button onClick={() => handleUpdate(user)} className="bg-blue-400 hover:bg-blue-500 text-white px-3 py-1 rounded cursor-pointer">Update</button>
-                          <button onClick={() => handleInactive()} className="bg-red-400 hover:bg-red-500 text-white px-3 py-1 rounded cursor-pointer">Mark Inactive</button>
-                          <button onClick={() => handleResetPassword(user)} className="bg-teal-500 hover:bg-teal-600 text-white px-3 py-1 rounded cursor-pointer">Reset Password</button>
+                          <button
+                            onClick={() => handleUpdate(user)}
+                            className="bg-blue-400 hover:bg-blue-500 text-white px-3 py-1 rounded cursor-pointer"
+                          >
+                            Update
+                          </button>
+                          <button
+                            onClick={() => handleInactive()}
+                            className="bg-red-400 hover:bg-red-500 text-white px-3 py-1 rounded cursor-pointer"
+                          >
+                            Mark Inactive
+                          </button>
+                          <button
+                            onClick={() => handleResetPassword(user)}
+                            className="bg-teal-500 hover:bg-teal-600 text-white px-3 py-1 rounded cursor-pointer"
+                          >
+                            Reset Password
+                          </button>
                         </div>
                       </td>
                     )}
@@ -165,13 +200,16 @@ const UserDetailsPage: React.FC = () => {
             <AddUserForm
               onClose={() => setShowAddUserModal(false)}
               onSuccess={(user) => {
-                setUsers((prev) => [...prev, {
-                  ...user,
-                  is_vendor: user.type_of_user === "vendor"
-                }]);
+                setUsers((prev) => [
+                  ...prev,
+                  {
+                    ...user,
+                    is_vendor: user.type_of_user === "vendor",
+                  },
+                ]);
                 setCreatedUser({
                   ...user,
-                  is_vendor: user.type_of_user === "vendor"
+                  is_vendor: user.type_of_user === "vendor",
                 });
                 setShowSuccessModal(true);
                 setShowAddUserModal(false);
@@ -183,11 +221,17 @@ const UserDetailsPage: React.FC = () => {
       )}
 
       {showModal && selectedUser && (
-        <ResetPasswordModal user={selectedUser} onClose={() => setShowModal(false)} />
+        <ResetPasswordModal
+          user={selectedUser}
+          onClose={() => setShowModal(false)}
+        />
       )}
 
       {showSuccessModal && createdUser && (
-        <SuccessModal user={createdUser} onClose={() => setShowSuccessModal(false)} />
+        <SuccessModal
+          user={createdUser}
+          onClose={() => setShowSuccessModal(false)}
+        />
       )}
 
       {showUpdateModal && selectedUser && (

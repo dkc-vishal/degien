@@ -1,15 +1,15 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { userEndPoints } from "../../endpoints/index";
-import type { UpdateUserRequest } from "../../types/index";
+import type { CreateUserRequest, UpdateUserRequest } from "../../types/index";
 import { cacheUtils } from "../../utils";
 
 //check this function is work correct or not
 export const useCreateUser = () => {
   return useMutation({
-    // mutationFn: (data: CreateUserRequest) => userEndPoints.createUser(data),
+    mutationFn: (data: CreateUserRequest) => userEndPoints.createUser(data),
     //check this function is work correct or not
-    mutationFn: userEndPoints.createUser,
+    // mutationFn: userEndPoints.createUser,
     onSuccess: (newUser) => {
       cacheUtils.users.addUserToList(newUser);
       toast.success("User created successfully");
@@ -37,8 +37,8 @@ export const useUpdateUser = () => {
 
 export const useDeleteUser = () => {
   return useMutation({
-    // mutationFn: (id: string) => userEndPoints.deleteUser(id),
-    mutationFn: userEndPoints.deleteUser,
+    mutationFn: (id: string) => userEndPoints.deleteUser(id),
+    // mutationFn: userEndPoints.deleteUser,
     onSuccess: (_, deletedUserId) => {
       // queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
       cacheUtils.users.removeUserFromList(deletedUserId);

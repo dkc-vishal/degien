@@ -34,16 +34,41 @@ export const useLogin = () => {
   });
 };
 
+export const useRefreshToken = () => {
+  return useMutation({
+    mutationFn: (refreshToken: string) =>
+      authEndpoints.refreshToken(refreshToken),
+    onSuccess: (data) => {
+      // Store new tokens
+      localStorage.setItem("auth_token", data.access_token);
+      if (data.refresh_token) {
+        localStorage.setItem("refresh_token", data.refresh_token);
+      }
+      toast.success("Session refreshed successfully");
+    },
+    onError: (error: any) => {
+      // Clear tokens and redirect to login
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("user_role");
+      cacheUtils.global.clearAll();
+
+      toast.error("Session expired. Please login again.");
+      window.location.href = "/Auth/Login";
+    },
+  });
+};
+
 export const useLogOut = () => {
   return useMutation({
     mutationFn: authEndpoints.logout,
     onSuccess: () => {
       // Clear local storage
-      localStorage.removeItem("token");
+      localStorage.removeItem("auth_token");
       localStorage.removeItem("refresh_token");
+      localStorage.removeItem("user_role");
 
       // Invalidate user data cache
-      // queryClient.invalidateQueries({ queryKey: queryKeys.auth.profile() });
       cacheUtils.global.clearAll();
       toast.success("Logged out successfully");
     },

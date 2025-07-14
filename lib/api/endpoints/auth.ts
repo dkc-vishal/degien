@@ -4,6 +4,7 @@ import {
   LoginRequest,
   LoginResponse,
   User,
+  Department,
 } from "../types/auth";
 
 export const authEndpoints = {
@@ -17,9 +18,11 @@ export const authEndpoints = {
   changePassword: (data: ChangePasswordRequest): Promise<void> =>
     apiClient.post("/auth/change-password/", data),
 
-  forgotPassword: (email: string): Promise<void> =>
-    apiClient.post("/auth/forgot-password/", { email }),
+  getDepartments: (): Promise<Department[]> =>
+    apiClient.get("/auth/departments/"),
 
-  refreshToken: (refreshToken: string): Promise<{ token: string }> =>
-    apiClient.post("/auth/refresh/", { refreshToken }),
+  refreshToken: (
+    refreshToken: string
+  ): Promise<{ access_token: string; refresh_token?: string }> =>
+    apiClient.post("/token/refresh/", { refresh_token: refreshToken }),
 };
