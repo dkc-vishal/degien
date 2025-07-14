@@ -1,5 +1,5 @@
 import { queryClient } from "../client/query-client";
-import { User } from "../types";
+import { CreateUserResponse, User } from "../types";
 import { queryKeys } from "./query-keys";
 
 export const cacheUtils = {
@@ -7,6 +7,10 @@ export const cacheUtils = {
   auth: {
     setUser: (user: User) => {
       queryClient.setQueryData(queryKeys.auth.profile(), user);
+    },
+
+    getUser: (): User | null | undefined => {
+      return queryClient.getQueryData(queryKeys.auth.profile());
     },
 
     clearUser: () => {
@@ -63,7 +67,7 @@ export const cacheUtils = {
       queryClient.removeQueries({ queryKey: queryKeys.users.detail(userId) });
     },
 
-    addUserToList: (newUser: User) => {
+    addUserToList: (newUser: CreateUserResponse) => {
       queryClient.setQueriesData(
         { queryKey: queryKeys.users.lists() },
         (oldData: any) => {

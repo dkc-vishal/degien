@@ -21,9 +21,7 @@ import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { IssueImage } from "@/types";
 import { Button } from "../ui/button";
 import { X } from "lucide-react";
-import { get } from "http";
-import { set } from "date-fns";
-import { table } from "console";
+import CellHistoryModal from "./HistoryModal";
 type AllowedDataType = "str" | "number" | "bool" | string;
 
 type CellData = {
@@ -97,7 +95,10 @@ export default function Table({
     y: 0,
     targetImage: null,
   });
-
+  const [activeHistoryCell, setActiveHistoryCell] = useState<{
+    cellId: string;
+    element: HTMLElement;
+  } | null>(null);
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollDirectionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -135,49 +136,12 @@ export default function Table({
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
   const [copiedImage, setCopiedImage] = useState<string | null>(null);
-  // const handleMouseMove = (e: MouseEvent) => {
-  //   if (resizingColIndex.current === null) return;
 
-  //   const thElements = document.querySelectorAll("th");
-  //   const th = thElements[resizingColIndex.current] as HTMLElement;
-
-  //   if (th) {
-  //     const newWidth = e.clientX - th.getBoundingClientRect().left;
-  //     if (newWidth > 20) {
-  //       th.style.width = `${newWidth}px`;
-  //       const updatedWidths = [...colWidths];
-  //       updatedWidths[resizingColIndex.current] = newWidth;
-  //       setColWidths(updatedWidths);
-  //       localStorage.setItem(
-  //         `table_colWidths_${tablename}`,
-  //         JSON.stringify(updatedWidths)
-  //       );
-  //     }
-  //   }
-  // };
 
   const resizeStartX = useRef(0);
   const resizeStartWidth = useRef(0);
 
-  // const handleMouseMove = (e: MouseEvent) => {
-  //   if (resizingColIndex.current === null) return;
-
-  //   const startX = resizeStartX.current;
-  //   const currentX = e.clientX;
-  //   const delta = currentX - startX;
-
-  //   const updated = [...colWidths];
-  //   const newWidth = resizeStartWidth.current + delta;
-
-  //   if (newWidth > 20 && newWidth < 500) {
-  //     updated[resizingColIndex.current] = newWidth;
-  //     setColWidths(updated);
-  //   }
-  //   localStorage.setItem(
-  //     `table_colWidths_${tablename}`,
-  //     JSON.stringify(updated)
-  //   );
-  // };
+ 
 
   const handleMouseMove = (e: MouseEvent) => {
     if (resizingColIndex.current === null) return;
@@ -1309,12 +1273,21 @@ export default function Table({
             >
               Delete Column
             </li> */}
-            <li
+<li
               onClick={() => {
                 if (contextMenu.cellid) {
-                  getCellHistory(contextMenu.cellid, contextMenu);
-                }
+                  // Find the cell element
+                  const cellElement = document.querySelector(
+                    `[data-row="${contextMenu.row}"][data-col="${contextMenu.col}"]`
+                  ) as HTMLElement;
 
+                  if (cellElement) {
+                    setActiveHistoryCell({
+                      cellId: contextMenu.cellid,
+                      element: cellElement,
+                    });
+                  }
+                }
                 setContextMenu(null);
               }}
               className="hover:bg-gray-100 px-4 py-2 cursor-pointer text-blue-600"
@@ -1361,106 +1334,7 @@ export default function Table({
           </div>
         </div>
       )}
-      {selectedHistory && (
-        <div
-          className="absolute bg-white border border-gray-300 rounded-lg shadow-lg w-80 z-50"
-          style={{
-            top: selectedHistory.y,
-            left: selectedHistory.x,
-          }}
-        >
-          <div className="border-b px-4 py-2 font-semibold text-gray-800 flex justify-between items-center">
-            <span>Edit history</span>
-            <div className="flex items-center space-x-2">
-              {/* Previous Button */}
-              <button
-                disabled={selectedHistoryIndex <= 0}
-                onClick={() =>
-                  setSelectedHistoryIndex((i) => Math.max(i - 1, 0))
-                }
-                className={`text-lg px-1 transition ${
-                  selectedHistoryIndex <= 0
-                    ? "text-gray-300"
-                    : "text-green-700 hover:text-green-900"
-                }`}
-              >
-                ❮
-              </button>
-
-              {/* Next Button */}
-              <button
-                disabled={
-                  selectedHistoryIndex >=
-                  Object.keys(selectedHistory.history).length - 1
-                }
-                onClick={() =>
-                  setSelectedHistoryIndex((i) =>
-                    Math.min(
-                      i + 1,
-                      Object.keys(selectedHistory.history).length - 1
-                    )
-                  )
-                }
-                className={`text-lg px-1 transition ${
-                  selectedHistoryIndex >=
-                  Object.keys(selectedHistory.history).length - 1
-                    ? "text-gray-300"
-                    : "text-gray-500 hover:text-gray-800"
-                }`}
-              >
-                ❯
-              </button>
-            </div>
-          </div>
-          <div className="p-4">
-            {(() => {
-              const entry = selectedHistory.history[selectedHistoryIndex];
-              return (
-                <div className="flex gap-3 items-start">
-                  <div className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white font-semibold">
-                    {entry.edited_by.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-medium text-sm text-gray-800">
-                      {entry.edited_by}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {new Date(entry.created_at).toLocaleString()}
-                    </div>
-                    <div className="mt-1 text-sm text-gray-700">
-                      Previous_value:{" "}
-                      <span className="italic text-red-500">
-                        "{entry.old_value}"
-                      </span>{" "}
-                      <br />
-                      New_Value:
-                      <span className="italic text-green-600">
-                        "{entry.new_value}"
-                      </span>
-                      <br />
-                      has_shape:
-                      <br />
-                      isHighlighted:
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-
-          <div className="border-t text-right px-4 py-2">
-            <button
-              onClick={() => {
-                setSelectedHistory(null);
-                setSelectedHistoryIndex(0);
-              }}
-              className="text-sm text-blue-500 hover:underline"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+    
 
       <main className="mt-4">
         <div className=" rounded-xl shadow" ref={tableRef}>
@@ -2415,11 +2289,18 @@ export default function Table({
                                       ? "bg-blue-100"
                                       : ""
                                   }
-                                   ${
+                                    ${
                                      isCellInAutofillRange(rowIndex, colIndex)
                                        ? "bg-green-200 border-2 border-green-400"
                                        : ""
-                                   }
+                                   } ${
+                                activeHistoryCell?.element ===
+                                document.querySelector(
+                                  `[data-row="${rowIndex}"][data-col="${colIndex}"]`
+                                )
+                                  ? "ring-4 ring-purple-500 bg-purple-50 border-purple-500"
+                                  : ""
+                              }
                                    
                                   `}
                             >
@@ -2565,6 +2446,7 @@ export default function Table({
                                     : "p-3!"
                                 } className="w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top"
 `}
+
                                 rows={1}
                               />
                             </td>
@@ -2574,6 +2456,14 @@ export default function Table({
                     ))}
                 </tbody>
               </table>
+              {activeHistoryCell && (
+                <CellHistoryModal
+                  cellId={activeHistoryCell.cellId}
+                  isVisible={!!activeHistoryCell}
+                  onClose={() => setActiveHistoryCell(null)}
+                  triggerElement={activeHistoryCell.element}
+                />
+              )}
             </div>
           </div>
 

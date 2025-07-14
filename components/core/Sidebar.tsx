@@ -21,7 +21,7 @@ export default function Sidebar({ isSidebarOpen }: any) {
   }, []);
 
   const menuItems = [
-    { icon: <MdDashboard size={22} />, label: "Dashboard", path: "/Dashboard" },
+    { icon: <MdDashboard size={22} />, label: "Dashboard", path: "/dashboard" },
     {
       icon: <FaUserFriends size={22} />,
       label: "User Management",

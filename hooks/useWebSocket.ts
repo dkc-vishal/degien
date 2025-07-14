@@ -3,6 +3,7 @@ import { useEffect, useRef, useCallback } from "react";
 
 type WebSocketCallback = (data: any) => void;
 
+const BASE_WS_URL = process.env.NEXT_PUBLIC_WS_BASE_URL;
 export const useWebSocket = (
   id: string,
   onMessage: WebSocketCallback
@@ -10,7 +11,6 @@ export const useWebSocket = (
   const socket = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-
     const ws = new WebSocket(
       `ws://128.100.10.108:8000/ws/v1/spreadsheet/spreadsheet/${id}/`
     );

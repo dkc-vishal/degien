@@ -34,7 +34,7 @@ export default function Form110() {
             "Sno",
             "Date",
             "Inspection Type",
-            "Issue Name", // You have multiple "FT" columns; you can make them unique if needed.
+            "Issue Name",
             "Comment",
             "Issue Picture",
             "Date",

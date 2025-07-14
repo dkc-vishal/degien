@@ -31,7 +31,7 @@ const LoginForm: React.FC = () => {
       return;
     }
     // You can add auth logic here
-    router.push("/Dashboard");
+    router.push("/dashboard");
   };
 
   return (
