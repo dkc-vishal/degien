@@ -44,8 +44,7 @@ const ChangePasswordPage: React.FC = () => {
 
     if (!form.systemPassword)
       errors.systemPassword = "System generated password is required.";
-    if (!form.newPassword)
-      errors.newPassword = "New password is required.";
+    if (!form.newPassword) errors.newPassword = "New password is required.";
     else if (form.newPassword.length < 4)
       errors.newPassword = "New password must be at least 4 characters.";
     if (!form.confirmNewPassword)
@@ -70,7 +69,7 @@ const ChangePasswordPage: React.FC = () => {
     setFieldErrors(errors);
 
     if (Object.values(errors).some(Boolean)) {
-      toast.error("Please fix the errors.")
+      toast.error("Please fix the errors.");
       return;
     }
 
@@ -92,7 +91,7 @@ const ChangePasswordPage: React.FC = () => {
 
       const data = await res.json();
 
-      console.log('Test data: ', data);
+      console.log("Test data: ", data);
 
       if (!res.ok) {
         if (Array.isArray(data.message)) {
@@ -113,7 +112,7 @@ const ChangePasswordPage: React.FC = () => {
         router.push("/Auth/Login");
       }, 1500);
     } catch (error) {
-      toast.error("An unexpected error occurred")
+      toast.error("An unexpected error occurred");
       console.error("Change password error:", error);
     }
   };
@@ -130,7 +129,10 @@ const ChangePasswordPage: React.FC = () => {
 
         {/* Email Field */}
         <div className="mb-4">
-          <label htmlFor="userEmail" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="userEmail"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Email <span className="text-red-500">*</span>
           </label>
           <input
@@ -140,8 +142,9 @@ const ChangePasswordPage: React.FC = () => {
             value={form.userEmail}
             onChange={handleChange}
             autoComplete="email"
-            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.userEmail ? "border-red-400" : "border-gray-300"
-              }`}
+            className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+              fieldErrors.userEmail ? "border-red-400" : "border-gray-300"
+            }`}
           />
           {fieldErrors.userEmail && (
             <p className="text-xs text-red-500 mt-1">{fieldErrors.userEmail}</p>
@@ -169,23 +172,33 @@ const ChangePasswordPage: React.FC = () => {
             value={form.systemPassword}
             onChange={handleChange}
             autoComplete="current-password"
-            className={`w-full px-3 py-2 pr-10 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.systemPassword ? "border-red-400" : "border-gray-300"
-              }`}
+            className={`w-full px-3 py-2 pr-10 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+              fieldErrors.systemPassword ? "border-red-400" : "border-gray-300"
+            }`}
           />
           <span
             className="absolute right-3 top-8.5 text-gray-500 cursor-pointer"
             onClick={() => setShowSystem(!showSystem)}
           >
-            {showSystem ? <AiFillEyeInvisible className="w-5 h-5" /> : <AiFillEye className="w-5 h-5" />}
+            {showSystem ? (
+              <AiFillEyeInvisible className="w-5 h-5" />
+            ) : (
+              <AiFillEye className="w-5 h-5" />
+            )}
           </span>
           {fieldErrors.systemPassword && (
-            <p className="text-xs text-red-500 mt-1">{fieldErrors.systemPassword}</p>
+            <p className="text-xs text-red-500 mt-1">
+              {fieldErrors.systemPassword}
+            </p>
           )}
         </div>
 
         {/* New Password */}
         <div className="mb-4 relative">
-          <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="newPassword"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             New Password <span className="text-red-500">*</span>
           </label>
           <input
@@ -195,23 +208,33 @@ const ChangePasswordPage: React.FC = () => {
             value={form.newPassword}
             onChange={handleChange}
             autoComplete="new-password"
-            className={`w-full px-3 py-2 pr-10 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.newPassword ? "border-red-400" : "border-gray-300"
-              }`}
+            className={`w-full px-3 py-2 pr-10 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+              fieldErrors.newPassword ? "border-red-400" : "border-gray-300"
+            }`}
           />
           <span
             className="absolute right-3 top-8.5 text-gray-500 cursor-pointer"
             onClick={() => setShowNew(!showNew)}
           >
-            {showNew ? <AiFillEyeInvisible className="w-5 h-5" /> : <AiFillEye className="w-5 h-5" />}
+            {showNew ? (
+              <AiFillEyeInvisible className="w-5 h-5" />
+            ) : (
+              <AiFillEye className="w-5 h-5" />
+            )}
           </span>
           {fieldErrors.newPassword && (
-            <p className="text-xs text-red-500 mt-1">{fieldErrors.newPassword}</p>
+            <p className="text-xs text-red-500 mt-1">
+              {fieldErrors.newPassword}
+            </p>
           )}
         </div>
 
         {/* Confirm Password */}
         <div className="mb-5 relative">
-          <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="confirmNewPassword"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             Confirm New Password <span className="text-red-500">*</span>
           </label>
           <input
@@ -221,17 +244,26 @@ const ChangePasswordPage: React.FC = () => {
             value={form.confirmNewPassword}
             onChange={handleChange}
             autoComplete="new-password"
-            className={`w-full px-3 py-2 pr-10 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${fieldErrors.confirmNewPassword ? "border-red-400" : "border-gray-300"
-              }`}
+            className={`w-full px-3 py-2 pr-10 border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+              fieldErrors.confirmNewPassword
+                ? "border-red-400"
+                : "border-gray-300"
+            }`}
           />
           <span
             className="absolute right-3 top-8.5 text-gray-500 cursor-pointer"
             onClick={() => setShowConfirm(!showConfirm)}
           >
-            {showConfirm ? <AiFillEyeInvisible className="w-5 h-5" /> : <AiFillEye className="w-5 h-5" />}
+            {showConfirm ? (
+              <AiFillEyeInvisible className="w-5 h-5" />
+            ) : (
+              <AiFillEye className="w-5 h-5" />
+            )}
           </span>
           {fieldErrors.confirmNewPassword && (
-            <p className="text-xs text-red-500 mt-1">{fieldErrors.confirmNewPassword}</p>
+            <p className="text-xs text-red-500 mt-1">
+              {fieldErrors.confirmNewPassword}
+            </p>
           )}
           {form.confirmNewPassword && (
             <p className="text-sm mt-1">
