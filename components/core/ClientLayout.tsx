@@ -6,14 +6,33 @@ import Header from "./Header";
 import { QueryProvider } from "../providers/QueryProvider";
 import { ProtectedRoute } from "../Protected_Route";
 import { PUBLIC_ROUTES } from "@/lib/types/roles";
-import { useState, useRef, useEffect } from "react";
+import { useState,  useRef,  useEffect } from "react";
 import { tokenUtils } from "@/lib/api/utils";
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+type Notification = {
+  notification_id: string;
 
+  object_id: string;
+
+  title: string;
+
+  message: string;
+
+  timestamp: string; // assuming ISO format
+
+  type: string; // assuming these are the only valid options
+};
+
+import NotificationModal from "@/app/notifications/NotificationModal";
 export default function ClientLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const [selectedNotification, setSelectedNotification] = useState(null);
+
   // Proactive token refresh check
   useEffect(() => {
     const checkTokenExpiry = async () => {
@@ -37,9 +56,50 @@ export default function ClientLayout({
   }, []);
 
   const socket = useRef<WebSocket | null>(null);
+
   const [notifications_mess, setNotifications_mess] = useState<Notification[]>(
     []
   );
+
+  const handleCloseModal = () => {
+    setNotifications_mess((prevItems) => prevItems.slice(1));
+  };
+
+  const patchData = async (notificationId: string) => {
+    const response = await fetch(
+      `http://128.100.10.108:8000/api/v1.0/notification/read-notification/${notificationId}/`,
+
+      {
+        method: "PATCH",
+
+        headers: {
+          "Content-Type": "application/json",
+
+          Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzU2Mzc4NDQxLCJpYXQiOjE3NTIwNTg0NDEsImp0aSI6IjRhNjU0ZjExMzk4MjRhMjc5ZWIxNGE5NDc3ZTM1NWUxIiwidXNlcl9pZCI6ImRlYjg2MjA5LWZhMTMtNDVlZC04YzMwLWYxODExMGMzOTVjNiJ9.YYLCICofVQr8dtdh2Ut--BwvsAkegqXcceizZ6XN4TU`, // 🔐 Token goes here
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (data.status === 200) {
+      setNotifications_mess((prevItems) => prevItems.slice(1));
+
+      console.log(data);
+    }
+  };
+
+  // const handleAcknowledge = async(notificationId: string) => {
+
+  //   const res = await axios.patch(`http://128.100.10.108:8000/api/v1.0/notification/read-notification/${notificationId}/`)
+
+  //   console.log(res)
+
+  //   // setNotifications_mess((prevItems) => prevItems.filter(item => item.notification_id !== notificationId));
+
+  //   toast.success("Notification acknowledged!");
+
+  // };
 
   useEffect(() => {
     const ws = new WebSocket(
@@ -49,11 +109,15 @@ export default function ClientLayout({
     ws.onopen = () => {
       console.log("WebSocket connected");
     };
+
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+
       console.log("WebSocket message received:", data);
+
       setNotifications_mess((prev) => [...prev, data]);
     };
+
     ws.onerror = (error) => {
       console.error("WebSocket error:", error);
     };
@@ -73,6 +137,7 @@ export default function ClientLayout({
       }
     };
   }, []);
+
   const pathname = usePathname();
   const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -105,6 +170,20 @@ export default function ClientLayout({
               </div>
               {children}
             </div>
+              {notifications_mess.length > 0 && (
+            <div>
+              <NotificationModal
+                key={notifications_mess[0].notification_id}
+                title={notifications_mess[0].title}
+                message={notifications_mess[0].message}
+                timestamp={new Date().toLocaleString()}
+                onConfirm={() => {
+                  patchData(notifications_mess[0].notification_id);
+                }}
+                onCancel={handleCloseModal}
+              />
+            </div>
+          )}
           </div>
         </ProtectedRoute>
       )}

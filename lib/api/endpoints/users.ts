@@ -5,11 +5,12 @@ import {
   UpdateUserRequest,
   UserFilter,
   PaginationResponse,
+  GetAllUsersResponse,
 } from "../types/index";
 
 export const userEndPoints = {
-  getUsers: (filter?: UserFilter): Promise<PaginationResponse<User>> =>
-    apiClient.get("/users/", { params: filter }),
+  getUsers: (filter?: UserFilter): Promise<GetAllUsersResponse> =>
+    apiClient.get("/auth/list-users/active", { params: filter }),
   getUserById: (id: string): Promise<User> => apiClient.get(`/users/${id}/`),
   createUser: (data: CreateUserRequest): Promise<User> =>
     apiClient.post("/users/", data),

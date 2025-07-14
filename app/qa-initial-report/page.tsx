@@ -6,13 +6,10 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { FaPrint } from "react-icons/fa";
 type ColumnMetadata = {
-  data_type: string;
   header: string;
-  is_editable: boolean;
-  is_frozen: boolean;
   is_hidden: boolean;
   is_moveable: boolean;
-  width: string;
+  width: number;
 };
 export default function QaIntialReport() {
   const [columnHeaders, setcolumnHeaders] = useState<ColumnMetadata[]>([]);
@@ -26,35 +23,20 @@ export default function QaIntialReport() {
   };
   async function fetchdata() {
     const res = await axios.get(
-      "http://shivam-mac.local:8001/api/v1.0/spreadsheet/32dbb7af-18b7-493f-ab77-0781e34a7957"
+      "http://gulab.local:8000/api/v1.0/spreadsheet/29a7c9f9-d199-4365-9567-e248693e68c8/"
     );
     const col_metadata: Record<string, ColumnMetadata> = await res.data.data
       .column_metadata;
-    console.log(res);
+      console.log(col_metadata)
     setTableData(res.data.data);
-
     setcolumnHeaders(Object.values(col_metadata));
   }
   useEffect(() => {
     fetchdata();
   }, []);
-  const handlePoNumberChange = (index: number, value: string) => {
-    const newPoNumber = [...poNumber];
-    newPoNumber[index] = value;
-    setPoNumber(newPoNumber);
-  };
 
-  const handleColorChange = (
-    rowIndex: number,
-    colIndex: number,
-    value: string
-  ) => {
-    setColorValues((prev) => {
-      const newColorValues = prev.map((row) => [...row]);
-      newColorValues[rowIndex][colIndex] = value;
-      return newColorValues;
-    });
-  };
+
+
 
   return (
     <>
@@ -287,11 +269,11 @@ export default function QaIntialReport() {
           </div>
         </div>
         <div style={{marginTop:"75px"}} className="print-container">
-               {columnHeaders.length>0 && (
+               {columnHeaders.length > 0 && (
                  <Table
-                   col={12}
-                   row={50}
-                   imagecol={3}
+                   col={14}
+                   row={120}
+                   imagecol={5}
                    tablename="mid-final"
                    columnheaders={columnHeaders}
                    spreadsheet={tableData}

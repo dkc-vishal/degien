@@ -1,9 +1,11 @@
 "use client";
 import ImageEditorModal from "@/components/image-editor/ImageEditorModal";
 import { toast } from "@/hooks/use-toast";
-import { useEffect, useRef } from "react"; // Make sure useRef is imported
+import { useCallback, useEffect, useRef } from "react"; // Make sure useRef is imported
 import React, { useState } from "react";
 import axios from "axios";
+import { useWebSocket } from "@/hooks/useWebSocket";
+import debounce from "lodash/debounce";
 export interface Issue {
   id: string;
   // description: string;
@@ -12,13 +14,7 @@ export interface Issue {
   priority?: string;
   createdDate?: string;
 }
-import {
-  FaBars,
-  FaTachometerAlt,
-  FaClipboardList,
-  FaWrench,
-  FaTools,
-} from "react-icons/fa";
+
 import { API_ENDPOINTS } from "@/lib/api";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
@@ -27,6 +23,7 @@ import { Button } from "../ui/button";
 import { X } from "lucide-react";
 import { get } from "http";
 import { set } from "date-fns";
+import { table } from "console";
 type AllowedDataType = "str" | "number" | "bool" | string;
 
 type CellData = {
@@ -56,9 +53,10 @@ export default function Table({
   imagecol2,
   columnheaders,
   spreadsheet,
+  getapi,
 }: any) {
   const [frozenColIndices, setFrozenColIndices] = useState<number[]>(
-    spreadsheet.grid_dimensions.frozen_columns || []
+    spreadsheet.frozen_columns || []
   );
   const [selectedHistory, setSelectedHistory] = useState<{
     key: string;
@@ -73,7 +71,7 @@ export default function Table({
 
   type TableRow = CellData[];
   const [cellShapes, setCellShapes] = useState<Record<string, string>>({});
-
+  const selectedCellRef = useRef<HTMLElement | null>(null);
   const [draggedRowIndex, setDraggedRowIndex] = useState<number | null>(null);
   const [draggedColIndex, setDraggedColIndex] = useState<number | null>(null);
   const draggedImageSource = useRef<string | null>(null);
@@ -108,7 +106,7 @@ export default function Table({
   const [columnHeaders, setColumnHeaders] = useState(
     Array.from({ length: col }, (_, colIndex) =>
       colIndex === imagecol || colIndex === imagecol2
-        ? "Measurement Picture"
+        ? "Issue Picture"
         : columnheaders[colIndex].header
     )
   );
@@ -123,6 +121,17 @@ export default function Table({
   const [colWidths, setColWidths] = useState(
     Array.from({ length: columnheaders.length }, (_, i) => columnheaders[i]) // Default width of 100 if not specified
   );
+  const updateColWidth = (index: number, newWidth: object) => {
+    setColWidths((prevWidths) => {
+      const updated = [...prevWidths];
+      updated[index] = {
+        ...updated[index],
+        ...newWidth,
+      };
+      return updated;
+    });
+  };
+
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
   const [copiedImage, setCopiedImage] = useState<string | null>(null);
@@ -185,10 +194,6 @@ export default function Table({
       updated[resizingColIndex.current].width = newWidth;
       setColWidths(updated);
     }
-    localStorage.setItem(
-      `table_colWidths_${tablename}`,
-      JSON.stringify(updated)
-    );
   };
   const [selectedHistoryIndex, setSelectedHistoryIndex] = useState(0);
 
@@ -299,13 +304,13 @@ export default function Table({
       return newData; // update the whole table
     });
   };
-  useEffect(() => {
-    const sheeetdata = spreadsheet.cells;
-    for (const [key, cell] of Object.entries(sheeetdata)) {
-      const typedCell = cell as CellData;
-      setCellValue(typedCell);
-    }
-  }, []);
+  // useEffect(() => {
+  //   const sheeetdata = spreadsheet.cells;
+  //   for (const [key, cell] of Object.entries(sheeetdata)) {
+  //     const typedCell = cell as CellData;
+  //     setCellValue(typedCell);
+  //   }
+  // }, []);
   const [contextMenu, setContextMenu] = useState<{
     cellid: string | null;
     visible: boolean;
@@ -421,6 +426,93 @@ export default function Table({
 
     pushToHistory(tableData);
     setTableData(updated);
+  };
+  const handleMessage = useCallback(
+    debounce((data: any) => {
+      if (typeof data !== "object") {
+        console.warn(
+          "Invalid WebSocket data:",
+          !data || typeof data !== "object" || !data.cells
+        );
+        return;
+      }
+
+      console.log("Debounced data:", data);
+      for (const [key, column] of Object.entries(data.column_metadata)) {
+        updateColWidth(Number(key), column);
+      }
+      console.log(colWidths);
+      for (const [key, cell] of Object.entries(
+        data.cells || data.updated_cells
+      )) {
+        const typedCell = cell as CellData;
+        setCellValue(typedCell);
+      }
+    }, 500), // 300ms debounce delay
+    []
+  );
+  const sendData = useWebSocket(getapi, handleMessage);
+  const saveoncellchangeupdate = (update: TableRow[], colWidths1: any) => {
+    console.log(colWidths);
+    const cellMap: Record<string, CellData> = {};
+
+    update.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        const key = `${rowIndex}-${colIndex}`;
+        cellMap[key] = cell;
+      });
+    });
+    const columnMetadata: Record<string, any> = {};
+
+    colWidths1.forEach((col: any, index: number) => {
+      columnMetadata[index] = {
+        width: col.width, // default width, adjust as needed
+        header: col.header,
+        is_hidden: false,
+        is_moveable: false,
+      };
+    });
+    sendData({
+      spreadsheet_id: getapi,
+      frozen_columns: frozenColIndices,
+      column_metadata: columnMetadata,
+      cells: cellMap,
+      spreadsheet_metadata: {
+        last_edit_time: "2025-07-10T06:41:22.646Z",
+      },
+    });
+  };
+  const saveoncellchange = () => {
+    const cellMap: Record<string, CellData> = {};
+
+    tableData.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        const key = `${rowIndex}-${colIndex}`;
+        cellMap[key] = cell;
+      });
+    });
+    const columnMetadata: Record<string, any> = {};
+
+    columnheaders.forEach((col: any, index: number) => {
+      columnMetadata[index] = {
+        width: 200, // default width, adjust as needed
+        header: col.header,
+        data_type: col.data_type,
+        is_editable: col.is_editable,
+        is_frozen: index < 2, // freeze first two columns for example
+        is_hidden: false,
+        is_moveable: false,
+      };
+    });
+    sendData({
+      spreadsheet_id: getapi,
+      frozen_columns: frozenColIndices,
+      column_metadata: columnMetadata,
+      cells: cellMap,
+      spreadsheet_metadata: {
+        last_edit_time: "2025-07-10T06:41:22.646Z",
+      },
+    });
   };
   useEffect(() => {
     localStorage.setItem(`table_data_${tablename}`, JSON.stringify(tableData));
@@ -615,7 +707,8 @@ export default function Table({
     });
     setTableData(newData);
   };
-  const handleImagePasteOrDrop = (
+
+  const handleImagePasteOrDrop = async (
     files: File[],
     rowIndex: number,
     colIndex: number
@@ -624,27 +717,36 @@ export default function Table({
       file.type.startsWith("image/")
     );
     if (imageFiles.length === 0) return;
+    const uploadPromises = imageFiles.map(async (file) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      try {
+        const response = await fetch(API_ENDPOINTS.imageUpload.url, {
+          method: API_ENDPOINTS.imageUpload.method,
+          body: formData,
+        });
+        if (!response.ok) throw new Error("Upload failed.");
+        const data = await response.json();
+        console.log("image url: ", data);
+        return data.data?.image || "";
+      } catch (error) {
+        console.error("Image upload error: ", error);
+        return "";
+      }
+    });
 
-    const imageUrls = imageFiles.map((file) => URL.createObjectURL(file));
-    console.log(imageUrls);
+    const backendUrls = (await Promise.all(uploadPromises)).filter(Boolean);
     setTableData((prev) => {
       const updated = [...prev];
-      const currentCell = updated[rowIndex][colIndex].value;
+      const current = updated[rowIndex][colIndex].value;
+      const existingUrls = Array.isArray(current) ? current : [];
 
-      // Make sure the value is an array of strings (image URLs)
-      const existingUrls: string[] = Array.isArray(currentCell)
-        ? currentCell.map((v) => String(v))
-        : [];
-
-      const newUniqueUrls = imageUrls.filter(
-        (url) => !existingUrls.includes(url)
-      );
-
-      updated[rowIndex][colIndex].value = [...existingUrls, ...newUniqueUrls];
+      updated[rowIndex][colIndex].value = [...existingUrls, ...backendUrls];
 
       return updated;
     });
   };
+
   const startAutoScroll = () => {
     if (!scrollContainerRef.current) return;
 
@@ -681,13 +783,13 @@ export default function Table({
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, []);
-  useEffect(() => {
-    const savedColWidths = localStorage.getItem(`table_colWidths_${tablename}`);
-    // console.log(savedColWidths);
-    if (savedColWidths) {
-      setColWidths(JSON.parse(savedColWidths));
-    }
-  }, []);
+  // useEffect(() => {
+  //   const savedColWidths = localStorage.getItem(`table_colWidths_${tablename}`);
+  //   // console.log(savedColWidths);
+  //   if (savedColWidths) {
+  //     setColWidths(JSON.parse(savedColWidths));
+  //   }
+  // }, []);
 
   useEffect(() => {
     setCellColors((prevColors) =>
@@ -723,12 +825,7 @@ export default function Table({
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, []);
-  useEffect(() => {
-    const savedWidths = localStorage.getItem(`table_colWidths_${tablename}`);
-    if (savedWidths) {
-      setColWidths(JSON.parse(savedWidths));
-    }
-  }, []);
+
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
@@ -742,14 +839,10 @@ export default function Table({
     if (!selectedRange) return;
 
     const { start, end } = selectedRange;
-
     const [startRow, startCol] = start;
-
     const [endRow, endCol] = end;
 
     const newData = [...tableData];
-
-    console.log(newData);
 
     for (
       let row = Math.min(startRow, endRow);
@@ -761,21 +854,30 @@ export default function Table({
         col <= Math.max(startCol, endCol);
         col++
       ) {
-        newData[row][col] = {
-          cell_id: self.crypto?.randomUUID?.() || generateUUID(),
-          row: row,
-          column: col,
-          value: "",
-          data_type: "str",
-          is_editable: true,
-          is_header: false,
-          has_shape: false,
-        }; // Clear cell content
+        const currentCell = newData[row][col];
+
+        if (currentCell) {
+          newData[row][col] = {
+            ...currentCell,
+            value: "", // ✅ Clear only the value
+          };
+        }
       }
     }
-
     setTableData(newData);
   };
+
+  // ...existing code...
+  const debouncedSave = useCallback(
+    debounce((data: TableRow[], colWidths: any) => {
+      saveoncellchangeupdate(data, colWidths);
+    }, 1000),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSave(tableData, colWidths);
+  }, [tableData, colWidths, debouncedSave]);
 
   const handleMouseMoveForScroll = (e: {
     clientX: number;
@@ -895,7 +997,7 @@ export default function Table({
         const isVertical = Math.abs(deltaRow) >= Math.abs(deltaCol);
         const fillDirection = isVertical ? "vertical" : "horizontal";
 
-        const sourceValue = updated[startRow][startCol];
+        const sourceValue = updated[startRow][startCol].value;
 
         {
           // Not numeric → fill with same value
@@ -904,14 +1006,14 @@ export default function Table({
             const max = Math.max(startRow, endRow);
 
             for (let r = min; r <= max; r++) {
-              updated[r][startCol] = sourceValue;
+              updated[r][startCol].value = sourceValue;
             }
           } else {
             const min = Math.min(startCol, endCol);
             const max = Math.max(startCol, endCol);
 
             for (let c = min; c <= max; c++) {
-              updated[startRow][c] = sourceValue;
+              updated[startRow][c].value = sourceValue;
             }
           }
         }
@@ -956,6 +1058,37 @@ export default function Table({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [imageSeleted, copiedImage]);
+  useEffect(() => {
+    const updatePosition = () => {
+      if (!selectedHistory) return;
+
+      const cellEl = selectedCellRef.current;
+      console.log(cellEl);
+      if (!cellEl) return;
+
+      const rect = cellEl.getBoundingClientRect();
+      setSelectedHistory((prev) =>
+        prev
+          ? {
+              ...prev,
+              x: rect.left + window.scrollX,
+              y: rect.top + window.scrollY,
+            }
+          : null
+      );
+    };
+
+    updatePosition();
+
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
+  }, [selectedHistory]);
+
   useKeyboardShortcuts({
     tableData,
     setTableData,
@@ -971,6 +1104,7 @@ export default function Table({
     redoStack,
     setRedoStack,
     lastSnapshotRef,
+    saveoncellchange,
   });
   const getCellHistory = async (
     cellid: string,
@@ -1003,27 +1137,39 @@ export default function Table({
     });
     const columnMetadata: Record<string, any> = {};
 
-  columnheaders.forEach((col:any, index:number) => {
-    columnMetadata[index] = {
-      width: 200, // default width, adjust as needed
-      header: col.header,
-      data_type: col.data_type,
-      is_editable: col.is_editable,
-      is_frozen: index < 2, // freeze first two columns for example
-      is_hidden: false,
-      is_moveable: false,
-    };
-  });
+    columnheaders.forEach((col: any, index: number) => {
+      columnMetadata[index] = {
+        width: 200, // default width, adjust as needed
+        header: col.header,
+        data_type: col.data_type,
+        is_editable: col.is_editable,
+        is_frozen: index < 2, // freeze first two columns for example
+        is_hidden: false,
+        is_moveable: false,
+      };
+    });
 
-    console.log({"spreadsheet_id":"32dbb7af-18b7-493f-ab77-0781e34a7957","frozen_column":frozenColIndices,"column_metadata":columnMetadata,"cells": cellMap});
-    const res = await axios.post("http://shivam-mac.local:8001/api/v1.0/spreadsheet/update/32dbb7af-18b7-493f-ab77-0781e34a7957/", {
-      spreadsheet_id: "32dbb7af-18b7-493f-ab77-0781e34a7957",
+    console.log({
+      spreadsheet_id: "822d02cf-e5eb-4ac8-81c1-13e36406c1e6",
       frozen_column: frozenColIndices,
       column_metadata: columnMetadata,
-      cells: cellMap
+      cells: cellMap,
     });
-    console.log(res)
+    const res = await axios.post(
+      "http://gulab.local:8000/api/v1.0/spreadsheet/update/b20c7d94-e11e-46f9-96d3-44aad3d2bb31/",
+      {
+        spreadsheet_id: "b20c7d94-e11e-46f9-96d3-44aad3d2bb31",
+        frozen_columns: frozenColIndices,
+        column_metadata: columnMetadata,
+        cells: cellMap,
+        spreadsheet_metadata: {
+          last_edit_time: "2025-07-10T06:41:22.646Z",
+        },
+      }
+    );
+    console.log(res);
   };
+
   return (
     <>
       {contextMenu1?.visible && (
@@ -1219,8 +1365,8 @@ export default function Table({
         <div
           className="absolute bg-white border border-gray-300 rounded-lg shadow-lg w-80 z-50"
           style={{
-            top: selectedHistory.row + selectedHistory.y,
-            left: selectedHistory.col + selectedHistory.x,
+            top: selectedHistory.y,
+            left: selectedHistory.x,
           }}
         >
           <div className="border-b px-4 py-2 font-semibold text-gray-800 flex justify-between items-center">
@@ -1279,7 +1425,7 @@ export default function Table({
                       {entry.edited_by}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {entry.created_at}
+                      {new Date(entry.created_at).toLocaleString()}
                     </div>
                     <div className="mt-1 text-sm text-gray-700">
                       Previous_value:{" "}
@@ -1624,8 +1770,7 @@ export default function Table({
                             >
                               {rowIndex + 1}
                             </td>
-                          ) : columnHeaders[colIndex] ===
-                            "Measurement Picture" ? (
+                          ) : columnHeaders[colIndex] === "Issue Picture" ? (
                             rowIndex === -1 ? (
                               <td>
                                 <textarea
@@ -1891,7 +2036,11 @@ export default function Table({
                                     );
 
                                     if (imageFiles.length > 0) {
-                                      console.log("hello");
+                                      console.log(
+                                        rowIndex,
+                                        colIndex,
+                                        imageFiles
+                                      );
                                       handleImagePasteOrDrop(
                                         imageFiles,
                                         rowIndex,
@@ -2058,9 +2207,9 @@ export default function Table({
                                     ★
                                   </div>
                                 )}
-                                {Array.isArray(cell) ? (
+                                {Array.isArray(cell.value) ? (
                                   <div className="flex flex-wrap  justify-center">
-                                    {(cell as string[]).map((src, i) => (
+                                    {cell.value.map((src, i) => (
                                       <div
                                         key={i}
                                         className="relative group"
@@ -2155,12 +2304,12 @@ export default function Table({
 
                                                 const isSingleImage =
                                                   cell.data_type ===
-                                                    "single_image" ||
+                                                    "multiple_image" ||
                                                   (Array.isArray(
                                                     cell.data_type
                                                   ) &&
                                                     cell.data_type.includes(
-                                                      "single_image"
+                                                      "multiple_image"
                                                     ));
 
                                                 if (
@@ -2301,12 +2450,24 @@ export default function Table({
                                 }}
                                 value={cell.value}
                                 data-cell={`${rowIndex}-${colIndex}`}
-                                ref={
-                                  editingCell?.[0] === rowIndex &&
-                                  editingCell?.[1] === colIndex
-                                    ? inputRef
-                                    : null
-                                }
+                                ref={(el) => {
+                                  // Set to inputRef if this is the editing cell
+                                  if (
+                                    editingCell?.[0] === rowIndex &&
+                                    editingCell?.[1] === colIndex
+                                  ) {
+                                    inputRef.current = el;
+                                  }
+
+                                  // Always store the cell ref by cell_id
+                                  if (
+                                    editingCell?.[0] === rowIndex &&
+                                    editingCell?.[1] === colIndex &&
+                                    el
+                                  ) {
+                                    selectedCellRef.current = el;
+                                  }
+                                }}
                                 onChange={(e) => {
                                   handleCellChange(
                                     rowIndex,
@@ -2417,7 +2578,7 @@ export default function Table({
           </div>
 
           {/* Buttons */}
-                    <button
+          <button
             onClick={handleSave}
             className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition duration-200"
           >

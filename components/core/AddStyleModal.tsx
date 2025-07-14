@@ -1,21 +1,35 @@
 "use client";
-import React, { useState } from "react";
+import axios from "axios";
+import React, { use, useEffect, useState } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { toast } from "sonner";
-
+import { SamplingStyleEndPoints } from "@/lib/api/endpoints/sampling";
+// import { User } from "lucide-react";
+import { userEndPoints } from "@/lib/api/endpoints";
+import { GetAllUsersResponse,User } from "@/lib/api/types/auth";
 interface AddStyleModalProps {
   onClose: () => void;
   onAddStyle: (newStyle: { styleName: string; image: string }) => void;
 }
 
 
-const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose, onAddStyle }) => {
-  const [form, setForm] = useState({
-    styleName: ""
-  });
+const AddStyleModal: React.FC<AddStyleModalProps> = ({
+  onClose,
+  onAddStyle,
+}) => {
+  const [Samplingusers, setSamplingusers] = useState<User[]>([]);
 
+  const [formData, setFormData] = useState({
+    styleName: "",
+    jcNumber: "",
+    styleNumber: "",
+    merchantName: "",
+  });
   const [fieldErrors, setFieldErrors] = useState({
-    styleName: ""
+    styleName: "",
+    jcNumber: "",
+    styleNumber: "",
+    merchantName: "",
   });
 
   const [error, setError] = useState("");
@@ -23,66 +37,104 @@ const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose, onAddStyle }) =>
   const validate = () => {
     const errors = {
       styleName: "",
+      jcNumber: "",
+      styleNumber: "",
+      merchantName: "",
     };
-    if (!form.styleName.trim()) {
+
+    if (!formData.styleName.trim()) {
       errors.styleName = "Style Name is required.";
     }
+
+    if (!formData.jcNumber.trim()) {
+      errors.jcNumber = "JC Number is required.";
+    }
+
+    if (!formData.styleNumber.trim()) {
+      errors.styleNumber = "Style Number is required.";
+    }
+
+    if (!formData.merchantName.trim()) {
+      errors.merchantName = "Sampling Merchant is required.";
+    }
+
     return errors;
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    if (fieldErrors.hasOwnProperty(e.target.name)) {
-      setFieldErrors({ ...fieldErrors, [e.target.name]: "" });
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    console.log(e.target.name, e.target.value);
+    const { name, value } = e.target;
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    // Clear individual field error if any
+    if (fieldErrors.hasOwnProperty(name)) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        [name]: "",
+      }));
     }
-    setError("");
+
+    setError(""); // Clear global error
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors = validate();
-    setFieldErrors(errors);
 
-    if (Object.values(errors).some(Boolean)) {
-      toast.error("Please fix the errors in the form.");
+    const hasErrors = Object.values(errors).some((val) => val !== "");
+
+    if (hasErrors) {
+      setFieldErrors(errors);
+      setError("Please fill in all required fields.");
       return;
     }
-
-    onAddStyle({
-      styleName: form.styleName,
-      image: "",
+    const res = await SamplingStyleEndPoints.createSamplingStyle({
+      name: formData.styleName,
+      jc_number: +formData.jcNumber,
+      style_number: +formData.styleNumber,
+      merchant_name: formData.merchantName,
     });
+    onClose();
+    setFormData({
+      styleName: "",
+      jcNumber: "",
+      styleNumber: "",
+      merchantName: "",
+    });
+    setFieldErrors({
+      styleName: "",
+      jcNumber: "",
+      styleNumber: "",
+      merchantName: "",
+    });
+    setError("");
 
-    toast.success("Style added successfully!");
-
-    setForm({ styleName: "" });
-
-    setTimeout(() => {
-      onClose();
-    }, 1000);
+    // Proceed with form submission
+    console.log("Submitting form", formData);
   };
 
-
-  const renderField = (label: string, name: keyof typeof form, type: string = "text") => (
-    <div className="flex flex-col">
-      <label className="text-sm font-medium text-gray-700 mb-1" htmlFor={name}>
-        {label} <span className="text-red-500">{fieldErrors[name] && "*"}</span>
-      </label>
-      <input
-        type={type}
-        id={name}
-        name={name}
-        value={form[name]}
-        onChange={handleChange}
-        className={`w-full px-4 py-2 border rounded-md text-sm shadow-sm focus:outline-none focus:ring-2 ${fieldErrors[name]
-          ? "border-red-500 focus:ring-red-300"
-          : "border-gray-300 focus:ring-blue-400"
-          }`}
-      />
-      {fieldErrors[name] && <span className="text-xs text-red-500 mt-1">{fieldErrors[name]}</span>}
-    </div>
-  );
+  const GetUser = async () => {
+    try {
+      const res: GetAllUsersResponse = await userEndPoints.getUsers();
+      if (res.status !== 200) {
+        throw new Error("Failed to fetch users");
+      }
+      if(res.status === 200) {
+        setSamplingusers(res.data.filter((user: User) => user.department === "sampling"));
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+  useEffect(() => {
+    GetUser();
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -97,13 +149,99 @@ const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose, onAddStyle }) =>
 
         {/* Form Content */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          <h2 className="text-2xl font-bold text-center text-black">Add New Style</h2>
+          <h2 className="text-2xl font-bold text-center text-black">
+            Add New Style
+          </h2>
 
-          {error && <div className="text-red-600 text-sm text-center font-medium">{error}</div>}
+          {error && (
+            <div className="text-red-600 text-sm text-center font-medium">
+              {error}
+            </div>
+          )}
 
           <div className="rounded-lg p-4 space-y-5">
             <div className="grid grid-cols-1 gap-6">
-              {renderField("Style Name", "styleName")}
+              {/* Style Name */}
+              <div className="flex flex-col">
+                <label
+                  htmlFor="styleName"
+                  className="mb-1 text-sm font-medium text-gray-700"
+                >
+                  Style Name
+                </label>
+                <input
+                  type="text"
+                  id="styleName"
+                  name="styleName"
+                  value={formData.styleName}
+                  onChange={handleChange}
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              {/* JC Number */}
+              <div className="flex flex-col">
+                <label
+                  htmlFor="jcNumber"
+                  className="mb-1 text-sm font-medium text-gray-700"
+                >
+                  JC Number
+                </label>
+                <input
+                  type="text"
+                  id="jcNumber"
+                  name="jcNumber"
+                  value={formData.jcNumber}
+                  onChange={handleChange}
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              {/* Style Number */}
+              <div className="flex flex-col">
+                <label
+                  htmlFor="styleNumber"
+                  className="mb-1 text-sm font-medium text-gray-700"
+                >
+                  Style Number
+                </label>
+                <input
+                  type="text"
+                  id="styleNumber"
+                  name="styleNumber"
+                  value={formData.styleNumber}
+                  onChange={handleChange}
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              {/* Sampling Merchant Name Dropdown */}
+              <div className="flex flex-col">
+                <label
+                  htmlFor="merchantName"
+                  className="mb-1 text-sm font-medium text-gray-700"
+                >
+                  Sampling Merchant Name
+                </label>
+                <select
+                  id="merchantName"
+                  name="merchantName"
+                  value={formData.merchantName}
+                  onChange={handleChange}
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Select a Merchant</option>
+                  {Samplingusers.map((user: User) => (
+                    <option key={user.user_id} value={user.name}>
+                      {user.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -116,7 +254,6 @@ const AddStyleModal: React.FC<AddStyleModalProps> = ({ onClose, onAddStyle }) =>
         </form>
       </div>
     </div>
-
   );
 };
 

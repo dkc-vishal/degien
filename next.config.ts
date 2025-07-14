@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  reactStrictMode: true,
-  output: "export",
+  reactStrictMode: false,
+  // output: "export",
   /* config options here */
   webpack: (config, { isServer }) => {
     if (!isServer) {
