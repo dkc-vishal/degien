@@ -187,7 +187,7 @@ export default function Table({
   const generateEmptyRow = (rowIndex: number): TableRow => {
     return Array.from({ length: col }, (_, colIndex) => {
       return {
-        cell_id: self.crypto?.randomUUID?.() || generateUUID(),
+        cell_id: "",
 
         row: rowIndex,
         column: colIndex,
@@ -412,7 +412,7 @@ export default function Table({
         const typedCell = cell as CellData;
         setCellValue(typedCell);
       }
-    }, 500), // 300ms debounce delay
+    }, 1000), // 300ms debounce delay
     []
   );
   const sendData = useWebSocket(getapi, handleMessage);
