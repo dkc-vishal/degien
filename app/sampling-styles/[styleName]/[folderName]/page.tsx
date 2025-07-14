@@ -4,6 +4,8 @@ import React from "react";
 import { useParams } from "next/navigation";
 import FileCard from "@/components/core/FileCard"; 
 import PageHeader from "@/components/core/PageHeader";
+import Link from "next/link";
+
 
 const folders = [
   { title: "Sampling", files: ["Sampling Watchpoint"] },
@@ -17,8 +19,9 @@ const folders = [
 
 const FileViewPage: React.FC = () => {
   const { styleName, folderName } = useParams();
-
-  const displayStyle = (styleName as string)
+  const id = (styleName as string).split("%40");
+  console.log(id[1])
+  const displayStyle = (id[0] as string)
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
@@ -38,7 +41,9 @@ const FileViewPage: React.FC = () => {
       {matchingFolder?.files.length ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-6">
           {matchingFolder.files.map((file, idx) => (
-            <FileCard key={idx} name={file} />
+            <Link href={`/SamplingWatchPoint/${id[1]}`} key={idx}>
+              <FileCard name={file}/>
+            </Link>
           ))}
         </div>
       ) : (

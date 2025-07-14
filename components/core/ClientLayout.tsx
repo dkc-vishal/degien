@@ -5,7 +5,7 @@ import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { QueryProvider } from "../providers/QueryProvider";
 import { useState, useRef, useEffect } from "react";
-
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 type Notification = {
   notification_id: string;
 
@@ -125,6 +125,8 @@ export default function ClientLayout({
 
   return (
     <QueryProvider>
+      
+            
       {isAuthRoute ? (
         <div className="min-h-screen bg-gray-100">{children}</div>
       ) : (

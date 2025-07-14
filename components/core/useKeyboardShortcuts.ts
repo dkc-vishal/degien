@@ -158,7 +158,7 @@ export function useKeyboardShortcuts({
           setSelectedCell([newRow, newCol]);
           setSelectionAnchor([newRow, newCol]);
           setSelectedRange({ start: [newRow, newCol], end: [newRow, newCol] });
-          saveoncellchange()
+          // saveoncellchange()
         }
       }
 

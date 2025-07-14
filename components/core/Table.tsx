@@ -23,6 +23,7 @@ import { Button } from "../ui/button";
 import { X } from "lucide-react";
 import { get } from "http";
 import { set } from "date-fns";
+import { table } from "console";
 type AllowedDataType = "str" | "number" | "bool" | string;
 
 type CellData = {
@@ -52,6 +53,7 @@ export default function Table({
   imagecol2,
   columnheaders,
   spreadsheet,
+  getapi,
 }: any) {
   const [frozenColIndices, setFrozenColIndices] = useState<number[]>(
     spreadsheet.frozen_columns || []
@@ -104,7 +106,7 @@ export default function Table({
   const [columnHeaders, setColumnHeaders] = useState(
     Array.from({ length: col }, (_, colIndex) =>
       colIndex === imagecol || colIndex === imagecol2
-        ? "Tag"
+        ? "Issue Picture"
         : columnheaders[colIndex].header
     )
   );
@@ -116,9 +118,20 @@ export default function Table({
   //     setTableData(JSON.parse(shareddata));
   //   }
   // }, []);
-  const [colWidths, setColWidths] = useState(
+  const [colWidths, setColWidths] = useState<>(
     Array.from({ length: columnheaders.length }, (_, i) => columnheaders[i]) // Default width of 100 if not specified
   );
+  const updateColWidth = (index: number, newWidth: object) => {
+    setColWidths((prevWidths) => {
+      const updated = [...prevWidths];
+      updated[index] = {
+        ...updated[index],
+        ...newWidth,
+      };
+      return updated;
+    });
+  };
+
   const isResizing = useRef(false);
   const resizingColIndex = useRef<number | null>(null);
   const [copiedImage, setCopiedImage] = useState<string | null>(null);
@@ -181,10 +194,6 @@ export default function Table({
       updated[resizingColIndex.current].width = newWidth;
       setColWidths(updated);
     }
-    localStorage.setItem(
-      `table_colWidths_${tablename}`,
-      JSON.stringify(updated)
-    );
   };
   const [selectedHistoryIndex, setSelectedHistoryIndex] = useState(0);
 
@@ -429,7 +438,10 @@ export default function Table({
       }
 
       console.log("Debounced data:", data);
-
+      for (const [key, column] of Object.entries(data.column_metadata)) {
+        updateColWidth(Number(key), column);
+      }
+      console.log(colWidths);
       for (const [key, cell] of Object.entries(
         data.cells || data.updated_cells
       )) {
@@ -439,9 +451,37 @@ export default function Table({
     }, 500), // 300ms debounce delay
     []
   );
+  const sendData = useWebSocket(getapi, handleMessage);
+  const saveoncellchangeupdate = (update: TableRow[], colWidths1: any) => {
+    console.log(colWidths);
+    const cellMap: Record<string, CellData> = {};
 
-  const { sendData } = useWebSocket(handleMessage);
+    update.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        const key = `${rowIndex}-${colIndex}`;
+        cellMap[key] = cell;
+      });
+    });
+    const columnMetadata: Record<string, any> = {};
 
+    colWidths1.forEach((col: any, index: number) => {
+      columnMetadata[index] = {
+        width: col.width, // default width, adjust as needed
+        header: col.header,
+        is_hidden: false,
+        is_moveable: false,
+      };
+    });
+    sendData({
+      spreadsheet_id: getapi,
+      frozen_columns: frozenColIndices,
+      column_metadata: columnMetadata,
+      cells: cellMap,
+      spreadsheet_metadata: {
+        last_edit_time: "2025-07-10T06:41:22.646Z",
+      },
+    });
+  };
   const saveoncellchange = () => {
     const cellMap: Record<string, CellData> = {};
 
@@ -465,7 +505,7 @@ export default function Table({
       };
     });
     sendData({
-      spreadsheet_id: "822d02cf-e5eb-4ac8-81c1-13e36406c1e6",
+      spreadsheet_id: getapi,
       frozen_columns: frozenColIndices,
       column_metadata: columnMetadata,
       cells: cellMap,
@@ -667,7 +707,8 @@ export default function Table({
     });
     setTableData(newData);
   };
-  const handleImagePasteOrDrop = (
+
+  const handleImagePasteOrDrop = async (
     files: File[],
     rowIndex: number,
     colIndex: number
@@ -676,27 +717,36 @@ export default function Table({
       file.type.startsWith("image/")
     );
     if (imageFiles.length === 0) return;
+    const uploadPromises = imageFiles.map(async (file) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      try {
+        const response = await fetch(API_ENDPOINTS.imageUpload.url, {
+          method: API_ENDPOINTS.imageUpload.method,
+          body: formData,
+        });
+        if (!response.ok) throw new Error("Upload failed.");
+        const data = await response.json();
+        console.log("image url: ", data);
+        return data.data?.image || "";
+      } catch (error) {
+        console.error("Image upload error: ", error);
+        return "";
+      }
+    });
 
-    const imageUrls = imageFiles.map((file) => URL.createObjectURL(file));
-    console.log(imageUrls);
+    const backendUrls = (await Promise.all(uploadPromises)).filter(Boolean);
     setTableData((prev) => {
       const updated = [...prev];
-      const currentCell = updated[rowIndex][colIndex].value;
-      console.log(currentCell,"vishal")
-      // Make sure the value is an array of strings (image URLs)
-      const existingUrls: string[] = Array.isArray(currentCell)
-        ? currentCell.map((v) => String(v))
-        : [];
+      const current = updated[rowIndex][colIndex].value;
+      const existingUrls = Array.isArray(current) ? current : [];
 
-      const newUniqueUrls = imageUrls.filter(
-        (url) => !existingUrls.includes(url)
-      );
-
-      updated[rowIndex][colIndex].value = [...existingUrls, ...newUniqueUrls];
+      updated[rowIndex][colIndex].value = [...existingUrls, ...backendUrls];
 
       return updated;
     });
   };
+
   const startAutoScroll = () => {
     if (!scrollContainerRef.current) return;
 
@@ -733,13 +783,13 @@ export default function Table({
     window.addEventListener("click", handleClick);
     return () => window.removeEventListener("click", handleClick);
   }, []);
-  useEffect(() => {
-    const savedColWidths = localStorage.getItem(`table_colWidths_${tablename}`);
-    // console.log(savedColWidths);
-    if (savedColWidths) {
-      setColWidths(JSON.parse(savedColWidths));
-    }
-  }, []);
+  // useEffect(() => {
+  //   const savedColWidths = localStorage.getItem(`table_colWidths_${tablename}`);
+  //   // console.log(savedColWidths);
+  //   if (savedColWidths) {
+  //     setColWidths(JSON.parse(savedColWidths));
+  //   }
+  // }, []);
 
   useEffect(() => {
     setCellColors((prevColors) =>
@@ -775,12 +825,7 @@ export default function Table({
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
   }, []);
-  useEffect(() => {
-    const savedWidths = localStorage.getItem(`table_colWidths_${tablename}`);
-    if (savedWidths) {
-      setColWidths(JSON.parse(savedWidths));
-    }
-  }, []);
+
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.focus();
@@ -788,46 +833,6 @@ export default function Table({
     }
   }, [editingCell]);
 
-  // const clearSelectedCells = () => {
-  //   pushToHistory(tableData); // ✅ Store before editing
-
-  //   if (!selectedRange) return;
-
-  //   const { start, end } = selectedRange;
-
-  //   const [startRow, startCol] = start;
-
-  //   const [endRow, endCol] = end;
-
-  //   const newData = [...tableData];
-
-  //   console.log(newData);
-
-  //   for (
-  //     let row = Math.min(startRow, endRow);
-  //     row <= Math.max(startRow, endRow);
-  //     row++
-  //   ) {
-  //     for (
-  //       let col = Math.min(startCol, endCol);
-  //       col <= Math.max(startCol, endCol);
-  //       col++
-  //     ) {
-  //       newData[row][col] = {
-  //         cell_id: self.crypto?.randomUUID?.() || generateUUID(),
-  //         row: row,
-  //         column: col,
-  //         value: "",
-  //         data_type: "str",
-  //         is_editable: true,
-  //         is_header: false,
-  //         has_shape: false,
-  //       }; // Clear cell content
-  //     }
-  //   }
-
-  //   setTableData(newData);
-  // };
   const clearSelectedCells = () => {
     pushToHistory(tableData); // ✅ Store before editing
 
@@ -859,9 +864,20 @@ export default function Table({
         }
       }
     }
-
     setTableData(newData);
   };
+
+  // ...existing code...
+  const debouncedSave = useCallback(
+    debounce((data: TableRow[], colWidths: any) => {
+      saveoncellchangeupdate(data, colWidths);
+    }, 1000),
+    []
+  );
+
+  useEffect(() => {
+    debouncedSave(tableData, colWidths);
+  }, [tableData, colWidths, debouncedSave]);
 
   const handleMouseMoveForScroll = (e: {
     clientX: number;
@@ -981,7 +997,7 @@ export default function Table({
         const isVertical = Math.abs(deltaRow) >= Math.abs(deltaCol);
         const fillDirection = isVertical ? "vertical" : "horizontal";
 
-        const sourceValue = updated[startRow][startCol];
+        const sourceValue = updated[startRow][startCol].value;
 
         {
           // Not numeric → fill with same value
@@ -990,14 +1006,14 @@ export default function Table({
             const max = Math.max(startRow, endRow);
 
             for (let r = min; r <= max; r++) {
-              updated[r][startCol] = sourceValue;
+              updated[r][startCol].value = sourceValue;
             }
           } else {
             const min = Math.min(startCol, endCol);
             const max = Math.max(startCol, endCol);
 
             for (let c = min; c <= max; c++) {
-              updated[startRow][c] = sourceValue;
+              updated[startRow][c].value = sourceValue;
             }
           }
         }
@@ -1140,9 +1156,9 @@ export default function Table({
       cells: cellMap,
     });
     const res = await axios.post(
-      "http://shivam-mac.local:8001/api/v1.0/spreadsheet/update/822d02cf-e5eb-4ac8-81c1-13e36406c1e6/",
+      "http://gulab.local:8000/api/v1.0/spreadsheet/update/b20c7d94-e11e-46f9-96d3-44aad3d2bb31/",
       {
-        spreadsheet_id: "822d02cf-e5eb-4ac8-81c1-13e36406c1e6",
+        spreadsheet_id: "b20c7d94-e11e-46f9-96d3-44aad3d2bb31",
         frozen_columns: frozenColIndices,
         column_metadata: columnMetadata,
         cells: cellMap,
@@ -1754,8 +1770,7 @@ export default function Table({
                             >
                               {rowIndex + 1}
                             </td>
-                          ) : columnHeaders[colIndex] ===
-                            "Tag" ? (
+                          ) : columnHeaders[colIndex] === "Issue Picture" ? (
                             rowIndex === -1 ? (
                               <td>
                                 <textarea
@@ -2021,7 +2036,11 @@ export default function Table({
                                     );
 
                                     if (imageFiles.length > 0) {
-                                      console.log(rowIndex, colIndex,imageFiles);
+                                      console.log(
+                                        rowIndex,
+                                        colIndex,
+                                        imageFiles
+                                      );
                                       handleImagePasteOrDrop(
                                         imageFiles,
                                         rowIndex,
@@ -2190,7 +2209,7 @@ export default function Table({
                                 )}
                                 {Array.isArray(cell.value) ? (
                                   <div className="flex flex-wrap  justify-center">
-                                    {(cell.value).map((src, i) => (
+                                    {cell.value.map((src, i) => (
                                       <div
                                         key={i}
                                         className="relative group"
@@ -2285,12 +2304,12 @@ export default function Table({
 
                                                 const isSingleImage =
                                                   cell.data_type ===
-                                                    "single_image" ||
+                                                    "multiple_image" ||
                                                   (Array.isArray(
                                                     cell.data_type
                                                   ) &&
                                                     cell.data_type.includes(
-                                                      "single_image"
+                                                      "multiple_image"
                                                     ));
 
                                                 if (
@@ -2443,7 +2462,8 @@ export default function Table({
                                   // Always store the cell ref by cell_id
                                   if (
                                     editingCell?.[0] === rowIndex &&
-                                    editingCell?.[1] === colIndex && el
+                                    editingCell?.[1] === colIndex &&
+                                    el
                                   ) {
                                     selectedCellRef.current = el;
                                   }

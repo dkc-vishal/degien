@@ -23,33 +23,20 @@ export default function QaIntialReport() {
   };
   async function fetchdata() {
     const res = await axios.get(
-      "http://shivam-mac.local:8001/api/v1.0/spreadsheet/822d02cf-e5eb-4ac8-81c1-13e36406c1e6/"
+      "http://gulab.local:8000/api/v1.0/spreadsheet/29a7c9f9-d199-4365-9567-e248693e68c8/"
     );
     const col_metadata: Record<string, ColumnMetadata> = await res.data.data
       .column_metadata;
+      console.log(col_metadata)
     setTableData(res.data.data);
     setcolumnHeaders(Object.values(col_metadata));
   }
   useEffect(() => {
     fetchdata();
   }, []);
-  const handlePoNumberChange = (index: number, value: string) => {
-    const newPoNumber = [...poNumber];
-    newPoNumber[index] = value;
-    setPoNumber(newPoNumber);
-  };
 
-  const handleColorChange = (
-    rowIndex: number,
-    colIndex: number,
-    value: string
-  ) => {
-    setColorValues((prev) => {
-      const newColorValues = prev.map((row) => [...row]);
-      newColorValues[rowIndex][colIndex] = value;
-      return newColorValues;
-    });
-  };
+
+
 
   return (
     <>
@@ -284,9 +271,9 @@ export default function QaIntialReport() {
         <div style={{marginTop:"75px"}} className="print-container">
                {columnHeaders.length > 0 && (
                  <Table
-                   col={4}
+                   col={14}
                    row={120}
-                   imagecol={3}
+                   imagecol={5}
                    tablename="mid-final"
                    columnheaders={columnHeaders}
                    spreadsheet={tableData}

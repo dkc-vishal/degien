@@ -16,8 +16,9 @@ const folders = [
 const SamplingStyleDetailPage: React.FC = () => {
   const { styleName } = useParams();
   const router = useRouter();
-
-  const displayName = (styleName as string)
+  const id = (styleName as string).split("%40");
+  console.log(id)
+  const displayName = (id[0] as string)
     .split("-")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");

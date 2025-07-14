@@ -6,7 +6,11 @@ export interface User {
   designation?: string | null;
   is_vendor: boolean;
 }
-
+export interface GetAllUsersResponse {
+  data: User[];
+  message: string;
+  status: number;
+}
 export interface LoginRequest {
   email: string;
   password: string;

@@ -1,4 +1,4 @@
-export const BASE_URL = "http://shivam-mac.local:8000/api/v1.0/auth";
+export const BASE_URL = "http://gulab.local:8000/api/";
 
 export const API_ENDPOINTS = {
   login: {
@@ -49,4 +49,8 @@ export const API_ENDPOINTS = {
     url: `http://shivam-mac.local:8000/api/v1.0/spreadsheet/cell-history/${cellid}`,
     method: "GET",
   }),
+  imageUpload: {
+    url: `${BASE_URL}v1.0/image/image/`,
+    method: "POST"
+  }
 };
