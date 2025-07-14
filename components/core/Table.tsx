@@ -118,7 +118,7 @@ export default function Table({
   //     setTableData(JSON.parse(shareddata));
   //   }
   // }, []);
-  const [colWidths, setColWidths] = useState<>(
+  const [colWidths, setColWidths] = useState(
     Array.from({ length: columnheaders.length }, (_, i) => columnheaders[i]) // Default width of 100 if not specified
   );
   const updateColWidth = (index: number, newWidth: object) => {
