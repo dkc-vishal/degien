@@ -1,6 +1,7 @@
 "use client";
+import { User } from "@/lib/api/types";
 import { cacheUtils } from "@/lib/api/utils";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { FaBars, FaMicrophone } from "react-icons/fa";
 export default function Header({ toggleSidebar }: any) {
   const [isRecording, setIsRecording] = useState(false);
@@ -10,7 +11,19 @@ export default function Header({ toggleSidebar }: any) {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordedChunksRef = useRef<Blob[]>([]);
 
-  const { getUser } = cacheUtils.auth;
+  const [user, setUser] = useState<User | null>(null);
+
+  const { getUser, setUser: cacheSetUser } = cacheUtils.auth;
+
+  useEffect(() => {
+    const currentUser = getUser();
+    setUser(currentUser!);
+  }, []);
+
+  const updateUser = (userData: User | null) => {
+    cacheSetUser(userData!); // Update cache
+    setUser(userData); // Update local React state
+  };
 
   const handleSidebarToggle = async () => {
     if (sidebarLoading) return;
@@ -196,7 +209,7 @@ export default function Header({ toggleSidebar }: any) {
           <span className="text-sm font-semibold">
             Welcome,{" "}
             <span className="capitalize">
-              {getUser()?.name.split(" ")[0] ?? "Guest"}
+              {user?.name.split(" ")[0] ?? "Guest"}
             </span>
           </span>
         </div>

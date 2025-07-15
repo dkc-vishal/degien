@@ -22,30 +22,6 @@ const ForgotPasswordPage = () => {
       return;
     }
 
-    // const res = await fetch(API_ENDPOINTS.resetPasswordSelfRequest.url, {
-    //   method: API_ENDPOINTS.resetPasswordSelfRequest.method,
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({ email }),
-    // });
-
-    // const data = await res.json();
-
-    // if (!res.ok) {
-    //   toast.error(data.message || "Failed to generate OTP");
-    //   return;
-    // }
-
-    // const token = data.data.token;
-
-    // console.log("token: ", token);
-
-    // Save to localStorage
-
-    // localStorage.setItem("reset_email", email);
-    // localStorage.setItem("reset_token", token);
-
     ForgotPasswordMutation.mutate(email, {
       onSuccess: (data) => {
         setRedirecting(true);

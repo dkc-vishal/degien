@@ -57,26 +57,6 @@ const VerifyOtpPage: React.FC = () => {
       return;
     }
 
-    // const res = await fetch(API_ENDPOINTS.resetPasswordSelfChange.url, {
-    //   method: API_ENDPOINTS.resetPasswordSelfChange.method,
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    //   body: JSON.stringify({
-    //     otp,
-    //     token,
-    //     password: newPassword,
-    //     confirm_password: confirmPassword,
-    //   }),
-    // });
-
-    // const data = await res.json();
-
-    // if (!res.ok) {
-    //   toast.error(data.message || "Failed to reset password");
-    //   return;
-    // }
-
     VerifyOTPMutation.mutate(
       {
         otp,

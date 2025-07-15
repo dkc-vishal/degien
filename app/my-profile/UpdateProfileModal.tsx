@@ -3,31 +3,22 @@
 import React, { useState } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { toast } from "sonner";
-import { useDepartments, useUpdateProfile } from "@/lib/api/hooks";
+import { useUpdateProfile } from "@/lib/api/hooks";
 
 interface Props {
   name: string;
-  department: string;
   onUpdate: (newName: string) => void;
   onClose: () => void;
 }
 
-const UpdateProfileModal: React.FC<Props> = ({
-  name,
-  department,
-  onUpdate,
-  onClose,
-}) => {
+const UpdateProfileModal: React.FC<Props> = ({ name, onUpdate, onClose }) => {
   const [username, setUsername] = useState(name);
-  const [selectedDepartment, setSelectedDepartment] = useState(department);
 
   const UpdateUserProfileMutation = useUpdateProfile();
 
   const isLoading = UpdateUserProfileMutation.isPending;
   const isError = UpdateUserProfileMutation.isError;
   const error = UpdateUserProfileMutation.error;
-
-  const { data: departments } = useDepartments();
 
   const handleUpdate = async () => {
     if (!username.trim()) {
@@ -40,27 +31,17 @@ const UpdateProfileModal: React.FC<Props> = ({
       return;
     }
 
-    if (!selectedDepartment) {
-      toast.error("Please select a department");
-      return;
-    }
-
     const nameChanged = username.trim() !== name.trim();
-    const departmentChanged = selectedDepartment !== department;
 
-    if (!nameChanged && !departmentChanged) {
-      toast.error("Please make at least one change to update");
+    if (!nameChanged) {
+      toast.error("Please make changes to update");
       return;
     }
 
-    const updatePayload: { name?: string; department?: string } = {};
+    const updatePayload: { name?: string } = {};
 
     if (nameChanged) {
       updatePayload.name = username.trim();
-    }
-
-    if (departmentChanged) {
-      updatePayload.department = selectedDepartment;
     }
 
     UpdateUserProfileMutation.mutate(updatePayload, {
@@ -79,11 +60,6 @@ const UpdateProfileModal: React.FC<Props> = ({
     setTimeout(() => {
       onClose();
     }, 500);
-  };
-
-  const getDepartmentName = (deptKey: string) => {
-    if (!departments?.data) return deptKey;
-    return (departments.data as unknown as Record<string, string>)[deptKey] || deptKey;
   };
 
   return (
@@ -124,67 +100,39 @@ const UpdateProfileModal: React.FC<Props> = ({
           </div>
         )}
 
+        {/* Name Input Field */}
         <div className="mb-4">
-          {/* Name Input Field */}
-          <div>
-            <label className="block text-sm text-gray-600 mb-2">
-              Employee Name
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              disabled={isLoading}
-              className={`w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 capitalize ${
-                isLoading ? "bg-gray-100 cursor-not-allowed" : ""
-              }`}
-              placeholder="Enter your full name"
-              maxLength={50}
-            />
+          <label className="block text-sm text-gray-600 mb-2">
+            Employee Name
+          </label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            disabled={isLoading}
+            className={`w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 capitalize ${
+              isLoading ? "bg-gray-100 cursor-not-allowed" : ""
+            }`}
+            placeholder="Enter your full name"
+            maxLength={50}
+          />
 
-            <div className="flex justify-between mt-1">
-              <span
-                className={`text-xs ${
-                  username.trim().length < 2 ? "text-red-500" : "text-gray-500"
-                }`}
-              >
-                {username.trim().length < 2 && username.trim().length > 0
-                  ? "Name too short"
-                  : ""}
-              </span>
-              <span className="text-xs text-gray-400">
-                {username.length}/50
-              </span>
-            </div>
-          </div>
-
-          {/* Department Select */}
-          <div>
-            <label className="block text-sm text-gray-600 mb-2">
-              Department
-            </label>
-            <select
-              value={selectedDepartment}
-              onChange={(e) => setSelectedDepartment(e.target.value)}
-              disabled={isLoading}
-              className={`w-full border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 ${
-                isLoading ? "bg-gray-100 cursor-not-allowed" : ""
+          <div className="flex justify-between mt-1">
+            <span
+              className={`text-xs ${
+                username.trim().length < 2 ? "text-red-500" : "text-gray-500"
               }`}
             >
-              <option value="">Select Department</option>
-              {departments?.data &&
-                Object.entries(departments.data).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-            </select>
+              {username.trim().length < 2 && username.trim().length > 0
+                ? "Name too short"
+                : ""}
+            </span>
+            <span className="text-xs text-gray-400">{username.length}/50</span>
           </div>
         </div>
 
         {/* Name comparison indicator */}
-        {((username.trim() !== name.trim() && username.trim()) ||
-          (selectedDepartment !== department && selectedDepartment)) && (
+        {username.trim() !== name.trim() && username.trim() && (
           <div className="my-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
             <p className="text-blue-700 text-sm font-medium mb-2">
               Changes to be made:
@@ -194,14 +142,6 @@ const UpdateProfileModal: React.FC<Props> = ({
               <div className="text-blue-600 text-sm mb-1">
                 <span className="font-medium">Name:</span> {name} →{" "}
                 {username.trim()}
-              </div>
-            )}
-
-            {selectedDepartment !== department && selectedDepartment && (
-              <div className="text-blue-600 text-sm">
-                <span className="font-medium">Department:</span>{" "}
-                {getDepartmentName(department || "None")} →{" "}
-                {getDepartmentName(selectedDepartment)}
               </div>
             )}
           </div>
@@ -247,7 +187,7 @@ const UpdateProfileModal: React.FC<Props> = ({
         </div>
 
         <p className="text-xs text-gray-500 mt-3 text-center">
-          Your information will be updated across all systems.
+          Your name will be updated across all systems.
         </p>
       </div>
     </div>

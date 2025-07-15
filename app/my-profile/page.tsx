@@ -27,7 +27,7 @@ const MyProfilePage = () => {
   } | null>(null);
 
   useEffect(() => {
-    // ✅ First priority: Fresh API data
+    // First priority: Fresh API data
     if (!isLoading && user?.data) {
       const userData = user.data as User;
       console.log("Setting user data from API:", userData);
@@ -41,7 +41,7 @@ const MyProfilePage = () => {
 
       setUserDetails(newUserDetails);
 
-      // ✅ Update cache with fresh data
+      // Update cache with fresh data
       setUser(userData);
       return;
     }
@@ -85,6 +85,7 @@ const MyProfilePage = () => {
         department: userDetails.department || "N/A",
         is_vendor: userDetails.is_vendor || false,
       });
+      
     }
     setShowUpdateModal(false);
   };
@@ -175,7 +176,6 @@ const MyProfilePage = () => {
       {showUpdateModal && userDetails && (
         <UpdateProfileModal
           name={userDetails.name}
-          department={userDetails.department}
           onClose={() => setShowUpdateModal(false)}
           onUpdate={handleProfileUpdate}
         />
