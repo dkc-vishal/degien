@@ -108,4 +108,46 @@ export const roleUtils = {
     const token = localStorage.getItem("auth_token");
     return !!token && this.isValidToken(token);
   },
+
+  /**
+   * Filter menu items based on user permissions
+   */
+  filterMenuItemsByRole<T extends { requiredRoles?: UserRole[] }>(
+    items: T[],
+    userRole: UserRole | null,
+    isAuthenticated: boolean
+  ): T[] {
+    return items.filter((item) => {
+      // If no specific roles required, show to all authenticated users
+      if (!item.requiredRoles) {
+        return isAuthenticated;
+      }
+
+      // Check if user has required role for this menu item
+      return (
+        isAuthenticated &&
+        userRole !== null &&
+        item.requiredRoles.includes(userRole)
+      );
+    });
+  },
+
+  /**
+   * Check if user can see a specific menu item
+   */
+  canSeeMenuItem(
+    item: { requiredRoles?: UserRole[] },
+    userRole: UserRole | null,
+    isAuthenticated: boolean
+  ): boolean {
+    if (!item.requiredRoles) {
+      return isAuthenticated;
+    }
+
+    return (
+      isAuthenticated &&
+      userRole !== null &&
+      item.requiredRoles.includes(userRole)
+    );
+  },
 };
