@@ -41,7 +41,7 @@ const page: React.FC = () => {
     if (!form.email) errors.email = "Email is required.";
     else if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email))
       errors.email = "Invalid email address.";
-    if (!form.password) errors.password = "Password is required.";
+    if (!form.password) errors.password = "Password is required. ";
     else if (form.password.length < 4)
       errors.password = "Password must be at least 4 characters.";
     return errors;
