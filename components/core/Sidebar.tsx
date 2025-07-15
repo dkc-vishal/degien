@@ -11,6 +11,7 @@ import { cacheUtils } from "@/lib/api/utils";
 import { useRole } from "@/hooks/useRole";
 import { roleUtils } from "@/lib/utils/role-utils";
 import { UserRole } from "@/lib/types/roles";
+import { useLogOut } from "@/lib/api/hooks";
 
 interface MenuItem {
   icon: React.ReactNode;
@@ -27,6 +28,10 @@ export default function Sidebar({ isSidebarOpen }: any) {
   const { userRole, isLoading, isAuthenticated } = useRole();
 
   const [unreadCount, setUnreadCount] = useState(0);
+  const [navigationLoading, setNavigationLoading] = useState<string | null>(
+    null
+  );
+  const [logoutLoading, setLogoutLoading] = useState(false);
 
   useEffect(() => {
     setUnreadCount(2);
@@ -69,6 +74,8 @@ export default function Sidebar({ isSidebarOpen }: any) {
     isAuthenticated
   );
 
+  const LogoutMutation = useLogOut();
+
   console.log(
     `Sidebar - Total menu items: ${menuItems.length}, Filtered: ${filteredMenuItems.length}, User Role: ${userRole}`
   );
@@ -77,42 +84,47 @@ export default function Sidebar({ isSidebarOpen }: any) {
     { icon: <CgProfile size={22} />, label: "My Profile", path: "/my-profile" },
   ];
 
+  const handleNavigation = async (path: string, label: string) => {
+    if (navigationLoading || logoutLoading) return; // Prevent navigation during loading
+
+    setNavigationLoading(path);
+
+    try {
+      await router.push(path);
+    } catch (error) {
+      console.error(`Navigation to ${label} failed:`, error);
+      toast.error(`Failed to navigate to ${label}`);
+    } finally {
+      // Clear loading state after a short delay to show the loading effect
+      setTimeout(() => {
+        setNavigationLoading(null);
+      }, 300);
+    }
+  };
+
   const handleLogout = async () => {
+    if (logoutLoading || navigationLoading) return; // Prevent multiple logout attempts
+
+    setLogoutLoading(true);
     const refreshToken = localStorage.getItem("refresh_token");
 
     if (!refreshToken) {
       toast.error("No refresh token found.");
+      setLogoutLoading(false);
       return;
     }
 
-    try {
-      const res = await fetch("http://gulab.local:8000/api/v1.0/auth/logout/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+    LogoutMutation.mutate(
+      { refresh: refreshToken },
+      {
+        onSuccess: () => {
+          router.push("/Auth/Login");
         },
-        body: JSON.stringify({ refresh: refreshToken }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        console.error("Logout failed:", err);
-        toast.error("Logout failed.");
-        return;
+        onSettled: () => {
+          setLogoutLoading(false);
+        },
       }
-
-      // removing localstorage saved infos
-
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("refresh_token");
-      localStorage.removeItem("user_role");
-      cacheUtils.global.clearAll();
-      toast.success("Logged out successfully.");
-      router.push("/Auth/Login");
-    } catch (error) {
-      console.error("Logout error:", error);
-      toast.error("Something went wrong during logout.");
-    }
+    );
   };
 
   return (
@@ -122,7 +134,7 @@ export default function Sidebar({ isSidebarOpen }: any) {
       }`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800">
+      <div className="flex items-center justify-between px-5 py-5.5 border-b border-gray-800">
         <h2 className="text-xl font-bold tracking-wide">Admin</h2>
       </div>
 
@@ -134,24 +146,44 @@ export default function Sidebar({ isSidebarOpen }: any) {
             {[1, 2, 3, 4].map((item) => (
               <div
                 key={item}
-                className="animate-pulse bg-gray-800 h-12 rounded-lg"
-              ></div>
+                className="animate-pulse bg-gray-800 h-12 rounded-lg flex items-center px-4"
+              >
+                <div className="w-6 h-6 bg-gray-700 rounded"></div>
+                {isOpen && (
+                  <div className="ml-4 w-24 h-4 bg-gray-700 rounded"></div>
+                )}
+              </div>
             ))}
           </div>
         ) : (
           filteredMenuItems.map((item: MenuItem, idx) => {
             const isActive = pathname.startsWith(item.path);
+            const isNavigating = navigationLoading === item.path;
+
             return (
               <button
                 key={idx}
-                onClick={() => router.push(item.path)}
-                className={`flex items-center px-4 py-3 rounded-lg text-left transition-all cursor-pointer w-full
+                onClick={() => handleNavigation(item.path, item.label)}
+                disabled={navigationLoading !== null || logoutLoading}
+                className={`flex items-center px-4 py-3 rounded-lg text-left transition-all cursor-pointer w-full relative
                 ${
                   isActive
                     ? "bg-gray-700 text-white font-semibold"
                     : "hover:bg-gray-800 text-gray-300"
-                }`}
+                }
+                ${
+                  navigationLoading !== null || logoutLoading
+                    ? "opacity-50 cursor-not-allowed"
+                    : ""
+                }
+                `}
               >
+                {isNavigating && (
+                  <div className="absolute inset-0 bg-gray-800 bg-opacity-50 rounded-lg flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  </div>
+                )}
+
                 <div className="flex items-center">
                   <span className="text-[22px]">{item.icon}</span>
                   {isOpen && (
@@ -180,17 +212,32 @@ export default function Sidebar({ isSidebarOpen }: any) {
       <div className="px-2 pb-4 space-y-2">
         {profileItems.map((item, idx) => {
           const isActive = pathname.startsWith(item.path);
+          const isNavigating = navigationLoading === item.path;
+
           return (
             <button
               key={idx}
-              onClick={() => router.push(item.path)}
-              className={`flex items-center px-4 py-3 rounded-lg text-left transition-all cursor-pointer w-full
+              onClick={() => handleNavigation(item.path, item.label)}
+              disabled={navigationLoading !== null || logoutLoading}
+              className={`flex items-center px-4 py-3 rounded-lg text-left transition-all cursor-pointer w-full relative
               ${
                 isActive
                   ? "bg-gray-700 text-white font-semibold"
                   : "hover:bg-gray-800 text-gray-300"
-              }`}
+              }
+              ${
+                navigationLoading !== null || logoutLoading
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }
+              `}
             >
+              {isNavigating && (
+                <div className="absolute inset-0 bg-gray-800 bg-opacity-50 rounded-lg flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                </div>
+              )}
+
               <span className="text-[22px]">{item.icon}</span>
               {isOpen && (
                 <span className="ml-4 text-[15px] font-medium">
@@ -202,14 +249,29 @@ export default function Sidebar({ isSidebarOpen }: any) {
         })}
 
         {/* Logout Button */}
-
         <button
           onClick={handleLogout}
-          className="flex items-center px-4 py-3 rounded-lg text-left transition-all cursor-pointer w-full hover:bg-gray-800 text-gray-300 mb-14"
+          disabled={navigationLoading !== null || logoutLoading}
+          className={`flex items-center px-4 py-3 rounded-lg text-left transition-all cursor-pointer w-full hover:bg-gray-800 text-gray-300 mb-14 relative
+          ${
+            navigationLoading !== null || logoutLoading
+              ? "opacity-50 cursor-not-allowed"
+              : ""
+          }
+          `}
         >
+          {/* Loading overlay for logout */}
+          {logoutLoading && (
+            <div className="absolute inset-0 bg-gray-800 bg-opacity-50 rounded-lg flex items-center justify-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            </div>
+          )}
+
           <TbLogout size={22} />
           {isOpen && (
-            <span className="ml-4 text-[15px] font-medium">Logout</span>
+            <span className="ml-4 text-[15px] font-medium">
+              {logoutLoading ? "Logging out..." : "Logout"}
+            </span>
           )}
         </button>
       </div>

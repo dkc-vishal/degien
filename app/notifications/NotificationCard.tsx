@@ -38,7 +38,7 @@ const NotificationCard = ({ title, message, timestamp, type, styleId, onPreview 
           ? `/sampling-styles/${styleId}`
           : `/production-styles/${styleId}`
       );
-    }, 1200);
+    }, 500);
   };
 
   return (

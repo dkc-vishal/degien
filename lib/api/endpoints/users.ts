@@ -13,8 +13,8 @@ export const userEndPoints = {
   getUsers: (
     endpoint?: string,
     filter?: UserFilter
-  ): Promise<PaginationResponse<User>> =>
-    apiClient.get(`${endpoint || "/users"}`, { params: filter }),
+  ): Promise<{data: User[], message: string, status: number, error_status: boolean}> =>
+    apiClient.get(`${endpoint || "/auth/users"}`, { params: filter }),
   getUserById: (id: string): Promise<User> => apiClient.get(`/users/${id}/`),
   createUser: (data: CreateUserRequest): Promise<CreateUserResponse> =>
     apiClient.post("/auth/create-user/", data),

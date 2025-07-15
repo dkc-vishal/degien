@@ -31,12 +31,14 @@ const AddUserForm: React.FC<{
   });
 
   const createUserMutation = useCreateUser();
+  
   const {
     data: departments,
     isLoading,
     isError,
     error: apiError,
   } = useDepartments();
+
   const router = useRouter();
 
   const validate = () => {
@@ -102,7 +104,7 @@ const AddUserForm: React.FC<{
         });
         setTimeout(() => {
           onClose();
-        }, 1000);
+        }, 500);
       },
     });
   };

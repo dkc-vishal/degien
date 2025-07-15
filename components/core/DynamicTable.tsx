@@ -56,7 +56,7 @@ export default function Table({
   imagecol2,
   columnheaders,
 }: any) {
-  const [frozenColIndices, setFrozenColIndices] = useState<number[]>([]);
+  const [frozenColIndices, setFrozenColIndices] = useState<number[]>([0,1]);
 
   const [selectedHistory, setSelectedHistory] = useState<{
     key: string;
@@ -1478,7 +1478,7 @@ export default function Table({
                           draggable
                           style={{
                             // position: "relative",
-                            width: colWidths[i], // Set default width
+                            width: colWidths[i].width, // Set default width
                             minWidth: "50px",
                             maxWidth: "500px",
                             position: frozenColIndices.includes(i)
@@ -1539,7 +1539,7 @@ export default function Table({
                           onDragOver={(e) => e.preventDefault()}
                           className={`border ${
                             isDragging ? "cursor-move" : "cursor-pointer"
-                          } ${i === 0 ? "no-print" : ""}`}
+                          } ${i === 0 ? "" : ""}`}
                         >
                           {getColumnLetter(i)}
 
@@ -1549,8 +1549,8 @@ export default function Table({
                               e.stopPropagation();
                               isResizing.current = true;
                               resizingColIndex.current = i;
-                              // resizeStartX.current = e.clientX;
-                              // resizeStartWidth.current = colWidths[i].width;
+                              resizeStartX.current = e.clientX;
+                              resizeStartWidth.current = colWidths[i].width;
                               document.addEventListener(
                                 "mousemove",
                                 handleMouseMove
@@ -1575,7 +1575,7 @@ export default function Table({
                       </>
                     ))}
                   </tr>
-                  <tr>
+                  <tr className="sticky top-0 z-30 border border-gray-300 p-2 text-sm font-semibold">
                     <th className="bg-amber-300 text-[17px]" colSpan={7}>
                       Orignal
                     </th>
@@ -1586,7 +1586,7 @@ export default function Table({
                       Repeat 2
                     </th>
                   </tr>
-                  <tr className="sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
+                  <tr className="sticky top-6 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
                     {columnHeaders?.map((_, i) => (
                       <>
                         <th
@@ -1594,7 +1594,7 @@ export default function Table({
                           draggable
                           style={{
                             // position: "relative",
-                            width: colWidths[i], // Set default width
+                            width: colWidths[i].width, // Set default width
                             minWidth: "50px",
                             maxWidth: "500px",
                             position: frozenColIndices.includes(i)
@@ -1708,34 +1708,25 @@ export default function Table({
                         className={`bg-white even:bg-gray-50 `}
                       >
                         {row.map((cell, colIndex) => {
-                          // if (
-                          //   frozenColIndices.length > 0 &&
-                          //   !frozenColIndices.includes(colIndex) &&
-                          //   colIndex < Math.max(...frozenColIndices) &&
-                          //   colIndex !== 0 &&
-                          //   colIndex !== 1
-                          // )
-                          //   return null;
-
                           return colIndex === 0 ? (
                             <td
                               style={{
                                 backgroundColor:
                                   cellColors?.[rowIndex]?.[colIndex] || "",
-                                width: colWidths[colIndex],
+                                width: colWidths[colIndex].width,
                                 minWidth: 50,
-                                position: frozenColIndices.includes(colIndex)
+                                position: true
                                   ? "sticky"
                                   : undefined,
-                                left: frozenColIndices.includes(colIndex)
+                                left: true
                                   ? getStickyLeftOffset(colIndex)
                                   : undefined,
-                                zIndex: frozenColIndices.includes(colIndex)
+                                zIndex: true
                                   ? 9
                                   : undefined,
                               }}
                               key={colIndex}
-                              className={`no-print border  ${
+                              className={`no-print border bg-slate-200  ${
                                 draggedRowIndex
                                   ? "cursor-grabbing"
                                   : "cursor-grab"
@@ -1763,7 +1754,7 @@ export default function Table({
                             </td>
                           ) : colIndex === 1 ? (
                             <td
-                              className={`border `}
+                              className={`border bg-slate-200`}
                               style={{
                                 textAlign: "center",
                                 position: true ? "sticky" : undefined,

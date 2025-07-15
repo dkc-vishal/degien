@@ -1,4 +1,5 @@
 import { apiClient } from "../client/axios-client";
+import { UpdateUserRequest, UpdateUserResponse } from "../types";
 import {
   ChangePasswordRequest,
   LoginRequest,
@@ -7,18 +8,35 @@ import {
   User,
   UserDetailResponse,
   Department,
+  FirstTimeLoginRequest,
+  ForgotPasswordResponse,
+  VerifyOTPRequest,
 } from "../types/auth";
 
 export const authEndpoints = {
   login: (data: LoginRequest): Promise<LoginResponse> =>
     apiClient.post("/auth/login/", data),
 
-  logout: (): Promise<void> => apiClient.post("/auth/logout/"),
+  logout: (data: { refresh: string }): Promise<void> =>
+    apiClient.post("/auth/logout/", data),
 
-  getProfile: (): Promise<UserDetailResponse> => apiClient.get("/auth/user-detail/"),
+  getProfile: (): Promise<UserDetailResponse> =>
+    apiClient.get("/auth/user-detail/"),
+
+  updateProfile: (data: UpdateUserRequest): Promise<UpdateUserResponse> =>
+    apiClient.post("/auth/user-detail/", data),
 
   changePassword: (data: ChangePasswordRequest): Promise<void> =>
     apiClient.post("/auth/change-password/", data),
+
+  firstTimeLogin: (data: FirstTimeLoginRequest): Promise<void> =>
+    apiClient.post("/auth/change-system-password/", data),
+
+  forgotPassword: (email: string): Promise<ForgotPasswordResponse> =>
+    apiClient.post("/auth/reset-password/self/request/", { email }),
+
+  verifyOTP: (data: VerifyOTPRequest): Promise<void> =>
+    apiClient.post("/auth/reset-password/self/change/", data),
 
   getDepartments: (): Promise<Department[]> =>
     apiClient.get("/auth/departments/"),

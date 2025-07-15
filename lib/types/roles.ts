@@ -30,7 +30,7 @@ export const ROUTE_PERMISSIONS: RoutePermission[] = [
 export const PUBLIC_ROUTES = [
   "/",
   "/Auth/Login",
-  "/Auth/Change-Password",
+  "/Auth/first_time_login",
   "/Auth/Forgot-Password",
   "/Auth/Reset-User-Password",
   "/Auth/Verify-OTP",

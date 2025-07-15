@@ -51,7 +51,7 @@ const ResetUserPasswordPage: React.FC = () => {
       }
 
       toast.success("Password changed successfully. Please login.");
-      setTimeout(() => router.push("/Auth/Login"), 1500);
+      setTimeout(() => router.push("/Auth/Login"), 500);
 
     } catch (err) {
       console.error("Reset error:", err);
