@@ -17,9 +17,7 @@ export default function Form110() {
           ["Buyer PO"],
         ]}
       />
-      <button
-        className="flex items-center bg-green-600 mt-4 gap-1  font-medium px-2 py-1 rounded-xl shadow-md transition duration-200"
-      >
+      <button className="flex items-center bg-green-600 mt-4 gap-1  font-medium px-2 py-1 rounded-xl shadow-md transition duration-200">
         Add Repeat
       </button>
       <div className="print-container">

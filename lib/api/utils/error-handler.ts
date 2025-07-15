@@ -1,7 +1,6 @@
 import { toast } from "sonner";
 import { cacheUtils } from "./cache-utils";
 
-
 export class ApiError extends Error {
   constructor(
     public status: number,

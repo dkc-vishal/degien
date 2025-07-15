@@ -7,13 +7,24 @@ import { GiSewingMachine } from "react-icons/gi";
 import { CgProfile } from "react-icons/cg";
 import { TbLogout } from "react-icons/tb";
 import { toast } from "sonner";
-import Image from "next/image";
 import { cacheUtils } from "@/lib/api/utils";
+import { useRole } from "@/hooks/useRole";
+import { roleUtils } from "@/lib/utils/role-utils";
+import { UserRole } from "@/lib/types/roles";
+
+interface MenuItem {
+  icon: React.ReactNode;
+  label: string;
+  path: string;
+  requiredRoles?: UserRole[];
+  unread?: number;
+}
 
 export default function Sidebar({ isSidebarOpen }: any) {
   const isOpen: boolean = isSidebarOpen;
   const router = useRouter();
   const pathname = usePathname();
+  const { userRole, isLoading, isAuthenticated } = useRole();
 
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -21,29 +32,46 @@ export default function Sidebar({ isSidebarOpen }: any) {
     setUnreadCount(2);
   }, []);
 
-  const menuItems = [
+  const menuItems: MenuItem[] = [
     { icon: <MdDashboard size={22} />, label: "Dashboard", path: "/dashboard" },
     {
       icon: <FaUserFriends size={22} />,
       label: "User Management",
       path: "/user-detail",
+      requiredRoles: ["admin", "sop_manager"], // Only admin and sop_manager can see this
     },
     {
       icon: <GiSewingMachine size={22} />,
       label: "Sampling Styles",
       path: "/sampling-styles",
+      // No requiredRoles = visible to all authenticated users
     },
     {
       icon: <FaTshirt size={22} />,
       label: "Production Styles",
       path: "/production-styles",
+      // Example: Only certain roles can see production
+      // requiredRoles: ["admin", "sop_manager", "tech"],
     },
     {
       icon: <MdLocalShipping size={22} />,
       label: "Shipped Styles",
       path: "/shipped-styles",
+      // Example: Only shipping related roles
+      // requiredRoles: ["admin", "sop_manager", "merchant"],
     },
   ];
+
+  // Filter menu items based on user permissions using utility function
+  const filteredMenuItems = roleUtils.filterMenuItemsByRole(
+    menuItems,
+    userRole,
+    isAuthenticated
+  );
+
+  console.log(
+    `Sidebar - Total menu items: ${menuItems.length}, Filtered: ${filteredMenuItems.length}, User Role: ${userRole}`
+  );
 
   const profileItems = [
     { icon: <CgProfile size={22} />, label: "My Profile", path: "/my-profile" },
@@ -100,37 +128,52 @@ export default function Sidebar({ isSidebarOpen }: any) {
 
       {/* Main Navigation */}
       <nav className="flex flex-col px-2 pt-4 space-y-2 flex-grow">
-        {menuItems.map((item: any, idx) => {
-          const isActive = pathname.startsWith(item.path);
-          return (
-            <button
-              key={idx}
-              onClick={() => router.push(item.path)}
-              className={`flex items-center px-4 py-3 rounded-lg text-left transition-all cursor-pointer w-full
-              ${
-                isActive
-                  ? "bg-gray-700 text-white font-semibold"
-                  : "hover:bg-gray-800 text-gray-300"
-              }`}
-            >
-              <div className="flex items-center">
-                <span className="text-[22px]">{item.icon}</span>
-                {isOpen && (
-                  <span className="ml-4 text-[15px] font-medium">
-                    {item.label}
-                  </span>
-                )}
-              </div>
+        {isLoading ? (
+          // Show loading skeleton while checking permissions
+          <div className="space-y-2">
+            {[1, 2, 3, 4].map((item) => (
+              <div
+                key={item}
+                className="animate-pulse bg-gray-800 h-12 rounded-lg"
+              ></div>
+            ))}
+          </div>
+        ) : (
+          filteredMenuItems.map((item: MenuItem, idx) => {
+            const isActive = pathname.startsWith(item.path);
+            return (
+              <button
+                key={idx}
+                onClick={() => router.push(item.path)}
+                className={`flex items-center px-4 py-3 rounded-lg text-left transition-all cursor-pointer w-full
+                ${
+                  isActive
+                    ? "bg-gray-700 text-white font-semibold"
+                    : "hover:bg-gray-800 text-gray-300"
+                }`}
+              >
+                <div className="flex items-center">
+                  <span className="text-[22px]">{item.icon}</span>
+                  {isOpen && (
+                    <span className="ml-4 text-[15px] font-medium">
+                      {item.label}
+                    </span>
+                  )}
+                </div>
 
-              {/* Notification badge */}
-              {isOpen && item.label === "Notifications" && item.unread > 0 && (
-                <span className="text-xs bg-red-500 text-white px-2 py-[1px] rounded-full font-bold">
-                  {item.unread}
-                </span>
-              )}
-            </button>
-          );
-        })}
+                {/* Notification badge */}
+                {isOpen &&
+                  item.label === "Notifications" &&
+                  item.unread &&
+                  item.unread > 0 && (
+                    <span className="text-xs bg-red-500 text-white px-2 py-[1px] rounded-full font-bold">
+                      {item.unread}
+                    </span>
+                  )}
+              </button>
+            );
+          })
+        )}
       </nav>
 
       {/* Profile + Logout */}

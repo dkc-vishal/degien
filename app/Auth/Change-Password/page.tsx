@@ -74,8 +74,6 @@ const ChangePasswordPage: React.FC = () => {
     }
 
     try {
-      // const token = localStorage.getItem("access_token");
-
       const res = await fetch(API_ENDPOINTS.changeSystemPassword.url, {
         method: API_ENDPOINTS.changeSystemPassword.method,
         headers: {
@@ -90,8 +88,6 @@ const ChangePasswordPage: React.FC = () => {
       });
 
       const data = await res.json();
-
-      console.log("Test data: ", data);
 
       if (!res.ok) {
         if (Array.isArray(data.message)) {

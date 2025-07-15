@@ -7,12 +7,17 @@ import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import { useLogin } from "@/lib/api/index";
 
 const page: React.FC = () => {
-  const token = localStorage.getItem("auth_token");
-  if (token) {
-    window.location.href = "/Dashboard";
-  }
-
   const router = useRouter();
+
+  // Check for existing token on client-side only
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const token = localStorage.getItem("auth_token");
+      if (token) {
+        router.push("/dashboard");
+      }
+    }
+  }, [router]);
 
   const [form, setForm] = useState({
     email: "",
