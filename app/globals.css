@@ -443,6 +443,9 @@ th .resize-handle {
   .page-break{
     page-break-after: always;
   }
+  .repeat-header{
+    display: table-header-group;
+  }
 }
 
 

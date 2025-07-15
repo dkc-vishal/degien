@@ -16,7 +16,7 @@ export default function InspectionPointPrintPage() {
     sno: i + 1,
     issue: `Issue ${i + 1}`,
     comment: `Watchpoint/Comment ${i + 1}`,
-    imageUrl: `/images/${i % 5}.jpg`, // looping mock images
+    imageUrl: `/images/${i % 5}.jpg`,
     ft: Array.from({ length: 10 }, () => ""),
   }));
 
@@ -53,7 +53,7 @@ export default function InspectionPointPrintPage() {
         <div><strong>Print Id</strong> – 2048</div>
         <div><strong>Print date</strong> – {new Date().toLocaleDateString()}</div>
       </div>
-      <div style={{ fontSize: "20px" }}>Inspection Point Sheet</div>
+      <div style={{ fontSize: "20px" }}>Inspection Point Form</div>
       <div style={{ textAlign: "right" }}>
         <div><strong>Form Version</strong> – 1.4</div>
         <div>Form Version date – 2025‑07‑14</div>
@@ -66,7 +66,7 @@ export default function InspectionPointPrintPage() {
       arr.slice(i * size, i * size + size)
     );
 
-  const pages = paginate(data, 3); // only 3 rows per print page
+  const pages = paginate(data, 3); // 3 rows per page
 
   return (
     <>
@@ -105,25 +105,27 @@ export default function InspectionPointPrintPage() {
           <div key={pageIndex} className="mb-12" style={{ pageBreakAfter: pageIndex < pages.length - 1 ? "always" : "auto" }}>
             <PrintHeader />
 
-            <div className="flex justify-between border p-4 my-4 text-sm">
-              <div>
-                <div>Style Name: _________</div>
-                <div>Vendor Name: _________</div>
-                <div>Tech Name: _________</div>
-                <div>Merchant Name: _________</div>
+            {pageIndex === 0 && (
+              <div className="flex justify-between border p-4 my-4 text-sm">
+                <div>
+                  <div>Style Name: _________</div>
+                  <div>Vendor Name: _________</div>
+                  <div>Tech Name: _________</div>
+                  <div>Merchant Name: _________</div>
+                </div>
+                <div>
+                  <div>Style Number: _________</div>
+                  <div>Inspection Type: _________</div>
+                  <div>Color: _________</div>
+                  <div>Size: _________</div>
+                </div>
+                <div>
+                  <div>QA Name: _________</div>
+                  <div>Received Date: _________</div>
+                  <div>Check Date: _________</div>
+                </div>
               </div>
-              <div>
-                <div>Style Number: _________</div>
-                <div>Inspection Type: _________</div>
-                <div>Color: _________</div>
-                <div>Size: _________</div>
-              </div>
-              <div>
-                <div>QA Name: _________</div>
-                <div>Received Date: _________</div>
-                <div>Check Date: _________</div>
-              </div>
-            </div>
+            )}
 
             <table
               style={{
@@ -144,7 +146,7 @@ export default function InspectionPointPrintPage() {
               </thead>
               <tbody>
                 {rows.map((row, idx) => (
-                  <tr key={idx} style={{ height: "180px" }}>
+                  <tr key={idx} style={{ height: "25vh" }}>
                     <td style={tdStyle}>{row.sno}</td>
                     <td style={tdStyle}>{row.issue}</td>
                     <td style={tdStyle}>{row.comment}</td>

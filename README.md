@@ -97,3 +97,13 @@ reduce the image height of the column on image delete (done)
 chat gpt
 
 https://chatgpt.com/share/68628966-8cb0-8011-8514-b70acdf8f0c1
+
+
+
+### Print Page 
+
+- Fit-Audit 
+
+- Inspection-Point-Print 
+
+- QA Initial Report 

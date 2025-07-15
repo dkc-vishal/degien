@@ -5,6 +5,8 @@ import Table from "../../components/core/Table";
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { FaPrint } from "react-icons/fa";
+import { useRouter } from "next/navigation";
+
 type ColumnMetadata = {
   data_type: string;
   header: string;
@@ -14,16 +16,19 @@ type ColumnMetadata = {
   is_moveable: boolean;
   width: string;
 };
-export default function QaIntialReport() {
+
+export default function QaInitialReport() {
 
   const [columnHeaders, setcolumnHeaders] = useState<ColumnMetadata[]>([]);
   const [tableData, setTableData] = useState({});
   const [poNumber, setPoNumber] = useState<string[]>([]);
-  
+
+  const router = useRouter() ; 
+
   const [colorValues, setColorValues] = useState<string[][]>([
     Array(6).fill(Array(6).fill("")),
   ]);
-  
+
   const handlePrint = () => {
     window.print();
   };
@@ -38,10 +43,11 @@ export default function QaIntialReport() {
 
     setcolumnHeaders(Object.values(col_metadata));
   }
+
   useEffect(() => {
     fetchdata();
   }, []);
-  
+
   const handlePoNumberChange = (index: number, value: string) => {
     const newPoNumber = [...poNumber];
     newPoNumber[index] = value;
@@ -72,12 +78,20 @@ export default function QaIntialReport() {
       <div className="p-6">
         <div>
           <SheetTitle title="QA Initial Reports" version="v1.4" />
-          <button
-            onClick={handlePrint}
-            className="flex items-center gap-1  font-medium px-4 py-1 mb-2 rounded-xl shadow-md transition duration-200"
-          >
-            <FaPrint />
-          </button>
+          <div className="flex items-center gap-8 mb-4">
+            <button
+              onClick={handlePrint}
+              className="flex items-center gap-2 font-medium px-4 py-2 mb-2 rounded-xl transition duration-200 bg-gray-100 hover:bg-gray-200 shadow-md tex-sm"
+            >
+              <FaPrint className="text-gray-600 cursor-pointer"/>
+            </button>
+            <button
+              onClick={() => router.push("/print/qa-initial-report")}
+              className="flex items-center gap-2 px-4 py-2 rounded-md bg-blue-100 hover:bg-blue-200 cursor-pointer shadow-sm transition duration-200 text-sm font-medium"
+            >
+              <FaPrint className="text-blue-600"/> Print 
+            </button>
+          </div>
         </div>
 
         <div className="mid  mx-auto border-2 border-black text-xs leading-tight">
@@ -148,8 +162,8 @@ export default function QaIntialReport() {
                 <div
                   key={i}
                   className={`${!poNumber.some((num) => num && num.trim() !== "")
-                      ? "border-2 border-red-500"
-                      : "border-r border-black"
+                    ? "border-2 border-red-500"
+                    : "border-r border-black"
                     }`}
                 >
                   <input
@@ -171,8 +185,8 @@ export default function QaIntialReport() {
             >
               <div
                 className={`${!poNumber.some((num) => num && num.trim() !== "")
-                    ? "border-2 border-red-500"
-                    : "border-r border-black"
+                  ? "border-2 border-red-500"
+                  : "border-r border-black"
                   }`}
               >
                 <input
@@ -186,8 +200,8 @@ export default function QaIntialReport() {
                 <input
                   key={i * j}
                   className={`${j === 5 ? "" : "border-r"} outline-none p-1 ${!poNumber.some((num) => num && num.trim() !== "")
-                      ? "border-2 border-red-500"
-                      : "border-r border-black"
+                    ? "border-2 border-red-500"
+                    : "border-r border-black"
                     }`}
                   placeholder="MERCHANT TO FILL"
                 // value={colorValues[i]?.[j]}
