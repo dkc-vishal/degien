@@ -94,7 +94,7 @@ const ChangePasswordPage: React.FC = () => {
         onSuccess: () => {
           setTimeout(() => {
             router.push("/Auth/Login");
-          }, 1500);
+          }, 500);
         },
       }
     );

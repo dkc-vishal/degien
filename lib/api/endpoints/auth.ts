@@ -17,7 +17,8 @@ export const authEndpoints = {
   login: (data: LoginRequest): Promise<LoginResponse> =>
     apiClient.post("/auth/login/", data),
 
-  logout: (): Promise<void> => apiClient.post("/auth/logout/"),
+  logout: (data: { refresh: string }): Promise<void> =>
+    apiClient.post("/auth/logout/", data),
 
   getProfile: (): Promise<UserDetailResponse> =>
     apiClient.get("/auth/user-detail/"),

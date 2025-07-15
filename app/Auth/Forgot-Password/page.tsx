@@ -53,7 +53,7 @@ const ForgotPasswordPage = () => {
         const token = data.data.token;
         setTimeout(() => {
           router.push(`/Auth/Verify-OTP?token=${token}`);
-        }, 2000);
+        }, 500);
       },
     });
   };

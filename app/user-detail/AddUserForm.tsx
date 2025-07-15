@@ -104,7 +104,7 @@ const AddUserForm: React.FC<{
         });
         setTimeout(() => {
           onClose();
-        }, 1000);
+        }, 500);
       },
     });
   };

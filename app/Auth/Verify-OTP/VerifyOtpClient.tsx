@@ -89,7 +89,7 @@ const VerifyOtpPage: React.FC = () => {
           setShowSuccessModal(true);
           setTimeout(() => {
             router.push("/Auth/Login");
-          }, 2000);
+          }, 500);
         },
         onError: (error: any) => {
           const message =

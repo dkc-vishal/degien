@@ -7,11 +7,6 @@ import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import { useLogin } from "@/lib/api/index";
 
 const page: React.FC = () => {
-  const token = localStorage.getItem("auth_token");
-  if (token) {
-    window.location.href = "/dashboard";
-  }
-
   const router = useRouter();
 
   // Check for existing token on client-side only

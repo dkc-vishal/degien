@@ -1,3 +1,5 @@
+import { PaginationResponse } from "./comman";
+
 export interface User {
   user_id: string;
   email: string;
@@ -10,6 +12,7 @@ export interface GetAllUsersResponse {
   data: User[];
   message: string;
   status: number;
+  error_status: boolean;
 }
 export interface LoginRequest {
   email: string;
@@ -21,14 +24,7 @@ export interface LoginResponse {
     access_token: string;
     refresh_token: string;
     role: string;
-    user_data: {
-      user_id: string;
-      email: string;
-      name: string;
-      department?: string | null;
-      designation?: string | null;
-      is_vendor: boolean;
-    };
+    user_data: User;
   };
 }
 
@@ -75,28 +71,14 @@ export type DepartmentResponse = {
 };
 
 export interface ResetPasswordResponse {
-  data: {
-    department: string;
-    email: string;
-    name: string;
-    system_generated_password: string;
-    type_of_user: TypeOfUser;
-    user_id: string;
-  };
+  data: User;
   error_status: boolean;
   message: string;
   status: number;
 }
 
 export interface UserDetailResponse {
-  data: {
-    user_id: string;
-    email: string;
-    name: string;
-    department: string | null;
-    designation?: string | null;
-    is_vendor?: boolean;
-  };
+  data: User;
   error_status: boolean;
   message: string;
   status: number;

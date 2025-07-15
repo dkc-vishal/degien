@@ -6,12 +6,12 @@ import { toast } from "sonner";
 import { SamplingStyleEndPoints } from "@/lib/api/endpoints/sampling";
 // import { User } from "lucide-react";
 import { userEndPoints } from "@/lib/api/endpoints";
-import { GetAllUsersResponse,User } from "@/lib/api/types/auth";
+import { GetAllUsersResponse, User } from "@/lib/api/types/auth";
+import { PaginationResponse } from "@/lib/api/types";
 interface AddStyleModalProps {
   onClose: () => void;
   onAddStyle: (newStyle: { styleName: string; image: string }) => void;
 }
-
 
 const AddStyleModal: React.FC<AddStyleModalProps> = ({
   onClose,
@@ -121,17 +121,23 @@ const AddStyleModal: React.FC<AddStyleModalProps> = ({
 
   const GetUser = async () => {
     try {
-      const res: GetAllUsersResponse = await userEndPoints.getUsers();
+      const res: GetAllUsersResponse = await userEndPoints.getUsers(
+        "/auth/list-users/active"
+      );
+
       if (res.status !== 200) {
         throw new Error("Failed to fetch users");
       }
-      if(res.status === 200) {
-        setSamplingusers(res.data.filter((user: User) => user.department === "sampling"));
+      if (res.status === 200) {
+        setSamplingusers(
+          res.data.filter((user: User) => user.department === "sampling")
+        );
       }
     } catch (error) {
       console.error("Error fetching users:", error);
     }
   };
+
   useEffect(() => {
     GetUser();
   }, []);

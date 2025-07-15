@@ -78,7 +78,7 @@ const UpdateProfileModal: React.FC<Props> = ({
 
     setTimeout(() => {
       onClose();
-    }, 1500);
+    }, 500);
   };
 
   const getDepartmentName = (deptKey: string) => {
