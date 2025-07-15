@@ -105,3 +105,55 @@ export const useResetPassword = () => {
     },
   });
 };
+
+export const useUpdateProfile = () => {
+  return useMutation({
+    mutationFn: authEndpoints.updateProfile,
+    onSuccess: (data) => {
+      toast.success("Profile updated successfully");
+      cacheUtils.auth.setUser(data);
+    },
+    onError: (error: any) => {
+      const message =
+        error.response?.data?.message || "Failed to update profile";
+      toast.error(message);
+    },
+  });
+};
+
+export const useFirstTimeLogin = () => {
+  return useMutation({
+    mutationFn: authEndpoints.firstTimeLogin,
+    onSuccess: (data) => {
+      toast.success("Login successful!");
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || "Failed to login";
+      toast.error(message);
+    },
+  });
+};
+
+export const useForgotPassword = () => {
+  return useMutation({
+    mutationFn: authEndpoints.forgotPassword,
+    onSuccess: () => {
+      toast.success("Password reset email sent successfully");
+    },
+    onError: () => {
+      toast.error("Failed to send password reset email");
+    },
+  });
+};
+
+export const useVerifyOTP = () => {
+  return useMutation({
+    mutationFn: authEndpoints.verifyOTP,
+    onSuccess: () => {
+      toast.success("OTP verified successfully");
+    },
+    onError: () => {
+      toast.error("Failed to verify OTP");
+    },
+  });
+};

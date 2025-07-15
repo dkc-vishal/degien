@@ -9,7 +9,7 @@ import { useLogin } from "@/lib/api/index";
 const page: React.FC = () => {
   const token = localStorage.getItem("auth_token");
   if (token) {
-    window.location.href = "/Dashboard";
+    window.location.href = "/dashboard";
   }
 
   const router = useRouter();
@@ -66,7 +66,7 @@ const page: React.FC = () => {
       onSuccess: () => {
         setSuccess("Login successful!");
         setTimeout(() => {
-          router.push("/Dashboard");
+          router.push("/dashboard");
         }, 500);
       },
     });
@@ -197,7 +197,7 @@ const page: React.FC = () => {
           <p className="text-sm text-gray-600">
             First time login?{" "}
             <span
-              onClick={() => router.push("/Auth/Change-Password")}
+              onClick={() => router.push("/Auth/first_time_login")}
               className="text-blue-600 font-medium hover:underline cursor-pointer"
             >
               Update

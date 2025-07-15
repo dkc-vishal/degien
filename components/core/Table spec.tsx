@@ -1,7 +1,7 @@
 "use client";
 // import ImageEditorModal from "@/components/image-editor/ImageEditorModal";
 import ImageEditorModal from "../image-editor/ImageEditorModal";
-import { use, useEffect, useRef } from "react"; // Make sure useRef is imported
+import { use, useCallback, useEffect, useRef } from "react"; // Make sure useRef is imported
 import React, { useState } from "react";
 import { API_ENDPOINTS } from "@/lib/api";
 export interface IssueImage {
@@ -300,38 +300,37 @@ export default function Table({
         has_shape: false,
       };
     });
-  };   
-   
+  };
 
-    
-const handleSaveEditedImage = (
-  issueId: string,
-  imageId: string,
-  newImageDataUrl: string
-) => {
-  const [rowIndex, colIndex, imageIndex] = issueId.split("-").map(Number);
+  const handleSaveEditedImage = (
+    issueId: string,
+    imageId: string,
+    newImageDataUrl: string
+  ) => {
+    const [rowIndex, colIndex, imageIndex] = issueId.split("-").map(Number);
 
-  setTableData((prevData) => {
-    const newData = [...prevData];
-    const cell = newData[rowIndex][colIndex];
+    setTableData((prevData) => {
+      const newData = [...prevData];
+      const cell = newData[rowIndex][colIndex];
 
-    const isSingleImage =
-      cell.data_type === "single_image" ||
-      (Array.isArray(cell.data_type) && cell.data_type.includes("single_image"));
+      const isSingleImage =
+        cell.data_type === "single_image" ||
+        (Array.isArray(cell.data_type) &&
+          cell.data_type.includes("single_image"));
 
-    if (isSingleImage && Array.isArray(cell.value)) {
-      const updatedImages = [...cell.value];
-      updatedImages[imageIndex] = newImageDataUrl;
+      if (isSingleImage && Array.isArray(cell.value)) {
+        const updatedImages = [...cell.value];
+        updatedImages[imageIndex] = newImageDataUrl;
 
-      newData[rowIndex][colIndex] = {
-        ...cell,
-        value: updatedImages,
-      };
-    }
+        newData[rowIndex][colIndex] = {
+          ...cell,
+          value: updatedImages,
+        };
+      }
 
-    localStorage.setItem(`table_data_${tablename}`, JSON.stringify(newData));
-    return newData;
-  });
+      localStorage.setItem(`table_data_${tablename}`, JSON.stringify(newData));
+      return newData;
+    });
 
     // toast({
     //   title: "Image updated",
@@ -357,7 +356,7 @@ const handleSaveEditedImage = (
           rownumber: 0,
           colnumber: 0,
           imgindex: 0,
-        })
+        });
         setSelectedRange(null);
         setSelectionAnchor(null);
       }
@@ -806,7 +805,6 @@ const handleSaveEditedImage = (
               realTimeMeasIdx,
               realTimeIdx,
             ].forEach((c) => c !== -1 && setValue(row, c, ""));
-
           } else {
             if (xsCol !== -1)
               setValue(row, xsCol, toFractionString(sizes.xs).toString());
@@ -1104,7 +1102,7 @@ const handleSaveEditedImage = (
   //     return updated;
   //   });
   // };
-  
+
   const handleImagePasteOrDrop = (
     files: File[],
     rowIndex: number,
@@ -1451,7 +1449,40 @@ const handleSaveEditedImage = (
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [imageSeleted, copiedImage]);
-  
+
+  const saveoncellchange = () => {
+    const cellMap: Record<string, CellData> = {};
+
+    tableData.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        const key = `${rowIndex}-${colIndex}`;
+        cellMap[key] = cell;
+      });
+    });
+    const columnMetadata: Record<string, any> = {};
+
+    columnheaders.forEach((col: any, index: number) => {
+      columnMetadata[index] = {
+        width: 200, // default width, adjust as needed
+        header: col.header,
+        data_type: col.data_type,
+        is_editable: col.is_editable,
+        is_frozen: index < 2, // freeze first two columns for example
+        is_hidden: false,
+        is_moveable: false,
+      };
+    });
+    // sendData({
+    //   spreadsheet_id: getapi,
+    //   frozen_columns: frozenColIndices,
+    //   column_metadata: columnMetadata,
+    //   cells: cellMap,
+    //   spreadsheet_metadata: {
+    //     last_edit_time: "2025-07-10T06:41:22.646Z",
+    //   },
+    // });
+  };
+
   useKeyboardShortcuts({
     tableData,
     setTableData,
@@ -1467,6 +1498,7 @@ const handleSaveEditedImage = (
     redoStack,
     setRedoStack,
     lastSnapshotRef,
+    saveoncellchange,
   });
 
   // image model
@@ -2976,9 +3008,6 @@ const handleSaveEditedImage = (
                                   }
 
                                   if (!editingCell) return;
-
-                                  
-
                                 }}
                                 className={`${
                                   rowIndex === 0

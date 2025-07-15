@@ -446,6 +446,7 @@ export default function Table({
       },
     });
   };
+
   const saveoncellchange = () => {
     const cellMap: Record<string, CellData> = {};
 
@@ -478,6 +479,7 @@ export default function Table({
       },
     });
   };
+  
   useEffect(() => {
     localStorage.setItem(`table_data_${tablename}`, JSON.stringify(tableData));
   }, [tableData]);
@@ -999,6 +1001,7 @@ export default function Table({
       document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [autofillStart, autofillTarget, tableData]);
+
   useEffect(() => {
     console.log("first");
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1022,6 +1025,7 @@ export default function Table({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [imageSeleted, copiedImage]);
+
   useEffect(() => {
     const updatePosition = () => {
       if (!selectedHistory) return;
@@ -1070,6 +1074,7 @@ export default function Table({
     lastSnapshotRef,
     saveoncellchange,
   });
+
   const getCellHistory = async (
     cellid: string,
     contextMenu: { row: number; col: number; x: number; y: number }
@@ -1090,6 +1095,7 @@ export default function Table({
     }));
     setSelectedHistoryIndex(Object.keys(updatedMap).length - 1);
   };
+
   const handleSave = async () => {
     const cellMap: Record<string, CellData> = {};
 

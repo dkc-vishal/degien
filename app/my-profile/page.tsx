@@ -105,7 +105,7 @@ const MyProfilePage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
               <div>
                 <p className="text-sm text-gray-500 mb-1">Employee Name</p>
-                <p className="text-lg font-medium text-gray-800">
+                <p className="text-lg font-medium text-gray-800 capitalize">
                   {userDetails.name}
                 </p>
               </div>
@@ -117,7 +117,7 @@ const MyProfilePage = () => {
               </div>
               <div>
                 <p className="text-sm text-gray-500 mb-1">Department</p>
-                <p className="text-lg font-medium text-gray-800">
+                <p className="text-lg font-medium text-gray-800 capitalize">
                   {userDetails.department}
                 </p>
               </div>
@@ -175,6 +175,7 @@ const MyProfilePage = () => {
       {showUpdateModal && userDetails && (
         <UpdateProfileModal
           name={userDetails.name}
+          department={userDetails.department}
           onClose={() => setShowUpdateModal(false)}
           onUpdate={handleProfileUpdate}
         />

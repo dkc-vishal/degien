@@ -32,10 +32,33 @@ export interface LoginResponse {
   };
 }
 
+export interface FirstTimeLoginRequest {
+  email: string;
+  system_password: string;
+  new_password: string;
+  confirm_password: string;
+}
+
+export interface ForgotPasswordResponse {
+  data: {
+    token: string;
+  };
+  error_status: boolean;
+  message: string;
+  status: number;
+}
+
+export interface VerifyOTPRequest {
+  otp: string;
+  token: string;
+  password: string;
+  confirm_password: string;
+}
+
 export interface ChangePasswordRequest {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
+  old_password: string;
+  new_password: string;
+  confirm_password: string;
 }
 
 export type UserRole =

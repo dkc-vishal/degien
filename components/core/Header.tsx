@@ -103,8 +103,8 @@ export default function Header({ toggleSidebar }: any) {
             alt="User Avatar"
             className="w-8 h-8 rounded-full"
           />
-          <span className="text-sm font-medium">
-            Welcome, {getUser()?.name ?? "Guest"}
+          <span className="text-sm font-semibold">
+            Welcome, <span className="capitalize">{getUser()?.name.split(" ")[0] ?? "Guest"}</span>
           </span>
         </div>
         {/* </div> */}

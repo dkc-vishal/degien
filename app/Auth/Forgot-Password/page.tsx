@@ -3,15 +3,16 @@
 import React, { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { API_ENDPOINTS } from "@/lib/api";
 import { RiMailSendLine, RiLockPasswordLine } from "react-icons/ri";
+import { useForgotPassword } from "@/lib/api/hooks";
 
 const ForgotPasswordPage = () => {
-
   const [email, setEmail] = useState("");
   const [redirecting, setRedirecting] = useState(false);
 
   const router = useRouter();
+
+  const ForgotPasswordMutation = useForgotPassword();
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,42 +22,40 @@ const ForgotPasswordPage = () => {
       return;
     }
 
-    try {
-      const res = await fetch(API_ENDPOINTS.resetPasswordSelfRequest.url, {
-        method: API_ENDPOINTS.resetPasswordSelfRequest.method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
+    // const res = await fetch(API_ENDPOINTS.resetPasswordSelfRequest.url, {
+    //   method: API_ENDPOINTS.resetPasswordSelfRequest.method,
+    //   headers: {
+    //     "Content-Type": "application/json",
+    //   },
+    //   body: JSON.stringify({ email }),
+    // });
 
-      const data = await res.json();
+    // const data = await res.json();
 
-      if (!res.ok) {
-        toast.error(data.message || "Failed to generate OTP");
-        return;
-      }
+    // if (!res.ok) {
+    //   toast.error(data.message || "Failed to generate OTP");
+    //   return;
+    // }
 
-      const token = data.data.token;
+    // const token = data.data.token;
 
-      console.log("token: ", token);
+    // console.log("token: ", token);
 
-      // Save to localStorage
+    // Save to localStorage
 
-      localStorage.setItem("reset_email", email);
-      localStorage.setItem("reset_token", token);
+    // localStorage.setItem("reset_email", email);
+    // localStorage.setItem("reset_token", token);
 
-      toast.success("OTP sent successfully. Check your email.");
-      setRedirecting(true);
+    ForgotPasswordMutation.mutate(email, {
+      onSuccess: (data) => {
+        setRedirecting(true);
 
-      setTimeout(() => {
-        router.push(`/Auth/Verify-OTP?token=${token}`);
-      }, 2000);
-
-    } catch (error) {
-      console.error("Forgot password error: ", error);
-      toast.error("Something went wrong.");
-    }
+        const token = data.data.token;
+        setTimeout(() => {
+          router.push(`/Auth/Verify-OTP?token=${token}`);
+        }, 2000);
+      },
+    });
   };
 
   return (
@@ -88,15 +87,15 @@ const ForgotPasswordPage = () => {
         <button
           type="submit"
           disabled={redirecting}
-          className={`w-full mt-4 flex items-center justify-center gap-2 text-white font-medium py-2 px-4 rounded-md transition cursor-pointer ${redirecting
+          className={`w-full mt-4 flex items-center justify-center gap-2 text-white font-medium py-2 px-4 rounded-md transition cursor-pointer ${
+            redirecting
               ? "bg-blue-300 cursor-not-allowed"
               : "bg-blue-500 hover:bg-blue-600"
-            }`}
+          }`}
         >
           <RiMailSendLine className="w-5 h-5" />
           {redirecting ? "Redirecting..." : "Send OTP"}
         </button>
-
 
         {/* Back to login */}
 

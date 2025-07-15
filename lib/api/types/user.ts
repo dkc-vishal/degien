@@ -23,6 +23,15 @@ export interface UpdateUserRequest {
   is_active?: boolean;
 }
 
+export interface UpdateUserResponse {
+  user_id: string;
+  name: string;
+  email: string;
+  department: string;
+  designation?: string;
+  is_vendor?: boolean;
+}
+
 export interface UserFilter extends QueryParams {
   search?: string;
   role?: UserRole;
