@@ -39,8 +39,6 @@ export default function Table({
   tablename,
   col,
   row,
-  imagecol,
-  imagecol2,
   columnheaders,
   spreadsheet,
   getapi,
@@ -99,20 +97,10 @@ export default function Table({
   const animationFrameRef = useRef<number | null>(null);
 
   const [columnHeaders, setColumnHeaders] = useState(
-    Array.from({ length: col }, (_, colIndex) =>
-      colIndex === imagecol || colIndex === imagecol2
-        ? "Issue Picture"
-        : columnheaders[colIndex].header
-    )
+    columnheaders.map((col: any) => col.header)
   );
   const tableRef = useRef<HTMLDivElement>(null);
 
-  // useEffect(() => {
-  //   const shareddata = localStorage.getItem(`table_data_${tablename}`);
-  //   if (shareddata) {
-  //     setTableData(JSON.parse(shareddata));
-  //   }
-  // }, []);
   const [colWidths, setColWidths] = useState(
     Array.from({ length: columnheaders.length }, (_, i) => columnheaders[i]) // Default width of 100 if not specified
   );
@@ -297,9 +285,12 @@ export default function Table({
         const typedCell = cell as CellData;
 
         if (typedCell.data_type === "single_image") {
-          typedCell.value = [];
+          if (!typedCell.value || typeof typedCell.value === "string") {
+            typedCell.value = typedCell.value ? [typedCell.value] : [];
+          } else if (!Array.isArray(typedCell.value)) {
+            typedCell.value = [];
+          }
         }
-
         setTableData((prevData) => {
           const newData = [...prevData];
           const updatedRow = [...newData[typedCell.row]];
@@ -1373,6 +1364,11 @@ export default function Table({
                   ))}
                 </colgroup>
                 <thead>
+                  <tr>
+                    <th className="bg-amber-300 text-[17px]" colSpan={8}>
+                      Orignal
+                    </th>
+                  </tr>
                   <tr className=" sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
                     {tableData[0]?.map((_, i) => (
                       <>
@@ -1479,19 +1475,8 @@ export default function Table({
                       </>
                     ))}
                   </tr>
-                  <tr className="sticky top-0 z-30 border border-gray-300 p-2 text-sm font-semibold">
-                    <th className="bg-amber-300 text-[17px]" colSpan={7}>
-                      Orignal
-                    </th>
-                    <th className="bg-green-300 text-[17px]" colSpan={4}>
-                      Repeat 1
-                    </th>
-                    <th className="bg-blue-300 text-[17px]" colSpan={4}>
-                      Repeat 2
-                    </th>
-                  </tr>
-                  <tr className="sticky top-6 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
-                    {columnHeaders?.map((_, i) => (
+                  <tr className="sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
+                    {columnHeaders?.map((_: any, i: number) => (
                       <>
                         <th
                           key={i}
@@ -1672,7 +1657,9 @@ export default function Table({
                             >
                               {rowIndex + 1}
                             </td>
-                          ) : columnHeaders[colIndex] === "Issue Picture" ? (
+                          ) : columnHeaders[colIndex]
+                              .toLowerCase()
+                              .includes("picture") ? (
                             rowIndex === -1 ? (
                               <td>
                                 <textarea
@@ -2206,12 +2193,12 @@ export default function Table({
 
                                                 const isSingleImage =
                                                   cell.data_type ===
-                                                    "multiple_image" ||
+                                                    "single_image" ||
                                                   (Array.isArray(
                                                     cell.data_type
                                                   ) &&
                                                     cell.data_type.includes(
-                                                      "multiple_image"
+                                                      "single_image"
                                                     ));
 
                                                 if (

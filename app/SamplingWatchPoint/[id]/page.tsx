@@ -53,8 +53,6 @@ const page = () => {
           <Table
             col={8}
             row={50}
-            imagecol={5}
-            imagecol2={7}
             tablename="Sampling Watchpoint"
             columnheaders={columnHeaders}
             spreadsheet={tableData}
