@@ -2,10 +2,19 @@
 
 import { useEffect, CSSProperties } from "react";
 import { FaPrint } from "react-icons/fa";
+import {useRouter} from "next/navigation"
+import { FaBackwardStep } from "react-icons/fa6";
 
 const FT_COLUMNS = Array.from({ length: 10 }, (_, i) => `FT No ${i + 1}`);
 
 export default function InspectionPointPrintPage() {
+
+  const router = useRouter() ; 
+
+  const handleBack = () => {
+    router.push("/inspection-point-print") ; 
+  }
+
   const handlePrint = () => window.print();
 
   useEffect(() => {
@@ -61,6 +70,30 @@ export default function InspectionPointPrintPage() {
     </div>
   );
 
+  const PrintFooter = ({
+    currentPage, 
+    totalPages, 
+  } : {
+    currentPage: number, 
+    totalPages: number 
+  }) => {
+    return (
+      <div
+        className="onprint"
+        style={{
+          display: "none", 
+          position: "absolute", 
+          bottom: "0", 
+          right: "20px", 
+          fontSize: "10px", 
+          fontFamily: "Arial"
+        }}
+      >
+        Page {currentPage} of {totalPages}
+      </div>
+    )
+  }
+
   const paginate = (arr: any[], size: number) =>
     Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
       arr.slice(i * size, i * size + size)
@@ -93,16 +126,32 @@ export default function InspectionPointPrintPage() {
       `}</style>
 
       <div className="p-4 print:p-0 mx-auto bg-white" style={{ maxWidth: "1370px" }}>
-        <button
-          onClick={handlePrint}
-          className="no-print mb-4 flex items-center gap-2 px-3 py-1 rounded bg-gray-200 shadow cursor-pointer hover:bg-gray-300"
-        >
-          <FaPrint />
-          Print
-        </button>
-
+        <div className="no-print flex gap-4 mb-8">
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-2 px-3 py-1 rounded bg-blue-300 shadow cursor-pointer hover:bg-blue-400 text-white font-semibold"
+          >
+            <FaPrint/>
+            Print 
+          </button>
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 px-3 py-1 rounded bg-blue-300 shadow cursor-pointer hover:bg-blue-400 text-white font-semibold"
+          >
+            <FaBackwardStep/>
+            Back to Inspection Point Page 
+          </button>
+        </div>
         {pages.map((rows, pageIndex) => (
-          <div key={pageIndex} className="mb-12" style={{ pageBreakAfter: pageIndex < pages.length - 1 ? "always" : "auto" }}>
+          <div
+            key={pageIndex} className="mb-12" 
+            style={{
+              position: "relative",
+              minHeight: "1120px", 
+              paddingBottom: "30px", 
+              pageBreakAfter: pageIndex < pages.length - 1 ? "always" : "auto"
+            }}
+          >
             <PrintHeader />
 
             {pageIndex === 0 && (
@@ -171,6 +220,13 @@ export default function InspectionPointPrintPage() {
                 ))}
               </tbody>
             </table>
+
+            {/* Page count footer */}
+
+            <PrintFooter
+              currentPage={pageIndex + 1}
+              totalPages={pages.length}
+            />
           </div>
         ))}
       </div>

@@ -79,9 +79,9 @@ export default function QAInitialReportTable({
             <th style={{ ...tdStyle, width: "50px" }}>Date</th>
             <th style={{ ...tdStyle, width: "80px" }}>Issue Name</th>
             <th style={{ ...tdStyle, width: "100px" }}>Watchpoint</th>
-            <th style={{ ...tdStyle, width: "160px" }}>Before Correction</th>
+            <th style={{ ...tdStyle, width: "160px" }}>Measurement Picture</th>
             <th style={{ ...tdStyle, width: "100px" }}>How to Solve</th>
-            <th style={{ ...tdStyle, width: "160px" }}>After Correction</th>
+            <th style={{ ...tdStyle, width: "160px" }}>Measurement Picture</th>
           </tr>
         </thead>
         <tbody>

@@ -2,8 +2,13 @@
 
 import { useEffect, CSSProperties } from "react";
 import { FaPrint } from "react-icons/fa";
+import { useRouter } from "next/navigation";
+import { FaBackwardStep } from "react-icons/fa6";
 
 export default function FitAuditPrintPage() {
+
+  const router = useRouter();
+
   const handlePrint = () => {
     window.print();
   };
@@ -138,7 +143,7 @@ export default function FitAuditPrintPage() {
   const tdStyle: CSSProperties = {
     border: "1px solid #000",
     borderRight: "1px solid #000",
-    borderBottom: "1px solid #000",  
+    borderBottom: "1px solid #000",
     fontSize: "10px",
     textAlign: "center",
     padding: "4px",
@@ -191,6 +196,30 @@ export default function FitAuditPrintPage() {
     </div>
   );
 
+  const PrintFooter = ({
+    currentPage,
+    totalPages,
+  }: {
+    currentPage: number;
+    totalPages: number;
+  }) => {
+    return (
+      <div
+        className="onprint"
+        style={{
+          display: "none",
+          position: "absolute", 
+          bottom: "1px", 
+          right: "20px", 
+          fontSize: "10px", 
+          fontFamily: "Arial"
+        }}
+      >
+        Page {currentPage} of {totalPages}
+      </div>
+    )
+  }
+
   return (
     <>
       <style jsx global>{`
@@ -224,16 +253,31 @@ export default function FitAuditPrintPage() {
       `}</style>
 
       <div className="p-4 print:p-0 mx-auto bg-white" style={{ maxWidth: "1370px" }}>
-        <button
-          onClick={handlePrint}
-          className="no-print mb-4 flex items-center gap-2 px-3 py-1 rounded bg-gray-200 shadow cursor-pointer hover:bg-gray-300"
-        >
-          <FaPrint />
-          Print
-        </button>
-
+        <div className="no-print flex gap-4 mb-8">
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-2 px-3 py-1 rounded bg-blue-300 shadow cursor-pointer hover:bg-blue-400 text-white font-bold"
+          >
+            <FaPrint />
+            Print
+          </button>
+          <button
+            onClick={() => router.push("/fit-audit")}
+            className="flex items-center gap-2 px-3 py-1 rounded bg-blue-300 hover:bg-blue-400 shadow cursor-pointer text-white font-bold"
+          >
+            <FaBackwardStep />
+            Back to Fit Audit
+          </button>
+        </div>
         {pages.map((rows, pageIndex) => (
-          <div key={pageIndex} className="mb-8">
+          <div
+            key={pageIndex}
+            className="mb-8 relative print:relative"
+            style={{
+              height: "1123px", 
+              position: "relative"
+            }}
+          >
             <PrintHeader />
 
             {pageIndex === 0 && (
@@ -287,24 +331,24 @@ export default function FitAuditPrintPage() {
                   {headers.flatMap((h) =>
                     h.children
                       ? h.children.map((child, j) => (
-                          <th
-                            key={`${h.label}-${j}`}
-                            style={{
-                              ...tdStyle,
-                              backgroundColor: "#fff",
-                              width: child.width,
-                            }}
-                          >
-                            {child.label}
-                          </th>
-                        ))
+                        <th
+                          key={`${h.label}-${j}`}
+                          style={{
+                            ...tdStyle,
+                            backgroundColor: "#fff",
+                            width: child.width,
+                          }}
+                        >
+                          {child.label}
+                        </th>
+                      ))
                       : []
                   )}
                 </tr>
               </thead>
               <tbody>
                 {rows.map((row, idx) => (
-                  <tr key={idx} style={{ height: "300px"}}>
+                  <tr key={idx} style={{ height: "300px" }}>
                     <td style={tdStyle}>{row.sno}</td>
                     <td style={tdRotated}>{row.header}</td>
                     <td style={tdStyle}>{row.measurementType}</td>
@@ -335,7 +379,21 @@ export default function FitAuditPrintPage() {
               </tbody>
             </table>
 
-            {pageIndex < pages.length - 1 && <div style={{ pageBreakAfter: "always" }} />}
+            {/* Page count footer */}
+
+            <PrintFooter
+              currentPage={pageIndex + 1}
+              totalPages={pages.length}
+            />
+
+            {/* Page break after each page except last */}
+
+            {
+              pageIndex < pages.length - 1 && <div style={{
+                pageBreakAfter: "always"
+              }} />
+            }
+
           </div>
         ))}
       </div>

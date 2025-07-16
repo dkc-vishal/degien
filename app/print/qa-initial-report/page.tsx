@@ -2,12 +2,16 @@
 
 import QAInitialReportTable from "./QAInitialReportTable";
 import { MdPrint } from "react-icons/md";
+import {useRouter} from "next/navigation" ;
+import { FaBackwardStep } from "react-icons/fa6";
 
 export default function QAInitialReportPrintPage() {
 
+  const router = useRouter() ; 
+
   const handlePrint = () => {
     window.print();
-  }
+  };
 
   const tableData = [
     { date: "2025-07-08", issue: "Thread Pull", watchpoint: "Sleeve Join", solution: "Thread trimmed" },
@@ -63,16 +67,23 @@ export default function QAInitialReportPrintPage() {
   return (
     <>
       <div className="mx-auto text-xs space-y-6">
-        {/* Page 1 */}
-
-        <button
-          onClick={handlePrint}
-          className="fixed top-36 left-110  flex items-center gap-2 px-4 py-2 bg-blue-400 hover:bg-blue-500 text-white rounded-md text-sm font-medium shadow-md print:hidden cursor-pointer"
-        >
-          <MdPrint className="text-lg" />
-          Print
-        </button>
-
+        <div className="fixed top-36 left-90 flex flex-col gap-3 print:hidden">
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-400 hover:bg-blue-500 text-white rounded-md text-sm font-medium shadow-md cursor-pointer"
+          >
+            <MdPrint className="text-lg"/>
+            Print 
+          </button>
+          <button
+            onClick={() => router.push("/qa-initial-report")}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-400 hover:bg-blue-500 text-white font-medium rounded-md text-sm shadow-md cursor-pointer"
+          >
+            <FaBackwardStep className="text-sm"/>
+            Back to QA Initial Report Page 
+          </button>
+        </div>
+        {/* 🔖 Page 1 Content */}
         <div style={{
           width: "800px",
           height: "1120px",
@@ -85,7 +96,7 @@ export default function QAInitialReportPrintPage() {
         }}>
           <PrintHeader />
 
-          {/* Main Report Section */}
+          {/* 📝 Main Section */}
           <div className="border border-black text-[11px]">
             <div className="grid grid-cols-6 border-b border-black">
               <div className="p-1 border-r border-black">Inspection Stage</div>
@@ -185,6 +196,7 @@ export default function QAInitialReportPrintPage() {
             </div>
           </div>
 
+          {/* 🧾 QA Table First Entry */}
           <QAInitialReportTable
             tableData={tableData}
             startIndex={0}
@@ -192,9 +204,23 @@ export default function QAInitialReportPrintPage() {
             pageNumber={1}
             totalPages={totalPages}
           />
+
+          {/* ✅ Page Footer for Page 1 */}
+          <div style={{
+            position: "absolute",
+            bottom: "24px",
+            left: "0",
+            width: "100%",
+            textAlign: "center",
+            fontSize: "12px",
+            fontFamily: "Arial",
+            fontWeight: 500
+          }}>
+            Page 1 of {totalPages}
+          </div>
         </div>
 
-        {/* Additional Pages */}
+        {/* 📄 Additional Pages */}
         {[1, 2, 3].map((pageIndex) => (
           <QAInitialReportTable
             key={pageIndex}
@@ -205,9 +231,6 @@ export default function QAInitialReportPrintPage() {
             totalPages={totalPages}
           />
         ))}
-      </div>
-      <div className="text-center text-[11px] font-medium mt-34 print:block print:text-black">
-        Page 1 of {totalPages}
       </div>
     </>
   );
