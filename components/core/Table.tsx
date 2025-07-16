@@ -47,8 +47,6 @@ export default function Table({
   tablename,
   col,
   row,
-  imagecol,
-  imagecol2,
   columnheaders,
   spreadsheet,
   getapi,
@@ -105,20 +103,10 @@ export default function Table({
   const animationFrameRef = useRef<number | null>(null);
 
   const [columnHeaders, setColumnHeaders] = useState(
-    Array.from({ length: col }, (_, colIndex) =>
-      colIndex === imagecol || colIndex === imagecol2
-        ? "Issue Picture"
-        : columnheaders[colIndex].header
-    )
-  );
+  columnheaders.map((col: any) => col.header)
+);
   const tableRef = useRef<HTMLDivElement>(null);
 
-  // useEffect(() => {
-  //   const shareddata = localStorage.getItem(`table_data_${tablename}`);
-  //   if (shareddata) {
-  //     setTableData(JSON.parse(shareddata));
-  //   }
-  // }, []);
   const [colWidths, setColWidths] = useState(
     Array.from({ length: columnheaders.length }, (_, i) => columnheaders[i]) // Default width of 100 if not specified
   );
@@ -137,11 +125,8 @@ export default function Table({
   const resizingColIndex = useRef<number | null>(null);
   const [copiedImage, setCopiedImage] = useState<string | null>(null);
 
-
   const resizeStartX = useRef(0);
   const resizeStartWidth = useRef(0);
-
- 
 
   const handleMouseMove = (e: MouseEvent) => {
     if (resizingColIndex.current === null) return;
@@ -176,6 +161,9 @@ export default function Table({
     setIsImageEditorOpen(false);
     setEditingImageInfo(null);
   };
+  const isFirstRender = useRef(true);
+
+
   function generateUUID() {
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
       const r = (Math.random() * 16) | 0;
@@ -206,7 +194,7 @@ export default function Table({
       const newData = [...prevData];
       const cell = newData[rownumber][colnumber];
 
-      const isSingleImage = cell.data_type === "single_image";
+      const isSingleImage = cell.data_type === "multiple_image";
 
       if (isSingleImage && Array.isArray(cell.value)) {
         const updatedImages = [...cell.value];
@@ -248,17 +236,23 @@ export default function Table({
     };
   }, []);
   const [tableData, setTableData] = useState<TableRow[]>(
-    Array.from({ length: row }, () => generateEmptyRow(row))
+    Array.from({ length: row }, (_, rowIndex) =>
+      Array.from({ length: col }, (_, colIndex) => ({
+        cell_id: "",
+        row: rowIndex,
+        column: colIndex,
+        value: "",
+        data_type: "str", // or infer from columnHeaders if needed
+        is_editable: true,
+        is_header: false,
+        has_shape: false,
+      }))
+    )
   );
-  const [autofillStart, setAutofillStart] = useState<[number, number] | null>(
-    null
-  );
-  const [autofillTarget, setAutofillTarget] = useState<[number, number] | null>(
-    null
-  );
+
   const setCellValue = (celldata: CellData) => {
-    if (celldata.data_type === "single_image") {
-      celldata.value = []; // Ensure value is an array for single_image type
+    if (celldata.data_type === "multiple_image") {
+      celldata.value = []; // Ensure value is an array for multiple_image type
     }
     setTableData((prevData) => {
       const newData = [...prevData]; // shallow copy rows
@@ -268,6 +262,149 @@ export default function Table({
       return newData; // update the whole table
     });
   };
+
+// --- Debounced Save (stable and clean)
+const debouncedSaveRef = useRef(
+  debounce((data: TableRow[], colWidthsSnapshot: any) => {
+    saveoncellchangeupdate(data, colWidthsSnapshot);
+  }, 1000)
+);
+
+// --- Debounced WebSocket Handler
+const handleMessage = useCallback(
+  debounce((data: any) => {
+    if (typeof data !== "object") {
+      console.warn("Invalid WebSocket data:", data);
+      return;
+    }
+
+    console.log("Debounced WebSocket Data:", data);
+
+    // Update column widths
+    for (const [key, column] of Object.entries(data.column_metadata)) {
+      updateColWidth(Number(key), column);
+    }
+
+    // Update cell data
+    for (const [key, cell] of Object.entries(data.cells || data.updated_cells || {})) {
+      const typedCell = cell as CellData;
+
+  if (typedCell.data_type === "multiple_image") {
+    if (!typedCell.value || typeof typedCell.value === "string") {
+      typedCell.value = typedCell.value ? [typedCell.value] : [];
+    } else if (!Array.isArray(typedCell.value)) {
+      typedCell.value = [];
+    }
+  }
+      setTableData((prevData) => {
+        const newData = [...prevData];
+        const updatedRow = [...newData[typedCell.row]];
+        updatedRow[typedCell.column] = typedCell;
+        newData[typedCell.row] = updatedRow;
+        return newData;
+      });
+    }
+  }, 1000),
+  []
+);
+
+// --- Save to Server when Table or Column Widths Change
+useEffect(() => {
+  if (isFirstRender.current) {
+    isFirstRender.current = false;
+    return; // ⛔ skip first time
+  }
+
+  debouncedSaveRef.current(tableData, colWidths);
+}, [tableData, colWidths]);
+
+// --- Cleanup debounced functions on unmount
+useEffect(() => {
+  return () => {
+    debouncedSaveRef.current.cancel();
+    handleMessage.cancel();
+  };
+}, []);
+
+// --- Send Data Function (used by both save calls)
+const saveoncellchangeupdate = (update: TableRow[], colWidths1: any) => {
+  const cellMap: Record<string, CellData> = {};
+
+  update.forEach((row, rowIndex) => {
+    row.forEach((cell, colIndex) => {
+      const key = `${rowIndex}-${colIndex}`;
+      cellMap[key] = cell;
+    });
+  });
+
+  const columnMetadata: Record<string, any> = {};
+  colWidths1.forEach((col: any, index: number) => {
+    columnMetadata[index] = {
+      width: col.width,
+      header: col.header,
+      is_hidden: false,
+      is_moveable: false,
+    };
+  });
+
+  sendData({
+    spreadsheet_id: getapi,
+    frozen_columns: frozenColIndices,
+    column_metadata: columnMetadata,
+    cells: cellMap,
+    spreadsheet_metadata: {
+      last_edit_time: new Date().toISOString(),
+    },
+  });
+};
+
+// --- Immediate Save Trigger (non-debounced, e.g. on manual save)
+const saveoncellchange = () => {
+  const cellMap: Record<string, CellData> = {};
+
+  tableData.forEach((row, rowIndex) => {
+    row.forEach((cell, colIndex) => {
+      const key = `${rowIndex}-${colIndex}`;
+      cellMap[key] = cell;
+    });
+  });
+
+  const columnMetadata: Record<string, any> = {};
+  columnheaders.forEach((col: any, index: number) => {
+    columnMetadata[index] = {
+      width: 200,
+      header: col.header,
+      data_type: col.data_type,
+      is_editable: col.is_editable,
+      is_frozen: index < 2,
+      is_hidden: false,
+      is_moveable: false,
+    };
+  });
+
+  sendData({
+    spreadsheet_id: getapi,
+    frozen_columns: frozenColIndices,
+    column_metadata: columnMetadata,
+    cells: cellMap,
+    spreadsheet_metadata: {
+      last_edit_time: new Date().toISOString(),
+    },
+  });
+};
+
+// --- WebSocket Listener
+const sendData = useWebSocket(getapi, handleMessage);
+
+
+
+  const [autofillStart, setAutofillStart] = useState<[number, number] | null>(
+    null
+  );
+  const [autofillTarget, setAutofillTarget] = useState<[number, number] | null>(
+    null
+  );
+
   // useEffect(() => {
   //   const sheeetdata = spreadsheet.cells;
   //   for (const [key, cell] of Object.entries(sheeetdata)) {
@@ -391,96 +528,6 @@ export default function Table({
     pushToHistory(tableData);
     setTableData(updated);
   };
-  const handleMessage = useCallback(
-    debounce((data: any) => {
-      if (typeof data !== "object") {
-        console.warn(
-          "Invalid WebSocket data:",
-          !data || typeof data !== "object" || !data.cells
-        );
-        return;
-      }
-
-      console.log("Debounced data:", data);
-      for (const [key, column] of Object.entries(data.column_metadata)) {
-        updateColWidth(Number(key), column);
-      }
-      console.log(colWidths);
-      for (const [key, cell] of Object.entries(
-        data.cells || data.updated_cells
-      )) {
-        const typedCell = cell as CellData;
-        setCellValue(typedCell);
-      }
-    }, 1000), // 300ms debounce delay
-    []
-  );
-  const sendData = useWebSocket(getapi, handleMessage);
-  const saveoncellchangeupdate = (update: TableRow[], colWidths1: any) => {
-    console.log(colWidths);
-    const cellMap: Record<string, CellData> = {};
-
-    update.forEach((row, rowIndex) => {
-      row.forEach((cell, colIndex) => {
-        const key = `${rowIndex}-${colIndex}`;
-        cellMap[key] = cell;
-      });
-    });
-    const columnMetadata: Record<string, any> = {};
-
-    colWidths1.forEach((col: any, index: number) => {
-      columnMetadata[index] = {
-        width: col.width, // default width, adjust as needed
-        header: col.header,
-        is_hidden: false,
-        is_moveable: false,
-      };
-    });
-    sendData({
-      spreadsheet_id: getapi,
-      frozen_columns: frozenColIndices,
-      column_metadata: columnMetadata,
-      cells: cellMap,
-      spreadsheet_metadata: {
-        last_edit_time: "2025-07-10T06:41:22.646Z",
-      },
-    });
-  };
-  const saveoncellchange = () => {
-    const cellMap: Record<string, CellData> = {};
-
-    tableData.forEach((row, rowIndex) => {
-      row.forEach((cell, colIndex) => {
-        const key = `${rowIndex}-${colIndex}`;
-        cellMap[key] = cell;
-      });
-    });
-    const columnMetadata: Record<string, any> = {};
-
-    columnheaders.forEach((col: any, index: number) => {
-      columnMetadata[index] = {
-        width: 200, // default width, adjust as needed
-        header: col.header,
-        data_type: col.data_type,
-        is_editable: col.is_editable,
-        is_frozen: index < 2, // freeze first two columns for example
-        is_hidden: false,
-        is_moveable: false,
-      };
-    });
-    sendData({
-      spreadsheet_id: getapi,
-      frozen_columns: frozenColIndices,
-      column_metadata: columnMetadata,
-      cells: cellMap,
-      spreadsheet_metadata: {
-        last_edit_time: "2025-07-10T06:41:22.646Z",
-      },
-    });
-  };
-  useEffect(() => {
-    localStorage.setItem(`table_data_${tablename}`, JSON.stringify(tableData));
-  }, [tableData]);
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -830,18 +877,6 @@ export default function Table({
     }
     setTableData(newData);
   };
-
-  // ...existing code...
-  const debouncedSave = useCallback(
-    debounce((data: TableRow[], colWidths: any) => {
-      saveoncellchangeupdate(data, colWidths);
-    }, 1000),
-    []
-  );
-
-  useEffect(() => {
-    debouncedSave(tableData, colWidths);
-  }, [tableData, colWidths, debouncedSave]);
 
   const handleMouseMoveForScroll = (e: {
     clientX: number;
@@ -1273,7 +1308,7 @@ export default function Table({
             >
               Delete Column
             </li> */}
-<li
+            <li
               onClick={() => {
                 if (contextMenu.cellid) {
                   // Find the cell element
@@ -1334,7 +1369,6 @@ export default function Table({
           </div>
         </div>
       )}
-    
 
       <main className="mt-4">
         <div className=" rounded-xl shadow" ref={tableRef}>
@@ -1644,7 +1678,7 @@ export default function Table({
                             >
                               {rowIndex + 1}
                             </td>
-                          ) : columnHeaders[colIndex] === "Issue Picture" ? (
+                          ) : columnHeaders[colIndex].toLowerCase().includes("picture") ? (
                             rowIndex === -1 ? (
                               <td>
                                 <textarea
@@ -2290,10 +2324,10 @@ export default function Table({
                                       : ""
                                   }
                                     ${
-                                     isCellInAutofillRange(rowIndex, colIndex)
-                                       ? "bg-green-200 border-2 border-green-400"
-                                       : ""
-                                   } ${
+                                      isCellInAutofillRange(rowIndex, colIndex)
+                                        ? "bg-green-200 border-2 border-green-400"
+                                        : ""
+                                    } ${
                                 activeHistoryCell?.element ===
                                 document.querySelector(
                                   `[data-row="${rowIndex}"][data-col="${colIndex}"]`
@@ -2446,7 +2480,6 @@ export default function Table({
                                     : "p-3!"
                                 } className="w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top"
 `}
-
                                 rows={1}
                               />
                             </td>

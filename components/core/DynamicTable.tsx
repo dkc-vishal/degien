@@ -47,8 +47,6 @@ export default function Table({
   tablename,
   col,
   row,
-  imagecol,
-  imagecol2,
   columnheaders,
   spreadsheet,
   getapi,
@@ -105,20 +103,10 @@ export default function Table({
   const animationFrameRef = useRef<number | null>(null);
 
   const [columnHeaders, setColumnHeaders] = useState(
-    Array.from({ length: col }, (_, colIndex) =>
-      colIndex === imagecol || colIndex === imagecol2
-        ? "Issue Picture"
-        : columnheaders[colIndex].header
-    )
+    columnheaders.map((col: any) => col.header)
   );
   const tableRef = useRef<HTMLDivElement>(null);
 
-  // useEffect(() => {
-  //   const shareddata = localStorage.getItem(`table_data_${tablename}`);
-  //   if (shareddata) {
-  //     setTableData(JSON.parse(shareddata));
-  //   }
-  // }, []);
   const [colWidths, setColWidths] = useState(
     Array.from({ length: columnheaders.length }, (_, i) => columnheaders[i]) // Default width of 100 if not specified
   );
@@ -174,7 +162,6 @@ export default function Table({
     setEditingImageInfo(null);
   };
   const isFirstRender = useRef(true);
-
 
   function generateUUID() {
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
@@ -275,137 +262,140 @@ export default function Table({
     });
   };
 
-// --- Debounced Save (stable and clean)
-const debouncedSaveRef = useRef(
-  debounce((data: TableRow[], colWidthsSnapshot: any) => {
-    saveoncellchangeupdate(data, colWidthsSnapshot);
-  }, 1000)
-);
+  // --- Debounced Save (stable and clean)
+  const debouncedSaveRef = useRef(
+    debounce((data: TableRow[], colWidthsSnapshot: any) => {
+      saveoncellchangeupdate(data, colWidthsSnapshot);
+    }, 1000)
+  );
 
-// --- Debounced WebSocket Handler
-const handleMessage = useCallback(
-  debounce((data: any) => {
-    if (typeof data !== "object") {
-      console.warn("Invalid WebSocket data:", data);
-      return;
-    }
-
-    console.log("Debounced WebSocket Data:", data);
-
-    // Update column widths
-    for (const [key, column] of Object.entries(data.column_metadata)) {
-      updateColWidth(Number(key), column);
-    }
-
-    // Update cell data
-    for (const [key, cell] of Object.entries(data.cells || data.updated_cells || {})) {
-      const typedCell = cell as CellData;
-
-      if (typedCell.data_type === "single_image") {
-        typedCell.value = [];
+  // --- Debounced WebSocket Handler
+  const handleMessage = useCallback(
+    debounce((data: any) => {
+      if (typeof data !== "object") {
+        console.warn("Invalid WebSocket data:", data);
+        return;
       }
 
-      setTableData((prevData) => {
-        const newData = [...prevData];
-        const updatedRow = [...newData[typedCell.row]];
-        updatedRow[typedCell.column] = typedCell;
-        newData[typedCell.row] = updatedRow;
-        return newData;
-      });
+      console.log("Debounced WebSocket Data:", data);
+
+      // Update column widths
+      for (const [key, column] of Object.entries(data.column_metadata)) {
+        updateColWidth(Number(key), column);
+      }
+
+      // Update cell data
+      for (const [key, cell] of Object.entries(
+        data.cells || data.updated_cells || {}
+      )) {
+        const typedCell = cell as CellData;
+
+        if (typedCell.data_type === "single_image") {
+          if (!typedCell.value || typeof typedCell.value === "string") {
+            typedCell.value = typedCell.value ? [typedCell.value] : [];
+          } else if (!Array.isArray(typedCell.value)) {
+            typedCell.value = [];
+          }
+        }
+        setTableData((prevData) => {
+          const newData = [...prevData];
+          const updatedRow = [...newData[typedCell.row]];
+          updatedRow[typedCell.column] = typedCell;
+          newData[typedCell.row] = updatedRow;
+          return newData;
+        });
+      }
+    }, 1000),
+    []
+  );
+
+  // --- Save to Server when Table or Column Widths Change
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return; // ⛔ skip first time
     }
-  }, 1000),
-  []
-);
 
-// --- Save to Server when Table or Column Widths Change
-useEffect(() => {
-  if (isFirstRender.current) {
-    isFirstRender.current = false;
-    return; // ⛔ skip first time
-  }
+    debouncedSaveRef.current(tableData, colWidths);
+  }, [tableData, colWidths]);
 
-  debouncedSaveRef.current(tableData, colWidths);
-}, [tableData, colWidths]);
+  // --- Cleanup debounced functions on unmount
+  useEffect(() => {
+    return () => {
+      debouncedSaveRef.current.cancel();
+      handleMessage.cancel();
+    };
+  }, []);
 
-// --- Cleanup debounced functions on unmount
-useEffect(() => {
-  return () => {
-    debouncedSaveRef.current.cancel();
-    handleMessage.cancel();
+  // --- Send Data Function (used by both save calls)
+  const saveoncellchangeupdate = (update: TableRow[], colWidths1: any) => {
+    const cellMap: Record<string, CellData> = {};
+
+    update.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        const key = `${rowIndex}-${colIndex}`;
+        cellMap[key] = cell;
+      });
+    });
+
+    const columnMetadata: Record<string, any> = {};
+    colWidths1.forEach((col: any, index: number) => {
+      columnMetadata[index] = {
+        width: col.width,
+        header: col.header,
+        is_hidden: false,
+        is_moveable: false,
+      };
+    });
+
+    sendData({
+      spreadsheet_id: getapi,
+      frozen_columns: frozenColIndices,
+      column_metadata: columnMetadata,
+      cells: cellMap,
+      spreadsheet_metadata: {
+        last_edit_time: new Date().toISOString(),
+      },
+    });
   };
-}, []);
 
-// --- Send Data Function (used by both save calls)
-const saveoncellchangeupdate = (update: TableRow[], colWidths1: any) => {
-  const cellMap: Record<string, CellData> = {};
+  // --- Immediate Save Trigger (non-debounced, e.g. on manual save)
+  const saveoncellchange = () => {
+    const cellMap: Record<string, CellData> = {};
 
-  update.forEach((row, rowIndex) => {
-    row.forEach((cell, colIndex) => {
-      const key = `${rowIndex}-${colIndex}`;
-      cellMap[key] = cell;
+    tableData.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        const key = `${rowIndex}-${colIndex}`;
+        cellMap[key] = cell;
+      });
     });
-  });
 
-  const columnMetadata: Record<string, any> = {};
-  colWidths1.forEach((col: any, index: number) => {
-    columnMetadata[index] = {
-      width: col.width,
-      header: col.header,
-      is_hidden: false,
-      is_moveable: false,
-    };
-  });
-
-  sendData({
-    spreadsheet_id: getapi,
-    frozen_columns: frozenColIndices,
-    column_metadata: columnMetadata,
-    cells: cellMap,
-    spreadsheet_metadata: {
-      last_edit_time: new Date().toISOString(),
-    },
-  });
-};
-
-// --- Immediate Save Trigger (non-debounced, e.g. on manual save)
-const saveoncellchange = () => {
-  const cellMap: Record<string, CellData> = {};
-
-  tableData.forEach((row, rowIndex) => {
-    row.forEach((cell, colIndex) => {
-      const key = `${rowIndex}-${colIndex}`;
-      cellMap[key] = cell;
+    const columnMetadata: Record<string, any> = {};
+    columnheaders.forEach((col: any, index: number) => {
+      columnMetadata[index] = {
+        width: 200,
+        header: col.header,
+        data_type: col.data_type,
+        is_editable: col.is_editable,
+        is_frozen: index < 2,
+        is_hidden: false,
+        is_moveable: false,
+      };
     });
-  });
 
-  const columnMetadata: Record<string, any> = {};
-  columnheaders.forEach((col: any, index: number) => {
-    columnMetadata[index] = {
-      width: 200,
-      header: col.header,
-      data_type: col.data_type,
-      is_editable: col.is_editable,
-      is_frozen: index < 2,
-      is_hidden: false,
-      is_moveable: false,
-    };
-  });
+    sendData({
+      spreadsheet_id: getapi,
+      frozen_columns: frozenColIndices,
+      column_metadata: columnMetadata,
+      cells: cellMap,
+      spreadsheet_metadata: {
+        last_edit_time: new Date().toISOString(),
+      },
+    });
+  };
 
-  sendData({
-    spreadsheet_id: getapi,
-    frozen_columns: frozenColIndices,
-    column_metadata: columnMetadata,
-    cells: cellMap,
-    spreadsheet_metadata: {
-      last_edit_time: new Date().toISOString(),
-    },
-  });
-};
-
-// --- WebSocket Listener
-const sendData = useWebSocket(getapi, handleMessage);
-
-
+  // --- WebSocket Listener
+  const sendData = useWebSocket(getapi, handleMessage);
 
   const [autofillStart, setAutofillStart] = useState<[number, number] | null>(
     null
@@ -1399,6 +1389,11 @@ const sendData = useWebSocket(getapi, handleMessage);
                   ))}
                 </colgroup>
                 <thead>
+                  <tr>
+                    <th className="bg-amber-300 text-[17px]" colSpan={8}>
+                      Orignal
+                    </th>
+                  </tr>
                   <tr className=" sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
                     {tableData[0]?.map((_, i) => (
                       <>
@@ -1506,7 +1501,7 @@ const sendData = useWebSocket(getapi, handleMessage);
                     ))}
                   </tr>
                   <tr className="sticky top-0 z-30 bg-white border border-gray-300 p-2 text-sm font-semibold">
-                    {columnHeaders?.map((_, i) => (
+                    {columnHeaders?.map((_: any, i: number) => (
                       <>
                         <th
                           key={i}
@@ -1687,7 +1682,9 @@ const sendData = useWebSocket(getapi, handleMessage);
                             >
                               {rowIndex + 1}
                             </td>
-                          ) : columnHeaders[colIndex] === "Issue Picture" ? (
+                          ) : columnHeaders[colIndex]
+                              .toLowerCase()
+                              .includes("picture") ? (
                             rowIndex === -1 ? (
                               <td>
                                 <textarea
@@ -2221,12 +2218,12 @@ const sendData = useWebSocket(getapi, handleMessage);
 
                                                 const isSingleImage =
                                                   cell.data_type ===
-                                                    "multiple_image" ||
+                                                    "single_image" ||
                                                   (Array.isArray(
                                                     cell.data_type
                                                   ) &&
                                                     cell.data_type.includes(
-                                                      "multiple_image"
+                                                      "single_image"
                                                     ));
 
                                                 if (
