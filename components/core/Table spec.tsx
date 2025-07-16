@@ -28,13 +28,6 @@ export interface Issue {
   createdDate?: string;
 }
 
-import {
-  FaBars,
-  FaTachometerAlt,
-  FaClipboardList,
-  FaWrench,
-  FaTools,
-} from "react-icons/fa";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
 import { Button } from "../ui/button";

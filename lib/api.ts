@@ -52,7 +52,7 @@ export const API_ENDPOINTS = {
     method: "GET",
   }),
   imageUpload: {
-    url: `${BASE_URL}v1.0/image/image/`,
+    url: `http://gulab.local:8000/api/v1.0/image/image/`,
     method: "POST"
   },
   activeUsers: {
