@@ -34,6 +34,8 @@ import { Button } from "../ui/button";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
+import { CellHistory } from "@/types";
+import CellHistoryModal from "./HistoryModal";
 function parseFraction(input: string): number {
   input = input.trim();
   if (!input) return 0;
@@ -107,21 +109,6 @@ type CellData = {
   has_shape: boolean;
 };
 
-type CellHistory = {
-  cell_history_id: string;
-
-  created_at: string; // ISO 8601 date string
-
-  edited_by: string;
-
-  has_shape: boolean;
-
-  is_highlighted: boolean;
-
-  new_value: string;
-
-  old_value: string;
-};
 export default function Table({
   tablename,
   col,
@@ -158,6 +145,11 @@ export default function Table({
   const [editingImageInfo, setEditingImageInfo] = useState<{
     issueId: string;
     image: IssueImage;
+  } | null>(null);
+
+  const [activeHistoryCell, setActiveHistoryCell] = useState<{
+    cellId: string;
+    element: HTMLElement;
   } | null>(null);
 
   const [imageSeleted, setimageSeleted] = useState({
@@ -1497,34 +1489,6 @@ export default function Table({
   // image model
   const [issues, setIssues] = useState<Issue[]>([]);
 
-  const getCellHistory = async (
-    cellid: string,
-    contextMenu: { row: number; col: number; x: number; y: number }
-  ) => {
-    const res = await axios.get(API_ENDPOINTS.cellHistory(cellid).url);
-
-    const updatedMap = { ...editHistoryMap, ...res.data.data };
-
-    const key = `${contextMenu.row}-${contextMenu.col}`;
-
-    setSelectedHistory((s) => ({
-      ...s,
-
-      key,
-
-      row: contextMenu.row,
-
-      col: contextMenu.col,
-
-      x: contextMenu.x,
-
-      y: contextMenu.y,
-
-      history: updatedMap,
-    }));
-
-    setSelectedHistoryIndex(Object.keys(updatedMap).length - 1);
-  };
   async function submitbutton() {
     const res = await axios.post(postapi, {});
   }
@@ -1671,9 +1635,18 @@ export default function Table({
             <li
               onClick={() => {
                 if (contextMenu.cellid) {
-                  getCellHistory(contextMenu.cellid, contextMenu);
-                }
+                  // Find the cell element
+                  const cellElement = document.querySelector(
+                    `[data-row="${contextMenu.row}"][data-col="${contextMenu.col}"]`
+                  ) as HTMLElement;
 
+                  if (cellElement) {
+                    setActiveHistoryCell({
+                      cellId: contextMenu.cellid,
+                      element: cellElement,
+                    });
+                  }
+                }
                 setContextMenu(null);
               }}
               className="hover:bg-gray-100 px-4 py-2 cursor-pointer text-blue-600"
@@ -1720,7 +1693,7 @@ export default function Table({
           </div>
         </div>
       )}
-      {selectedHistory && Object.keys(selectedHistory.history).length > 0 && (
+      {/* {selectedHistory && Object.keys(selectedHistory.history).length > 0 && (
         <div
           className="absolute bg-white border border-gray-300 rounded-lg shadow-lg w-80 z-50"
           style={{
@@ -1735,7 +1708,7 @@ export default function Table({
             <div className="flex items-center space-x-2">
               {/* Previous Button */}
 
-              <button
+      {/* <button
                 disabled={selectedHistoryIndex <= 0}
                 onClick={() =>
                   setSelectedHistoryIndex((i) => Math.max(i - 1, 0))
@@ -1751,7 +1724,7 @@ export default function Table({
 
               {/* Next Button */}
 
-              <button
+      {/* <button
                 disabled={
                   selectedHistoryIndex >=
                   Object.keys(selectedHistory.history).length - 1
@@ -1772,11 +1745,11 @@ export default function Table({
                 }`}
               >
                 ❯
-              </button>
-            </div>
-          </div>
+              </button> */}
+      {/* </div>
+          </div> */}
 
-          <div className="p-4">
+      {/* <div className="p-4">
             {(() => {
               const entry = selectedHistory.history[selectedHistoryIndex];
 
@@ -1829,7 +1802,7 @@ export default function Table({
             </button>
           </div>
         </div>
-      )}
+      )} */}
 
       <main className="mt-4">
         <div className=" rounded-xl shadow" ref={tableRef}>
@@ -1841,10 +1814,10 @@ export default function Table({
             onMouseMove={handleMouseMoveForScroll}
           >
             <div
-              className="removeminheight overflow-auto max-h-[800px] border rounded"
+              className="removeminheight overflow-auto max-h-[800px] border rounded relative"
               style={{ width: "100%", overflow: "scroll" }}
             >
-              <table className="table-fixed w-full text-sm border-content border-collapse">
+              <table className="table-fixed w-full text-sm border-content border-collapse relative">
                 <colgroup>
                   {colWidths.map((w, i) => (
                     <col key={i} style={{ width: w.width }} />
@@ -3020,6 +2993,15 @@ export default function Table({
                     ))}
                 </tbody>
               </table>
+
+              {activeHistoryCell && (
+                <CellHistoryModal
+                  cellId={activeHistoryCell.cellId}
+                  isVisible={!!activeHistoryCell}
+                  onClose={() => setActiveHistoryCell(null)}
+                  triggerElement={activeHistoryCell.element}
+                />
+              )}
             </div>
           </div>
 

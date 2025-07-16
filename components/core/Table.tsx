@@ -18,7 +18,7 @@ export interface Issue {
 import { API_ENDPOINTS } from "@/lib/api";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { useKeyboardShortcuts } from "./useKeyboardShortcuts";
-import { IssueImage } from "@/types";
+import { CellHistory, IssueImage } from "@/types";
 import { Button } from "../ui/button";
 import { X } from "lucide-react";
 import CellHistoryModal from "./HistoryModal";
@@ -34,15 +34,7 @@ type CellData = {
   is_header: boolean;
   has_shape: boolean;
 };
-type CellHistory = {
-  cell_history_id: string;
-  created_at: string; // ISO 8601 date string
-  edited_by: string;
-  has_shape: boolean;
-  is_highlighted: boolean;
-  new_value: string;
-  old_value: string;
-};
+
 export default function Table({
   tablename,
   col,
@@ -79,11 +71,13 @@ export default function Table({
     issueId: string;
     image: IssueImage;
   } | null>(null);
+
   const [imageSeleted, setimageSeleted] = useState({
     rownumber: 0,
     colnumber: 0,
     imgindex: 0,
   });
+
   const [contextMenu2, setContextMenu2] = useState<{
     visible: boolean;
     x: number;
@@ -95,10 +89,12 @@ export default function Table({
     y: 0,
     targetImage: null,
   });
+
   const [activeHistoryCell, setActiveHistoryCell] = useState<{
     cellId: string;
     element: HTMLElement;
   } | null>(null);
+
   const [isImageEditorOpen, setIsImageEditorOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollDirectionRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -137,11 +133,8 @@ export default function Table({
   const resizingColIndex = useRef<number | null>(null);
   const [copiedImage, setCopiedImage] = useState<string | null>(null);
 
-
   const resizeStartX = useRef(0);
   const resizeStartWidth = useRef(0);
-
- 
 
   const handleMouseMove = (e: MouseEvent) => {
     if (resizingColIndex.current === null) return;
@@ -403,7 +396,7 @@ export default function Table({
 
       console.log("Debounced data:", data);
       for (const [key, column] of Object.entries(data.column_metadata)) {
-        updateColWidth(Number(key), column);
+        updateColWidth(Number(key), column as Object);
       }
       console.log(colWidths);
       for (const [key, cell] of Object.entries(
@@ -479,7 +472,7 @@ export default function Table({
       },
     });
   };
-  
+
   useEffect(() => {
     localStorage.setItem(`table_data_${tablename}`, JSON.stringify(tableData));
   }, [tableData]);
@@ -1075,27 +1068,6 @@ export default function Table({
     saveoncellchange,
   });
 
-  const getCellHistory = async (
-    cellid: string,
-    contextMenu: { row: number; col: number; x: number; y: number }
-  ) => {
-    const res = await axios.get(API_ENDPOINTS.cellHistory(cellid).url);
-
-    const updatedMap = { ...editHistoryMap, ...res.data.data };
-
-    const key = `${contextMenu.row}-${contextMenu.col}`;
-    setSelectedHistory((s) => ({
-      ...s,
-      key,
-      row: contextMenu.row,
-      col: contextMenu.col,
-      x: contextMenu.x,
-      y: contextMenu.y,
-      history: updatedMap,
-    }));
-    setSelectedHistoryIndex(Object.keys(updatedMap).length - 1);
-  };
-
   const handleSave = async () => {
     const cellMap: Record<string, CellData> = {};
 
@@ -1279,7 +1251,7 @@ export default function Table({
             >
               Delete Column
             </li> */}
-<li
+            <li
               onClick={() => {
                 if (contextMenu.cellid) {
                   // Find the cell element
@@ -1340,7 +1312,6 @@ export default function Table({
           </div>
         </div>
       )}
-    
 
       <main className="mt-4">
         <div className=" rounded-xl shadow" ref={tableRef}>
@@ -1352,10 +1323,10 @@ export default function Table({
             onMouseMove={handleMouseMoveForScroll}
           >
             <div
-              className="removeminheight overflow-auto max-h-[800px] border rounded"
+              className="removeminheight overflow-auto max-h-[800px] border rounded relative"
               style={{ width: "100%", overflow: "scroll" }}
             >
-              <table className="table-fixed w-full text-sm border-content border-collapse">
+              <table className="table-fixed w-full text-sm border-content border-collapse relative">
                 <colgroup>
                   {colWidths.map((w, i) => (
                     <col key={i} style={{ width: w.width }} />
@@ -2296,10 +2267,10 @@ export default function Table({
                                       : ""
                                   }
                                     ${
-                                     isCellInAutofillRange(rowIndex, colIndex)
-                                       ? "bg-green-200 border-2 border-green-400"
-                                       : ""
-                                   } ${
+                                      isCellInAutofillRange(rowIndex, colIndex)
+                                        ? "bg-green-200 border-2 border-green-400"
+                                        : ""
+                                    } ${
                                 activeHistoryCell?.element ===
                                 document.querySelector(
                                   `[data-row="${rowIndex}"][data-col="${colIndex}"]`
@@ -2452,7 +2423,6 @@ export default function Table({
                                     : "p-3!"
                                 } className="w-full h-auto m-0 border outline-none resize-none overflow-hidden whitespace-pre-wrap break-words p-2 align-top"
 `}
-
                                 rows={1}
                               />
                             </td>
