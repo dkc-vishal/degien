@@ -62,7 +62,7 @@ const page: React.FC = () => {
       onSuccess: () => {
         setSuccess("Login successful!");
         setTimeout(() => {
-          router.push("/dashboard");
+          router.push("/Dashboard");
         }, 2000);
       },
     });
