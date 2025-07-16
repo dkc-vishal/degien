@@ -123,7 +123,7 @@ const CellHistoryModal: React.FC<CellHistoryModalProps> = ({
 
   return (
     <div
-      className="absolute bg-white border border-gray-300 rounded-lg shadow-lg w-80 z-50"
+      className="absolute bg-white border border-gray-300 rounded-lg shadow-lg w-80 z-10"
       style={{
         top: position.top,
         left: position.left,

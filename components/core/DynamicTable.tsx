@@ -398,13 +398,6 @@ export default function Table({
     null
   );
 
-  // useEffect(() => {
-  //   const sheeetdata = spreadsheet.cells;
-  //   for (const [key, cell] of Object.entries(sheeetdata)) {
-  //     const typedCell = cell as CellData;
-  //     setCellValue(typedCell);
-  //   }
-  // }, []);
   const [contextMenu, setContextMenu] = useState<{
     cellid: string | null;
     visible: boolean;
