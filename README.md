@@ -108,4 +108,22 @@ https://chatgpt.com/share/68628966-8cb0-8011-8514-b70acdf8f0c1
 
 - QA Initial Report 
 
-- Page 1 (current) of 4 (total) 
+
+##### Swagger API 
+
+1. POST
+/api/v1.0/auth/update-details/admin/{id}/
+Update User Details (Admin)
+
+  - asking for designation field but there is no such field while user creation 
+
+  - asking for user id (on click on update button, backend should fire the user_id automatically) 
+
+  - should get name from the req.body (since name isn't coming by default in req.body section but when i manually add it, then api is accepting it and giving correct response)
+
+
+2. POST
+/api/v1.0/auth/reset-password/admin/
+Reset User Password (Admin)
+
+ - documentation problem (asking for email, but when we provide email, it gives us error that the 'user_id' field is required)
