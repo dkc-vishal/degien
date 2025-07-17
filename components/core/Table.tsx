@@ -106,6 +106,7 @@ export default function Table({
   const [colWidths, setColWidths] = useState(
     Array.from({ length: columnheaders.length }, (_, i) => columnheaders[i]) // Default width of 100 if not specified
   );
+
   const updateColWidth = (index: number, newWidth: object) => {
     setColWidths((prevWidths) => {
       const updated = [...prevWidths];
@@ -1127,15 +1128,15 @@ export default function Table({
     });
 
     console.log({
-      spreadsheet_id: "822d02cf-e5eb-4ac8-81c1-13e36406c1e6",
+      spreadsheet_id: "34edabce-68a7-45ca-b2af-ec7b6778c0b4",
       frozen_column: frozenColIndices,
       column_metadata: columnMetadata,
       cells: cellMap,
     });
     const res = await axios.post(
-      "http://gulab.local:8000/api/v1.0/spreadsheet/update/b20c7d94-e11e-46f9-96d3-44aad3d2bb31/",
+      "http://gulab.local:8000/api/v1.0/spreadsheet/update/34edabce-68a7-45ca-b2af-ec7b6778c0b4/",
       {
-        spreadsheet_id: "b20c7d94-e11e-46f9-96d3-44aad3d2bb31",
+        spreadsheet_id: "34edabce-68a7-45ca-b2af-ec7b6778c0b4",
         frozen_columns: frozenColIndices,
         column_metadata: columnMetadata,
         cells: cellMap,

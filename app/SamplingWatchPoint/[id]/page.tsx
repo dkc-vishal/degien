@@ -6,12 +6,14 @@ import InputForm from "@/components/core/InputForm";
 import { FaPrint } from "react-icons/fa";
 import { useParams } from "next/navigation";
 import axios from "axios";
+
 type ColumnMetadata = {
   header: string;
   is_hidden: boolean;
   is_moveable: boolean;
   width: number;
 };
+
 const page = () => {
   const [columnHeaders, setcolumnHeaders] = useState<ColumnMetadata[]>([]);
   const [tableData, setTableData] = useState({});
@@ -19,6 +21,7 @@ const page = () => {
   const handlePrint = () => {
     window.print();
   };
+  
   async function fetchdata() {
     const res = await axios.get(
       `http://gulab.local:8000/api/v1.0/spreadsheet/${id}/`
