@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  output: "export",
+  // output: "export", // Commented out for development - this prevents images from loading
   /* config options here */
   webpack: (config, { isServer }) => {
     if (!isServer) {

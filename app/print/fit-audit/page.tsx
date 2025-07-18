@@ -13,6 +13,16 @@ export default function FitAuditPrintPage() {
     window.print();
   };
 
+  const getRowHeightForPage = (pageIndex: number, totalPages: number, rowsInPage: number) => {
+    if (pageIndex === 0) return 300;
+
+    if (pageIndex === totalPages - 1 && rowsInPage > 1 && rowsInPage < 3) {
+      return Math.floor(1123 / rowsInPage);
+    }
+
+    return 300;
+  };
+
   useEffect(() => {
     handlePrint();
   }, []);
@@ -191,7 +201,18 @@ export default function FitAuditPrintPage() {
         <div>
           <strong>Form Version</strong> – 1.0
         </div>
-        <div>Form Version date – 2025‑07‑14</div>
+        <div
+          style={{
+            fontSize: "14px",
+            fontWeight: "bold",
+            backgroundColor: "#e0e0e0", // light gray 
+            padding: "1px 2px",
+            borderRadius: "2px",
+            display: "inline-block"
+          }}
+        >
+          Form Version date – 14-07-2025
+        </div>
       </div>
     </div>
   );
@@ -207,12 +228,12 @@ export default function FitAuditPrintPage() {
       <div
         className="onprint"
         style={{
-          display: "none",
-          position: "absolute", 
-          bottom: "1px", 
-          right: "20px", 
-          fontSize: "10px", 
-          fontFamily: "Arial"
+          fontSize: "10px",
+          fontFamily: "Arial",
+          marginTop: "4px",
+          borderBottom: "1px solid #aaa",
+          width: "fit-content",
+          display: "inline-block"
         }}
       >
         Page {currentPage} of {totalPages}
@@ -240,6 +261,9 @@ export default function FitAuditPrintPage() {
           .no-print {
             display: none;
           }
+          table {
+            border: 2px solid black !important;
+          }
           thead {
             display: table-header-group;
           }
@@ -253,6 +277,9 @@ export default function FitAuditPrintPage() {
       `}</style>
 
       <div className="p-4 print:p-0 mx-auto bg-white" style={{ maxWidth: "1370px" }}>
+
+        {/* nav buttons */}
+
         <div className="no-print flex gap-4 mb-8">
           <button
             onClick={handlePrint}
@@ -269,19 +296,28 @@ export default function FitAuditPrintPage() {
             Back to Fit Audit
           </button>
         </div>
+
         {pages.map((rows, pageIndex) => (
           <div
             key={pageIndex}
             className="mb-8 relative print:relative"
             style={{
-              height: "1123px", 
+              height: "1123px",
               position: "relative"
             }}
           >
+
+            {/* Page count */}
+
+            <PrintFooter
+              currentPage={pageIndex + 1}
+              totalPages={pages.length}
+            />
+
             <PrintHeader />
 
             {pageIndex === 0 && (
-              <div className="flex justify-between border p-4 my-4 text-sm">
+              <div className="flex justify-between border p-4 my-1 text-sm">
                 <div>
                   <div>Style Name: _________</div>
                   <div>Vendor Name: _________</div>
@@ -307,7 +343,8 @@ export default function FitAuditPrintPage() {
                 width: "100%",
                 borderCollapse: "collapse",
                 tableLayout: "fixed",
-                border: "1px solid black"
+                border: "1px solid black",
+              
               }}
             >
               <thead>
@@ -348,24 +385,41 @@ export default function FitAuditPrintPage() {
               </thead>
               <tbody>
                 {rows.map((row, idx) => (
-                  <tr key={idx} style={{ height: "300px" }}>
+                  <tr
+                    key={idx}
+                    style={{
+                      height: `${getRowHeightForPage(pageIndex, pages.length, rows.length)
+                        }px`
+                    }}
+                  >
                     <td style={tdStyle}>{row.sno}</td>
                     <td style={tdRotated}>{row.header}</td>
                     <td style={tdStyle}>{row.measurementType}</td>
                     <td style={tdStyle}>{row.location}</td>
-                    <td style={{ ...tdStyle, padding: 0 }}>
-                      <div style={{ height: "100%", width: "100%" }}>
+                    <td style={{ ...tdStyle, padding: 0, height: "100%" }}>
+                      <div
+                        style={{
+                          width: "100%",
+                          aspectRatio: "9 / 16",
+                          position: "relative",
+                          overflow: "hidden",
+                            margin: "auto"
+                        }}
+                      >
                         <img
                           src={row.imageUrl}
                           alt="pic"
                           style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
                             width: "100%",
                             height: "100%",
                             objectFit: "cover",
-                            display: "block",
                           }}
                         />
                       </div>
+
                     </td>
                     <td style={tdStyle}>{row.gradingRule}</td>
                     <td style={tdStyle}>{row.xs}</td>
@@ -374,17 +428,11 @@ export default function FitAuditPrintPage() {
                     <td style={tdStyle}></td>
                     <td style={tdStyle}></td>
                     <td style={tdStyle}></td>
+                    <td style={tdStyle}></td>
                   </tr>
                 ))}
               </tbody>
             </table>
-
-            {/* Page count footer */}
-
-            <PrintFooter
-              currentPage={pageIndex + 1}
-              totalPages={pages.length}
-            />
 
             {/* Page break after each page except last */}
 

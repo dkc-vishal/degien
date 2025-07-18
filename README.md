@@ -127,3 +127,37 @@ Update User Details (Admin)
 Reset User Password (Admin)
 
  - documentation problem (asking for email, but when we provide email, it gives us error that the 'user_id' field is required)
+
+
+#### 17th July, 2025 
+
+- Form version date more bold and bigger in size 
+
+- page count in header 
+
+- more stretched out from second page onwards (fill the page, dont leave empty spaces)
+
+- respect image's 9/16 ratio 
+
+
+#### Tech Graded Specs - Dashboard 
+
+1. First Table 
+
+  - date in indian format 
+  - time and person remove 
+  - result -> dont show dropdown value as Pass or Fail, the value will come from backend 
+  - Fit (3), PP (3), Top (3), Web (12) - its inside columns will come as pop-up  
+
+2. Second Table 
+
+  - Grading rule will be +ve 
+  - add a 'Tolerance' column 
+  - in value when a data is clicked, for a worst case scenario show all of the column fit (1-4), pp (1-4), top (1-4) and web (1-12) - only one data row 
+
+  #### Sessions 
+
+  - Pivot table 
+  - formatting standard 
+  - sticky notes 
+  - bookmark

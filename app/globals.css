@@ -427,7 +427,6 @@ th .resize-handle {
 
                                   /* Print-Specific Styles */
 
-
 @media print{
   .no-print{
     display: none !important;
@@ -447,5 +446,3 @@ th .resize-handle {
     display: table-header-group;
   }
 }
-
-
